@@ -180,16 +180,17 @@ export default function FeaturesSection() {
       </div>
       <div className="max-w-7xl mx-auto px-6 relative z-10">
         <div
-          className="flex flex-col lg:flex-row justify-between items-start gap-6 mb-16"
+          className="flex flex-col lg:flex-row justify-between items-start gap-6 mb-16 opacity-100 animate-on-scroll"
+          style={{ animation: 'animationIn 0.8s ease-out 0.2s forwards', opacity: 0 }}
         >
           <div>
-            <span className="text-xs font-bold tracking-[0.2em] uppercase text-[#4A6741] mb-4 block">Capabilities</span>
-            <h2 className="text-4xl md:text-5xl font-black tracking-tight text-[#1a1a1a]">
+            <span className="text-xs font-mono tracking-widest uppercase text-accent mb-4 block">Capabilities</span>
+            <h2 className="text-4xl md:text-5xl font-extrabold tracking-tight text-foreground">
               Built for scale.<br />
-              <span className="text-[#4A6741]">Designed for precision.</span>
+              <span className="text-gradient-primary">Designed for precision.</span>
             </h2>
           </div>
-          <p className="text-slate-500 max-w-sm text-lg font-medium leading-relaxed lg:text-right pt-4">
+          <p className="text-muted-foreground max-w-sm text-base leading-relaxed lg:text-right pt-4">
             Every component of VEXA is engineered for enterprise fashion platforms — from indie D2C to global retail.
           </p>
         </div>
@@ -199,7 +200,11 @@ export default function FeaturesSection() {
           {features?.map((feature, i) => (
             <div
               key={feature?.id}
-              className={`relative glass-card rounded-2xl p-5 group hover:border-[#4A6741]/30 transition-all duration-500 overflow-hidden bg-white ${feature?.colSpan}`}
+              className={`relative glass-card rounded-2xl p-5 group hover:border-primary/30 transition-all duration-500 overflow-hidden opacity-100 animate-on-scroll ${feature?.colSpan}`}
+              style={{
+                animation: `animationIn 0.8s ease-out ${0.2 + i * 0.1}s forwards`,
+                opacity: 0,
+              }}
             >
               {/* Subtle glow on hover */}
               <div

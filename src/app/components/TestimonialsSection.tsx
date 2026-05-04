@@ -41,16 +41,16 @@ const testimonials = [
 
 function TestimonialCard({ t }: { t: typeof testimonials[0] }) {
   return (
-    <div className="relative bg-white border border-slate-100 shadow-lg rounded-2xl p-8 mb-6 group hover:border-[#4A6741]/20 transition-all duration-500">
-      <svg className="w-6 h-6 text-[#4A6741] mb-5 opacity-40" fill="currentColor" viewBox="0 0 24 24">
+    <div className="relative glass-card rounded-2xl p-8 mb-6 group hover:border-primary/20 transition-all duration-500">
+      <svg className="w-6 h-6 text-foreground mb-5 opacity-60" fill="currentColor" viewBox="0 0 24 24">
         <path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z" />
         <path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V20c0 1 0 1 1 1z" />
       </svg>
-      <p className="text-slate-500 text-base font-light leading-relaxed mb-6">{t.quote}</p>
-      <div className="border-t border-slate-50 pt-5">
-        <div className="font-bold text-[#1a1a1a] text-sm">{t.name}</div>
-        <div className="text-xs text-slate-400 mt-0.5">{t.role}</div>
-        <div className="text-xs text-[#4A6741] mt-0.5 font-mono">{t.company}</div>
+      <p className="text-muted-foreground text-base font-light leading-relaxed mb-6">{t.quote}</p>
+      <div className="border-t border-border pt-5">
+        <div className="font-semibold text-foreground text-sm">{t.name}</div>
+        <div className="text-xs text-muted-foreground mt-0.5">{t.role}</div>
+        <div className="text-xs text-primary/70 mt-0.5 font-mono">{t.company}</div>
       </div>
     </div>
   );
@@ -66,16 +66,16 @@ export default function TestimonialsSection() {
       <div className="max-w-7xl mx-auto px-6">
         <div
           className="flex flex-col lg:flex-row justify-between gap-6 mb-16 opacity-100 animate-on-scroll"
-          style={{ animation: 'animationIn 0.8s ease-out 0.2s forwards', opacity: 1 }}
+          style={{ animation: 'animationIn 0.8s ease-out 0.2s forwards', opacity: 0 }}
         >
           <div>
-            <span className="text-xs font-bold tracking-[0.2em] uppercase text-[#4A6741] mb-4 block">Social Proof</span>
-            <h2 className="text-4xl md:text-5xl font-black tracking-tight text-[#1a1a1a]">
+            <span className="text-xs font-mono tracking-widest uppercase text-accent mb-4 block">Social Proof</span>
+            <h2 className="text-4xl md:text-5xl font-extrabold tracking-tight text-foreground">
               Brands that{' '}
-              <span className="text-[#4A6741]">ship with VEXA.</span>
+              <span className="text-gradient-primary">ship with VEXA.</span>
             </h2>
           </div>
-          <p className="text-slate-500 max-w-sm text-lg font-medium leading-relaxed lg:text-right pt-4">
+          <p className="text-muted-foreground max-w-sm text-base leading-relaxed lg:text-right pt-4">
             From D2C startups to enterprise fashion groups — teams at every scale trust VEXA.
           </p>
         </div>
@@ -85,7 +85,7 @@ export default function TestimonialsSection() {
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 h-[700px] overflow-hidden opacity-100 animate-on-scroll"
           style={{
             animation: 'animationIn 0.8s ease-out 0.4s forwards',
-            opacity: 1,
+            opacity: 0,
             maskImage: 'linear-gradient(to bottom, transparent, black 8%, black 92%, transparent)',
             WebkitMaskImage: 'linear-gradient(to bottom, transparent, black 8%, black 92%, transparent)',
           }}

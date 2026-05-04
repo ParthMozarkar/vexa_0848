@@ -9,25 +9,29 @@ export default function HeroSection() {
       <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[40rem] h-[40rem] rounded-full blur-[100px] pointer-events-none z-0" style={{ background: 'rgba(0,212,255,0.04)' }} />
       {/* Badge */}
       <div
-        className="relative glass-card bg-[#4A6741]/5 border-[#4A6741]/20 rounded-full mt-8 px-5 py-2 flex items-center gap-2 z-20"
+        className="relative glass-card bg-primary/5 border-primary/20 rounded-full mt-8 px-5 py-2 flex items-center gap-2 z-20 opacity-100"
+        style={{ animation: 'animationIn 0.8s ease-out 0.2s forwards', opacity: 0 }}
       >
-        <span className="w-2 h-2 rounded-full bg-[#bef264] animate-pulse" />
-        <span className="text-sm font-bold text-[#4A6741] font-mono">Virtual Try-On API · v3.0</span>
+        <span className="w-2 h-2 rounded-full bg-accent animate-pulse-glow" />
+        <span className="text-sm font-medium text-primary/90 font-mono">Virtual Try-On API · v3.0</span>
       </div>
       {/* Hero Headline */}
       <h1
-        className="mt-8 text-center font-black tracking-tighter leading-none z-20 relative px-4"
+        className="mt-8 text-center font-sans font-extrabold tracking-tighter leading-none z-20 relative px-4"
         style={{
           fontSize: 'clamp(3rem, 10vw, 9rem)',
           lineHeight: 0.9,
+          animation: 'animationIn 0.8s ease-out 0.3s forwards',
+          opacity: 0,
         }}
       >
-        <span className="block text-[#4A6741]">See It On You.</span>
-        <span className="block text-slate-400 mt-2">Before You Buy.</span>
+        <span className="block text-gradient-primary">See It On You.</span>
+        <span className="block text-slate-500 mt-2">Before You Buy.</span>
       </h1>
       {/* Sub */}
       <p
-        className="mt-8 text-base md:text-xl text-slate-500 text-center max-w-2xl font-medium px-6 z-20 relative"
+        className="mt-8 text-base md:text-xl text-muted-foreground text-center max-w-2xl leading-relaxed font-normal px-6 z-20 relative"
+        style={{ animation: 'animationIn 0.8s ease-out 0.4s forwards', opacity: 0 }}
       >
         VEXA embeds AI-powered 3D virtual try-on directly into your fashion platform.
         One SDK. Zero friction. Measurably fewer returns.
@@ -35,41 +39,24 @@ export default function HeroSection() {
       {/* CTAs */}
       <div
         className="flex flex-col sm:flex-row mt-10 gap-3 items-center z-20 relative"
+        style={{ animation: 'animationIn 0.8s ease-out 0.5s forwards', opacity: 0 }}
       >
-        {/* Primary CTA with spinning border beam */}
-        <button className="group relative flex items-center gap-3 bg-gradient-to-b from-primary/20 to-primary/10 border-white/10 border rounded-full pt-2 pr-8 pb-2 pl-2 hover:bg-primary/20 transition-all duration-300 overflow-hidden">
-          <div
-            className="absolute inset-0 rounded-full"
-            style={{
-              WebkitMask: 'linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0)',
-              WebkitMaskComposite: 'xor',
-              maskComposite: 'exclude',
-              padding: '1px',
-              pointerEvents: 'none',
-            }}
-          >
-            <div
-              className="absolute animate-spin-slow rounded-full"
-              style={{
-                inset: '-100%',
-                background: 'conic-gradient(from 0deg, transparent 0 300deg, #5B4BF5 360deg)',
-              }}
-            />
-          </div>
-          <div className="relative z-10 flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-primary text-white shadow-lg neon-glow-primary">
+        {/* Primary CTA with solid Sage-Green */}
+        <a href="/#booking" className="group relative flex items-center gap-3 bg-[#4A6741] rounded-full pt-2 pr-8 pb-2 pl-2 hover:bg-[#3d5636] transition-all duration-300 shadow-xl shadow-[#4A6741]/20">
+          <div className="relative z-10 flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-white/20 text-white">
             <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
               <path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z" />
             </svg>
           </div>
-          <span className="relative z-10 text-base font-semibold text-white tracking-tight">Book a Demo</span>
-        </button>
+          <span className="relative z-10 text-base font-bold text-white tracking-tight">Book a Demo</span>
+        </a>
 
-        <button className="flex items-center gap-2 border border-border hover:border-white/20 bg-white/5 hover:bg-white/10 rounded-full px-6 py-3.5 text-sm font-medium text-foreground transition-all duration-300 group">
+        <a href="/integration" className="flex items-center gap-2 border border-slate-200 hover:border-[#4A6741]/30 bg-white rounded-full px-6 py-3.5 text-sm font-bold text-[#1a1a1a] transition-all duration-300 group shadow-sm">
           <span>Start Integration</span>
           <svg className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14m-7-7 7 7-7 7" />
           </svg>
-        </button>
+        </a>
       </div>
       {/* Floating Cards */}
       {/* Card 1: Top Left — Conversion Rate */}
@@ -81,10 +68,10 @@ export default function HeroSection() {
           <span className="text-xs font-mono text-muted-foreground">Conversion Rate</span>
           <span className="w-2 h-2 rounded-full bg-accent animate-pulse-glow" />
         </div>
-        <div className="text-3xl font-bold text-gradient-accent mb-1">+312%</div>
-        <div className="text-xs text-muted-foreground">vs. standard product images</div>
-        <div className="mt-3 h-1 bg-muted rounded-full overflow-hidden">
-          <div className="h-full rounded-full" style={{ width: '78%', background: 'linear-gradient(90deg, #5B4BF5, #00D4FF)' }} />
+        <div className="text-3xl font-bold text-[#4A6741] mb-1">+312%</div>
+        <div className="text-xs text-slate-500">vs. standard product images</div>
+        <div className="mt-3 h-1 bg-slate-100 rounded-full overflow-hidden">
+          <div className="h-full rounded-full bg-[#4A6741]" style={{ width: '78%' }} />
         </div>
       </div>
       {/* Card 2: Top Right — Active Avatars */}
@@ -100,11 +87,11 @@ export default function HeroSection() {
           </div>
           <span className="text-xs font-mono text-muted-foreground">Live Avatars</span>
         </div>
-        <div className="text-2xl font-bold text-white mb-1">2.4M+</div>
-        <div className="text-xs text-muted-foreground">generated this month</div>
+        <div className="text-2xl font-bold text-[#1a1a1a] mb-1">2.4M+</div>
+        <div className="text-xs text-slate-500">generated this month</div>
         <div className="flex gap-1 mt-3">
           {[40, 65, 55, 80, 70, 90, 75]?.map((h, i) => (
-            <div key={i} className="flex-1 rounded-sm" style={{ height: `${h * 0.3}px`, background: i === 6 ? '#00D4FF' : 'rgba(91,75,245,0.4)' }} />
+            <div key={i} className="flex-1 rounded-sm" style={{ height: `${h * 0.3}px`, background: i === 6 ? '#4A6741' : 'rgba(74,103,65,0.3)' }} />
           ))}
         </div>
       </div>
@@ -125,8 +112,8 @@ export default function HeroSection() {
           </div>
           <div className="flex-1">
             <div className="text-xs text-muted-foreground mb-1">After VEXA</div>
-            <div className="h-2 rounded-full" style={{ background: 'linear-gradient(90deg, #5B4BF5, #00D4FF)', width: '60%' }} />
-            <div className="text-xs text-accent mt-1">17% returns</div>
+            <div className="h-2 rounded-full bg-[#4A6741]" style={{ width: '60%' }} />
+            <div className="text-xs text-[#4A6741] mt-1">17% returns</div>
           </div>
         </div>
       </div>
@@ -141,11 +128,11 @@ export default function HeroSection() {
           </svg>
           <span className="text-xs font-mono text-muted-foreground">API Latency</span>
         </div>
-        <div className="text-2xl font-bold text-white mb-1">
-          <span className="text-gradient-accent">&lt;200</span>
-          <span className="text-sm text-muted-foreground font-normal">ms</span>
+        <div className="text-2xl font-bold text-[#1a1a1a] mb-1">
+          <span className="text-[#4A6741]">&lt;200</span>
+          <span className="text-sm text-slate-500 font-normal">ms</span>
         </div>
-        <div className="text-xs text-muted-foreground">p99 render time</div>
+        <div className="text-xs text-slate-500">p99 render time</div>
         <div className="mt-3 flex items-end gap-1">
           {[60, 45, 80, 55, 70, 40, 65, 50, 75, 45]?.map((h, i) => (
             <div
@@ -153,7 +140,7 @@ export default function HeroSection() {
               className="flex-1 rounded-sm"
               style={{
                 height: `${h * 0.25}px`,
-                background: i === 9 ? 'rgba(0,212,255,0.8)' : 'rgba(91,75,245,0.3)',
+                background: i === 9 ? '#4A6741' : 'rgba(74,103,65,0.3)',
               }}
             />
           ))}

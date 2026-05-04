@@ -6,23 +6,32 @@ export default function CTASection() {
     <section className="relative py-16 pb-24 overflow-hidden">
       <div className="max-w-7xl mx-auto px-6">
         <div
-          className="relative glass-card rounded-3xl overflow-hidden bg-white border-slate-100 shadow-2xl"
+          className="relative glass-card rounded-3xl overflow-hidden opacity-100 animate-on-scroll"
+          style={{ animation: 'animationIn 0.8s ease-out 0.2s forwards', opacity: 0 }}
         >
           {/* Background glow */}
           <div className="absolute inset-0 pointer-events-none">
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[40rem] h-[20rem] rounded-full blur-[80px] opacity-10 bg-[#4A6741]" />
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[40rem] h-[20rem] rounded-full blur-[80px]" style={{ background: 'rgba(91,75,245,0.15)' }} />
+            <div className="absolute bottom-0 right-1/4 w-[20rem] h-[15rem] rounded-full blur-[60px]" style={{ background: 'rgba(0,212,255,0.08)' }} />
+          </div>
+
+          {/* Ghost text */}
+          <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden">
+            <span className="text-[8vw] font-extrabold whitespace-nowrap tracking-tighter select-none" style={{ color: 'rgba(255,255,255,0.02)' }}>
+              START BUILDING
+            </span>
           </div>
 
           <div className="relative z-10 px-8 md:px-16 py-16 md:py-20 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-10">
             <div className="max-w-2xl">
-              <span className="text-xs font-bold tracking-[0.2em] uppercase text-[#4A6741] mb-4 block">
+              <span className="text-xs font-mono tracking-widest uppercase text-accent mb-4 block">
                 Ready to integrate?
               </span>
-              <h2 className="text-3xl md:text-5xl font-black tracking-tight mb-4">
-                <span className="text-slate-400">Deploy virtual try-on</span>
-                <span className="block text-[#4A6741]">in one afternoon.</span>
+              <h2 className="text-3xl md:text-5xl font-extrabold tracking-tight mb-4">
+                <span className="text-muted-foreground">Deploy virtual try-on</span>
+                <span className="block text-gradient-primary">in one afternoon.</span>
               </h2>
-              <p className="text-slate-500 text-lg font-medium leading-relaxed max-w-md">
+              <p className="text-muted-foreground text-base leading-relaxed max-w-md">
                 Three lines of code. Full 3D virtual try-on. Your customers see it on themselves — before checkout.
               </p>
             </div>
@@ -47,7 +56,7 @@ export default function CTASection() {
           </div>
 
           {/* Bottom stats bar */}
-          <div className="relative z-10 border-t border-slate-50 px-8 md:px-16 py-6 flex flex-wrap gap-8">
+          <div className="relative z-10 border-t border-border px-8 md:px-16 py-6 flex flex-wrap gap-8">
             {[
               { label: 'Setup time', val: '< 1 day' },
               { label: 'Uptime SLA', val: '99.9%' },
@@ -55,8 +64,8 @@ export default function CTASection() {
               { label: 'Support', val: '24/7 dedicated' },
             ]?.map((item) => (
               <div key={item?.label}>
-                <div className="text-xl font-black text-[#4A6741]">{item?.val}</div>
-                <div className="text-[10px] font-bold uppercase tracking-widest text-slate-400">{item?.label}</div>
+                <div className="text-lg font-bold font-mono text-gradient-accent">{item?.val}</div>
+                <div className="text-xs text-muted-foreground">{item?.label}</div>
               </div>
             ))}
           </div>

@@ -9,11 +9,12 @@ import BenefitsSection from '@/app/components/BenefitsSection';
 import TestimonialsSection from '@/app/components/TestimonialsSection';
 import CTASection from '@/app/components/CTASection';
 import ScrollAnimationInit from '@/app/components/ScrollAnimationInit';
-import BookingFormSection from '@/app/components/BookingFormSection';
+import BookingFormSection from '@/components/BookingFormSection';
+import './marketing.css';
 
 export default function HomePage() {
   return (
-    <main className="min-h-screen bg-background overflow-x-hidden">
+    <main className="min-h-screen bg-[#f8f7f2] overflow-x-hidden">
       <ScrollAnimationInit />
       <Header />
       <HeroSection />

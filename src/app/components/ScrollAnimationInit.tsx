@@ -14,8 +14,25 @@ export default function ScrollAnimationInit() {
       },
       { threshold: 0.15, rootMargin: '0px 0px -8% 0px' }
     );
-    document.querySelectorAll('.animate-on-scroll')?.forEach((el) => io?.observe(el));
-    return () => io?.disconnect();
+    const observeElements = () => {
+      document.querySelectorAll('.animate-on-scroll:not(.observed)').forEach((el) => {
+        el.classList.add('observed');
+        io.observe(el);
+      });
+    };
+
+    observeElements();
+    
+    const mutationObserver = new MutationObserver(() => {
+      observeElements();
+    });
+    
+    mutationObserver.observe(document.body, { childList: true, subtree: true });
+
+    return () => {
+      io.disconnect();
+      mutationObserver.disconnect();
+    };
   }, []);
 
   return null;

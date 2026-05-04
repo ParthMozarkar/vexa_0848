@@ -78,25 +78,25 @@ export default function DemoSection() {
         {/* Header */}
         <div
           className="text-center mb-16 animate-on-scroll"
-        >
-          <span className="text-xs font-bold tracking-[0.2em] uppercase text-[#4A6741] mb-4 block">
+          style={{ animation: 'animationIn 0.8s ease-out 0.2s forwards', opacity: 0 }}>
+          <span className="text-xs font-mono tracking-widest uppercase text-accent mb-4 block">
             Product Demo
           </span>
-          <h2 className="text-4xl md:text-5xl font-black tracking-tight text-[#1a1a1a] mb-4">
+          <h2 className="text-4xl md:text-5xl font-extrabold tracking-tight text-foreground mb-4">
             Try-on that{' '}
-            <span className="text-[#4A6741]">feels real.</span>
+            <span className="text-gradient-primary">feels real.</span>
           </h2>
-          <p className="text-slate-500 max-w-xl mx-auto text-lg font-medium leading-relaxed">
+          <p className="text-muted-foreground max-w-xl mx-auto text-base leading-relaxed">
             AI body mapping generates a photorealistic 3D avatar in seconds. Customers see exactly how each garment fits their body — not a mannequin.
           </p>
         </div>
 
         {/* Demo Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
           {/* Left: Phone mockup stack */}
           <div
             className="relative flex justify-center items-center h-[520px] animate-on-scroll"
-          >
+            style={{ animation: 'animationIn 0.8s ease-out 0.3s forwards', opacity: 0 }}>
 
             {/* Glow */}
             <div
@@ -231,7 +231,7 @@ export default function DemoSection() {
           {/* Right: Feature callouts */}
           <div
             className="space-y-4 animate-on-scroll"
-          >
+            style={{ animation: 'animationIn 0.8s ease-out 0.4s forwards', opacity: 0 }}>
             {[
             {
               icon:

@@ -48,15 +48,15 @@ export default function HowItWorksSection() {
       </div>
       <div className="max-w-7xl mx-auto px-6 relative z-10">
         <div
-          className="text-center mb-16"
-        >
+          className="text-center mb-16 opacity-100 animate-on-scroll"
+          style={{ animation: 'animationIn 0.8s ease-out 0.2s forwards', opacity: 0 }}>
           
-          <span className="text-xs font-bold tracking-[0.2em] uppercase text-[#4A6741] mb-4 block">
+          <span className="text-xs font-mono tracking-widest uppercase text-accent mb-4 block">
             The Process
           </span>
-          <h2 className="text-4xl md:text-5xl font-black tracking-tight text-[#1a1a1a]">
+          <h2 className="text-4xl md:text-5xl font-extrabold tracking-tight text-foreground">
             Three steps.{' '}
-            <span className="text-[#4A6741]">Infinite fits.</span>
+            <span className="text-gradient-primary">Infinite fits.</span>
           </h2>
         </div>
 
@@ -65,8 +65,10 @@ export default function HowItWorksSection() {
           {steps?.map((step, i) =>
           <div
             key={i}
-            className="relative glass-card rounded-3xl overflow-hidden group hover:border-[#4A6741]/30 transition-all duration-500 bg-white"
+            className="relative glass-card rounded-3xl overflow-hidden group hover:border-primary/30 transition-all duration-500 opacity-100 animate-on-scroll"
             style={{
+              animation: `animationIn 0.8s ease-out ${0.2 + i * 0.15}s forwards`,
+              opacity: 0,
               minHeight: i === 1 ? '520px' : '460px'
             }}>
             

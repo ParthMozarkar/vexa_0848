@@ -55,16 +55,17 @@ export default function BenefitsSection() {
       </div>
       <div className="max-w-7xl mx-auto px-6 relative z-10">
         <div
-          className="text-center mb-16"
+          className="text-center mb-16 opacity-100 animate-on-scroll"
+          style={{ animation: 'animationIn 0.8s ease-out 0.2s forwards', opacity: 0 }}
         >
-          <span className="text-xs font-bold tracking-[0.2em] uppercase text-[#4A6741] mb-4 block">
+          <span className="text-xs font-mono tracking-widest uppercase text-accent mb-4 block">
             The ROI
           </span>
-          <h2 className="text-4xl md:text-5xl font-black tracking-tight text-[#1a1a1a]">
+          <h2 className="text-4xl md:text-5xl font-extrabold tracking-tight text-foreground">
             Numbers that{' '}
-            <span className="text-[#4A6741]">move the needle.</span>
+            <span className="text-gradient-primary">move the needle.</span>
           </h2>
-          <p className="text-slate-500 max-w-xl mx-auto mt-4 text-lg font-medium leading-relaxed">
+          <p className="text-muted-foreground max-w-xl mx-auto mt-4 text-base leading-relaxed">
             Real metrics from VEXA-integrated storefronts. Not projections — production data.
           </p>
         </div>
@@ -73,7 +74,11 @@ export default function BenefitsSection() {
           {stats?.map((stat, i) => (
             <div
               key={i}
-              className="relative glass-card rounded-2xl p-6 group hover:border-[#4A6741]/30 transition-all duration-500 overflow-hidden bg-white"
+              className="relative glass-card rounded-2xl p-6 group hover:border-primary/30 transition-all duration-500 overflow-hidden opacity-100 animate-on-scroll"
+              style={{
+                animation: `animationIn 0.8s ease-out ${0.2 + i * 0.12}s forwards`,
+                opacity: 0,
+              }}
             >
               <div
                 className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none"
@@ -107,7 +112,8 @@ export default function BenefitsSection() {
 
         {/* Integration logos */}
         <div
-          className="mt-16 pt-12 border-t border-slate-100"
+          className="mt-16 pt-12 border-t border-border opacity-100 animate-on-scroll"
+          style={{ animation: 'animationIn 0.8s ease-out 0.6s forwards', opacity: 0 }}
         >
           <p className="text-xs font-mono uppercase tracking-widest text-muted-foreground text-center mb-8">
             Integrates with your stack
