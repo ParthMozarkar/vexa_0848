@@ -64,12 +64,18 @@ export default function ThreeDComingSoon() {
               </div>
 
               <div className="flex flex-col md:flex-row items-center justify-center gap-4">
-                <button className="w-full md:w-auto px-10 py-5 rounded-2xl bg-[#4A6741] text-white font-black uppercase tracking-widest text-sm shadow-2xl shadow-[#4A6741]/40 hover:scale-105 transition-all">
+                <a 
+                  href="/#booking-section"
+                  className="w-full md:w-auto px-10 py-5 rounded-2xl bg-[#4A6741] text-white font-black uppercase tracking-widest text-sm shadow-2xl shadow-[#4A6741]/40 hover:scale-105 transition-all text-center"
+                >
                   Join the Waitlist
-                </button>
-                <button className="w-full md:w-auto px-10 py-5 rounded-2xl bg-white text-slate-600 border border-slate-200 font-black uppercase tracking-widest text-sm hover:bg-slate-50 transition-all">
+                </a>
+                <a 
+                  href="/#how-it-works"
+                  className="w-full md:w-auto px-10 py-5 rounded-2xl bg-white text-slate-600 border border-slate-200 font-black uppercase tracking-widest text-sm hover:bg-slate-50 transition-all text-center"
+                >
                   View Roadmap
-                </button>
+                </a>
               </div>
             </motion.div>
           </div>
