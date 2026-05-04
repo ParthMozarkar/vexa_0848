@@ -212,10 +212,10 @@ export default function AdminDashboard() {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-slate-50/50">
+                  <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Time</th>
                   <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">User / Email</th>
                   <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Location (IP)</th>
                   <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Device</th>
-                  <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Provider</th>
                   <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Status</th>
                   <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Latency</th>
                 </tr>
@@ -223,6 +223,9 @@ export default function AdminDashboard() {
               <tbody className="divide-y divide-slate-50">
                 {logs.map((log) => (
                   <tr key={log.id} className="hover:bg-slate-50/30 transition-colors">
+                    <td className="px-8 py-4 text-[10px] font-bold text-slate-400 whitespace-nowrap">
+                      {new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </td>
                     <td className="px-8 py-4">
                       <div className="flex flex-col gap-1">
                         <div className="flex items-center gap-2">
@@ -237,25 +240,25 @@ export default function AdminDashboard() {
                       </div>
                     </td>
                     <td className="px-8 py-4">
-                      <span className="text-xs font-mono font-bold text-slate-400 bg-slate-50 px-2 py-1 rounded-md border border-slate-100">
-                        {log.ip_address || '0.0.0.0'}
+                      <span className="text-[10px] font-mono font-bold text-slate-400 bg-slate-50 px-2 py-1 rounded-md border border-slate-100">
+                        {log.ip_address || '—'}
                       </span>
                     </td>
                     <td className="px-8 py-4">
                       <div className="flex items-center gap-2">
-                        <span className={`px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-widest ${
-                          log.device_info === 'Mac' ? 'bg-indigo-50 text-indigo-500' :
-                          log.device_info === 'Windows' ? 'bg-sky-50 text-sky-500' :
-                          'bg-slate-50 text-slate-400'
-                        }`}>
-                          {log.device_info || 'Unknown'}
-                        </span>
+                        {log.device_info ? (
+                          <span className={`px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-widest ${
+                            log.device_info === 'Mac' ? 'bg-indigo-50 text-indigo-500' :
+                            log.device_info === 'Windows' ? 'bg-sky-50 text-sky-500' :
+                            log.device_info === 'iOS' || log.device_info === 'Android' ? 'bg-orange-50 text-orange-500' :
+                            'bg-slate-50 text-slate-400'
+                          }`}>
+                            {log.device_info}
+                          </span>
+                        ) : (
+                          <span className="text-[10px] text-slate-300">—</span>
+                        )}
                       </div>
-                    </td>
-                    <td className="px-8 py-4">
-                      <span className="text-[10px] font-black uppercase tracking-tighter text-slate-400 bg-slate-100 px-2 py-1 rounded-md">
-                        {log.provider}
-                      </span>
                     </td>
                     <td className="px-8 py-4">
                       {log.status === 'success' ? (
