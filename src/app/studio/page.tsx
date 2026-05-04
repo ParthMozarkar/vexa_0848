@@ -220,61 +220,40 @@ export default function StudioPage() {
       </div>
 
       {/* ── Main panels ───────────────────────────────────────────────────────── */}
-      <div className="flex-1 px-4 md:px-6 pb-20 max-w-7xl mx-auto w-full">
-        <div className="flex flex-col lg:flex-row gap-8">
+      <div className="flex-1 px-4 md:px-6 pb-20 max-w-[1600px] mx-auto w-full">
+        <div className="flex flex-col lg:flex-row gap-6 items-start">
 
-          {/* ── Left panel (40%) ──────────────────────────────────────────── */}
-          <div className="w-full lg:w-[40%] flex flex-col gap-6">
-            <div className="bg-white rounded-3xl p-8 flex flex-col gap-8 border border-slate-100 shadow-xl shadow-slate-200/40">
-
+          {/* ── Left Column: Person Photo (25%) ───────────────────────────── */}
+          <div className="w-full lg:w-[25%] flex flex-col gap-6">
+            <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-xl shadow-slate-200/40">
+              <p className="text-slate-400 text-[10px] font-bold uppercase tracking-[0.2em] mb-4">
+                01. Your Photo
+              </p>
               <ImageUploadBox
                 label="Person Photo"
-                sublabel="Full body photo works best"
+                sublabel="Full body photo"
                 value={personUrl}
                 onChange={setPersonUrl}
                 onClear={() => { setPersonUrl(null); setPersonUploading(false); }}
                 onUploadingChange={setPersonUploading}
-                height="h-64 md:h-80"
+                height="h-64 lg:h-[450px]"
               />
-
-              <div className="flex flex-col gap-6">
-                <ImageUploadBox
-                  label="Garment Image"
-                  sublabel="Flat-lay or model photo works"
-                  value={garmentUrl}
-                  onChange={setGarmentUrl}
-                  onClear={() => { setGarmentUrl(null); setGarmentUploading(false); }}
-                  onUploadingChange={setGarmentUploading}
-                  height="h-64 md:h-80"
-                />
-
-                {/* Category pills */}
-                <div className="flex gap-3 flex-wrap">
-                  {CATEGORIES.map((cat) => (
-                    <button
-                      key={cat.id}
-                      type="button"
-                      onClick={() => setCategory(cat.id)}
-                      className={`px-6 py-3 rounded-full text-sm font-bold uppercase tracking-widest transition-all ${
-                        category === cat.id
-                          ? "bg-[#4A6741] text-white shadow-lg shadow-[#4A6741]/30"
-                          : "bg-slate-50 text-slate-400 border border-slate-200 hover:text-slate-600"
-                      }`}
-                    >
-                      {cat.label}
-                    </button>
-                  ))}
-                </div>
-              </div>
             </div>
           </div>
 
-          {/* ── Right panel (60%) ─────────────────────────────────────────── */}
-          <div className="w-full lg:w-[60%] flex flex-col">
-            <div className="glass-panel p-8 flex flex-col h-full min-h-[600px] border border-slate-100 shadow-2xl shadow-slate-200/50">
-              <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-6">
-                Try-On Result
-              </p>
+          {/* ── Center Column: Try-On Result (50%) ───────────────────────── */}
+          <div className="w-full lg:w-[50%] flex flex-col">
+            <div className="glass-panel p-6 flex flex-col min-h-[500px] lg:h-[650px] border border-slate-100 shadow-2xl shadow-slate-200/50">
+              <div className="flex items-center justify-between mb-4">
+                <p className="text-[#4A6741] text-[10px] font-black uppercase tracking-[0.3em]">
+                  Generation Stage
+                </p>
+                {status === "ready" && (
+                  <div className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-600 text-[10px] font-bold uppercase tracking-wider border border-emerald-100">
+                    AI Optimized
+                  </div>
+                )}
+              </div>
 
               <div className="flex-1 relative rounded-2xl overflow-hidden flex items-center justify-center bg-slate-50/50 border border-slate-100">
                 <AnimatePresence mode="wait">
@@ -291,8 +270,8 @@ export default function StudioPage() {
                       <div className="w-20 h-20 rounded-3xl bg-white border border-slate-100 flex items-center justify-center shadow-sm">
                         <Shirt className="w-8 h-8 text-slate-200" />
                       </div>
-                      <p className="text-slate-400 font-medium">
-                        Your professional try-on result will appear here
+                      <p className="text-slate-400 font-medium text-sm">
+                        Waiting for uploads...
                       </p>
                     </motion.div>
                   )}
@@ -307,15 +286,15 @@ export default function StudioPage() {
                       className="flex flex-col items-center gap-6 text-center p-8"
                     >
                       <div className="relative">
-                        <Loader2 className="w-16 h-16 text-[#bef264] animate-spin" />
-                        <div className="absolute inset-0 rounded-full bg-[#bef264]/20 blur-2xl" />
+                        <Loader2 className="w-16 h-16 text-[#4A6741] animate-spin" />
+                        <div className="absolute inset-0 rounded-full bg-[#4A6741]/20 blur-2xl" />
                       </div>
                       <div className="space-y-2">
                         <p className="text-[#0f172a] text-xl font-black">
-                          Vexa AI is working...
+                          Draping Garment...
                         </p>
                         <p className="text-slate-500 text-sm font-medium">
-                          Draping your clothing with high-precision physics.
+                          Vexa AI is processing your look.
                         </p>
                       </div>
                     </motion.div>
@@ -358,13 +337,13 @@ export default function StudioPage() {
                       <div className="w-16 h-16 rounded-2xl bg-rose-50 flex items-center justify-center">
                         <RotateCcw className="w-6 h-6 text-rose-400" />
                       </div>
-                      <p className="text-rose-500 font-bold">
+                      <p className="text-rose-500 font-bold text-sm">
                         {errorMsg}
                       </p>
                       <button
                         type="button"
                         onClick={handleReset}
-                        className="px-6 py-2 rounded-xl bg-slate-100 text-slate-600 font-bold hover:bg-slate-200 transition-colors"
+                        className="px-6 py-2 rounded-xl bg-slate-100 text-slate-600 font-bold hover:bg-slate-200 transition-colors text-xs"
                       >
                         Try Again
                       </button>
@@ -374,6 +353,47 @@ export default function StudioPage() {
               </div>
             </div>
           </div>
+
+          {/* ── Right Column: Garment (25%) ────────────────────────────────── */}
+          <div className="w-full lg:w-[25%] flex flex-col gap-6">
+            <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-xl shadow-slate-200/40">
+              <p className="text-slate-400 text-[10px] font-bold uppercase tracking-[0.2em] mb-4">
+                02. The Garment
+              </p>
+              <ImageUploadBox
+                label="Garment"
+                sublabel="Flat-lay photo"
+                value={garmentUrl}
+                onChange={setGarmentUrl}
+                onClear={() => { setGarmentUrl(null); setGarmentUploading(false); }}
+                onUploadingChange={setGarmentUploading}
+                height="h-64 lg:h-[350px]"
+              />
+
+              <div className="mt-6 space-y-4">
+                <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">
+                  Category
+                </p>
+                <div className="flex gap-2 flex-wrap">
+                  {CATEGORIES.map((cat) => (
+                    <button
+                      key={cat.id}
+                      type="button"
+                      onClick={() => setCategory(cat.id)}
+                      className={`flex-1 min-w-[80px] px-3 py-2 rounded-xl text-[10px] font-bold uppercase tracking-widest transition-all ${
+                        category === cat.id
+                          ? "bg-[#4A6741] text-white shadow-lg shadow-[#4A6741]/30"
+                          : "bg-slate-50 text-slate-400 border border-slate-200 hover:text-slate-600"
+                      }`}
+                    >
+                      {cat.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </div>
+
         </div>
       </div>
 
