@@ -31,7 +31,7 @@ const tiers = [
     features: [
       '100,000 try-on renders/mo',
       '5 storefront integrations',
-      'REST API + SDK (React/Vue)',
+      'REST API + Software Development Kit (React/Vue)',
       'Advanced body mapping (68 points)',
       'Priority support + Slack channel',
       '99.9% uptime SLA',
@@ -52,7 +52,7 @@ const tiers = [
     features: [
       'Unlimited renders',
       'Unlimited storefronts',
-      'Full SDK + white-label',
+      'Full Software Development Kit + white-label',
       'Custom model training',
       'Dedicated CSM + SLA',
       '99.99% uptime SLA',

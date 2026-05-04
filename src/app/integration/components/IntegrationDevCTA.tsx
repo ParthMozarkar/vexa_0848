@@ -64,7 +64,7 @@ export default function IntegrationDevCTA() {
               <div className="grid grid-cols-2 gap-3 mb-6">
                 {[
                   { label: 'API Reference', icon: '⚡' },
-                  { label: 'SDK Guides', icon: '📦' },
+                  { label: 'Software Development Kit Guides', icon: '📦' },
                   { label: 'Webhooks', icon: '🔗' },
                   { label: 'Examples', icon: '💡' },
                 ]?.map((doc) => (

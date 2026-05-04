@@ -1,12 +1,12 @@
 import React from 'react';
-
+import { GooeyText } from '@/components/ui/gooey-text-morphing';
 
 export default function HeroSection() {
   return (
-    <section className="relative min-h-screen flex flex-col items-center justify-center overflow-hidden pt-20 pb-12">
-      {/* Ambient Background Glows */}
-      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[80rem] h-[50rem] bg-primary/10 rounded-full blur-[120px] pointer-events-none z-0" />
-      <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[40rem] h-[40rem] rounded-full blur-[100px] pointer-events-none z-0" style={{ background: 'rgba(0,212,255,0.04)' }} />
+    <section className="relative min-h-screen flex flex-col items-center justify-center overflow-x-hidden overflow-y-visible pt-20 pb-12">
+      {/* Ambient Background Glows — ripple grid is global in GlobalLayout */}
+      <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[80rem] h-[50rem] bg-primary/10 rounded-full blur-[120px] pointer-events-none z-[1]" />
+      <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[40rem] h-[40rem] rounded-full blur-[100px] pointer-events-none z-[1]" style={{ background: 'rgba(0,212,255,0.04)' }} />
       {/* Badge */}
       <div
         className="relative glass-card bg-primary/5 border-primary/20 rounded-full mt-8 px-5 py-2 flex items-center gap-2 z-20 opacity-100"
@@ -26,7 +26,20 @@ export default function HeroSection() {
         }}
       >
         <span className="block text-gradient-primary">See It On You.</span>
-        <span className="block text-slate-500 mt-2">Before You Buy.</span>
+        <span className="mt-2 block w-full max-w-[min(100%,42rem)] mx-auto">
+          <GooeyText
+            texts={[
+              'Before You Buy.',
+              'Try It On Virtually.',
+              'Fewer Returns.',
+              'One Software Development Kit.',
+            ]}
+            morphTime={1}
+            cooldownTime={0.35}
+            className="font-extrabold tracking-tighter"
+            textClassName="text-slate-500 text-[clamp(1.75rem,5.5vw,4.5rem)] md:text-[clamp(2rem,6vw,5rem)] font-extrabold tracking-tighter leading-none"
+          />
+        </span>
       </h1>
       {/* Sub */}
       <p
@@ -34,7 +47,7 @@ export default function HeroSection() {
         style={{ animation: 'animationIn 0.8s ease-out 0.4s forwards', opacity: 0 }}
       >
         VEXA embeds AI-powered 3D virtual try-on directly into your fashion platform.
-        One SDK. Zero friction. Measurably fewer returns.
+        One Software Development Kit. Zero friction. Measurably fewer returns.
       </p>
       {/* CTAs */}
       <div

@@ -1,7 +1,7 @@
 {
   "name": "vexa-sdk",
   "version": "1.0.0",
-  "description": "VEXA AI virtual try-on SDK for React Native",
+  "description": "VEXA AI virtual try-on Software Development Kit for React Native",
   "main": "index.ts",
   "types": "index.ts",
   "keywords": [

@@ -203,7 +203,7 @@ export default function StudioPage() {
   const btn = buttonConfig();
 
   return (
-    <div className="w-full min-h-screen flex flex-col bg-background">
+    <div className="w-full min-h-screen flex flex-col">
       <Header />
       
       {/* ── Page heading ──────────────────────────────────────────────────────── */}

@@ -1,6 +1,6 @@
 # vexa-sdk
 
-VEXA AI Virtual Try-On SDK for React Native / Expo.
+VEXA AI Virtual Try-On Software Development Kit for React Native / Expo.
 
 ## Installation
 

@@ -10,7 +10,7 @@ import ScrollAnimationInit from '@/app/components/ScrollAnimationInit';
 
 export default function PricingPage() {
   return (
-    <main className="min-h-screen bg-background overflow-x-hidden">
+    <main className="min-h-screen overflow-x-hidden">
       <ScrollAnimationInit />
       <Header />
       <PricingHero />

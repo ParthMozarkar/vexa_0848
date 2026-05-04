@@ -1,7 +1,7 @@
 /**
  * avatarCache.ts
  * Presigned URL generation + short-lived in-memory TTL cache.
- * Uses Cloudflare R2 via AWS S3-compatible SDK for production presigning.
+ * Uses Cloudflare R2 via AWS S3-compatible Software Development Kit for production presigning.
  *
  * RULE: raw storage paths are NEVER returned — only signed URLs with expiry.
  */
@@ -38,7 +38,7 @@ function getR2Client(): S3Client {
 
 /**
  * Generate a presigned URL for a given storage path.
- * Uses Cloudflare R2 via S3-compatible SDK in production,
+ * Uses Cloudflare R2 via S3-compatible Software Development Kit in production,
  * falls back to CDN URL when R2 is not configured.
  */
 async function generatePresignedUrl(storagePath: string): Promise<string> {

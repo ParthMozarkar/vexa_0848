@@ -280,7 +280,31 @@ input[type="number"] { -moz-appearance: textfield; }
     background: linear-gradient(#fff, #fff) padding-box,
                 linear-gradient(135deg, #4A6741, #3d5636) border-box;
   }
-}
+  .robot-theme-panel {
+    background:
+      radial-gradient(circle at top, rgba(190, 242, 100, 0.16), transparent 42%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.92) 0%, rgba(248, 247, 242, 0.84) 100%);
+    box-shadow: 0 30px 80px -42px rgba(74, 103, 65, 0.32);
+  }
+  .robot-spline-frame {
+    background:
+      radial-gradient(circle at top, rgba(190, 242, 100, 0.14), transparent 38%),
+      linear-gradient(180deg, rgba(255, 255, 255, 0.42) 0%, rgba(230, 228, 217, 0.88) 100%);
+  }
+  .robot-spline-canvas {
+    position: absolute !important;
+    left: -28% !important;
+    top: -18% !important;
+    width: 148% !important;
+    height: 148% !important;
+    transform: scale(0.74);
+    transform-origin: center;
+  }
+  .robot-spline-canvas canvas {
+    clip-path: inset(0 0 62px 0 round 0 0 24px 24px);
+    filter: sepia(0.95) hue-rotate(18deg) saturate(0.62) brightness(0.94) contrast(1.02);
+  }
+  }
 
 @keyframes animationIn {
   0% { opacity: 0; transform: translateY(30px); filter: blur(8px); }

@@ -2,7 +2,7 @@ import type { NextConfig } from "next";
 import { withSentryConfig } from "@sentry/nextjs";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  transpilePackages: ["@splinetool/react-spline", "@splinetool/runtime"],
 };
 
 export default withSentryConfig(nextConfig, {

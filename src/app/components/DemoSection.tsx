@@ -262,7 +262,7 @@ export default function DemoSection() {
                   </svg>,
 
               color: '#A78BFA',
-              title: 'Drop-in SDK Integration',
+              title: 'Drop-in Software Development Kit Integration',
               desc: 'Three lines of code. Works with Shopify, WooCommerce, custom React apps, and native mobile.',
               tag: '3 lines of code'
             }].

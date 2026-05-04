@@ -47,7 +47,7 @@ const platforms = [
   },
   {
     name: 'React Native',
-    type: 'Mobile SDK',
+    type: 'Mobile Software Development Kit',
     status: 'Native Module',
     statusColor: '#6B8C5E',
     icon: (
@@ -61,7 +61,7 @@ const platforms = [
   },
   {
     name: 'Flutter',
-    type: 'Mobile SDK',
+    type: 'Mobile Software Development Kit',
     status: 'Dart Package',
     statusColor: '#6B8C5E',
     icon: (
@@ -75,7 +75,7 @@ const platforms = [
   {
     name: 'Next.js',
     type: 'React Framework',
-    status: 'SDK Ready',
+    status: 'Software Development Kit Ready',
     statusColor: '#4A6741',
     icon: (
       <svg className="w-7 h-7" viewBox="0 0 180 180" fill="none">
@@ -87,7 +87,7 @@ const platforms = [
   },
   {
     name: 'iOS Swift',
-    type: 'Native SDK',
+    type: 'Native Software Development Kit',
     status: 'CocoaPod',
     statusColor: '#8B7D3C',
     icon: (
@@ -99,7 +99,7 @@ const platforms = [
   },
   {
     name: 'Android',
-    type: 'Native SDK',
+    type: 'Native Software Development Kit',
     status: 'Maven Package',
     statusColor: '#8B7D3C',
     icon: (
@@ -129,7 +129,7 @@ export default function IntegrationPlatforms() {
             <span className="text-gradient-primary">your stack.</span>
           </h2>
           <p className="text-muted-foreground text-sm max-w-xl mx-auto">
-            Official plugins, SDKs, and packages for every major platform. Community integrations for everything else.
+            Official plugins, Software Development Kits, and packages for every major platform. Community integrations for everything else.
           </p>
         </div>
 
