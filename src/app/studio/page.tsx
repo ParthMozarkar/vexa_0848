@@ -6,6 +6,7 @@ import { Download, Loader2, RotateCcw, Shirt } from "lucide-react";
 import { ImageUploadBox } from "@/components/studio/ImageUploadBox";
 import { supabase } from "@/lib/supabase";
 import { useStore } from "@/store/useStore";
+import Header from "@/components/Header";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -202,9 +203,11 @@ export default function StudioPage() {
   const btn = buttonConfig();
 
   return (
-    <div className="w-full min-h-[calc(100vh-4rem)] flex flex-col bg-background pt-16">
+    <div className="w-full min-h-screen flex flex-col bg-background">
+      <Header />
+      
       {/* ── Page heading ──────────────────────────────────────────────────────── */}
-      <div className="px-4 md:px-6 pt-12 pb-8 max-w-7xl mx-auto w-full text-center">
+      <div className="px-4 md:px-6 pt-24 pb-8 max-w-7xl mx-auto w-full text-center">
         <h1 className="text-4xl md:text-6xl font-black tracking-tighter text-[#1a1a1a]">
           Virtual Try-On{" "}
           <span className="text-[#4A6741]">
