@@ -4,7 +4,7 @@ import { usePathname } from 'next/navigation';
 import Navbar from './Navbar';
 import Footer from './Footer';
 
-const MARKETING_ROUTES = ['/', '/3d', '/virtual-try-on', '/pricing', '/integration', '/studio'];
+const MARKETING_ROUTES = ['/', '/3d', '/virtual-try-on', '/pricing', '/integration', '/studio', '/admin'];
 
 export default function GlobalLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();

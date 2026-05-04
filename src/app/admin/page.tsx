@@ -93,11 +93,10 @@ export default function AdminDashboard() {
   }, []);
 
   return (
-    <main className="min-h-screen bg-background flex flex-col">
-      <Header />
+    <div className="w-full min-h-screen flex flex-col bg-background">
       
       {!isAuthenticated ? (
-        <div className="flex-1 flex items-center justify-center px-6">
+        <div className="flex-1 flex items-center justify-center px-6 pt-20">
           <motion.div 
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -118,17 +117,17 @@ export default function AdminDashboard() {
                   type="text" 
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
-                  className="w-full px-6 py-4 rounded-2xl bg-slate-50 border border-slate-100 focus:outline-none focus:border-[#4A6741] transition-all text-sm font-bold"
+                  className="w-full px-6 py-4 rounded-2xl bg-slate-50 border border-slate-200 focus:outline-none focus:border-[#4A6741] transition-all text-sm font-bold text-slate-900"
                   placeholder="admin"
                 />
               </div>
               <div>
-                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2 ml-2">Password</label>
+                <label className="block text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2 ml-2">Password</label>
                 <input 
                   type="password" 
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="w-full px-6 py-4 rounded-2xl bg-slate-50 border border-slate-100 focus:outline-none focus:border-[#4A6741] transition-all text-sm font-bold"
+                  className="w-full px-6 py-4 rounded-2xl bg-slate-50 border border-slate-200 focus:outline-none focus:border-[#4A6741] transition-all text-sm font-bold text-slate-900"
                   placeholder="••••••••"
                 />
               </div>
@@ -278,7 +277,6 @@ export default function AdminDashboard() {
         </div>
         </div>
       )}
-      <Footer />
-    </main>
+    </div>
   );
 }
