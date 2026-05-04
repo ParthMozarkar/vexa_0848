@@ -99,7 +99,7 @@ export default function ProductsPage() {
 
       {!userPhotoUrl && (
         <motion.div
-          initial={{ opacity: 0, y: 10 }}
+          initial={{ opacity: 1, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           className="mb-10 p-6 rounded-2xl glass-panel border border-[#bef264]/20 bg-gradient-to-r from-black/40 to-[#bef264]/5 flex flex-col sm:flex-row items-center justify-between gap-6"
         >

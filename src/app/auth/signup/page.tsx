@@ -63,7 +63,7 @@ export default function AuthPage() {
       </div>
 
       <motion.div
-        initial={{ opacity: 0, y: 24 }}
+        initial={{ opacity: 1, y: 24 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
         className="w-full max-w-md relative z-10"
@@ -103,9 +103,9 @@ export default function AuthPage() {
           <AnimatePresence mode="wait">
             <motion.div
               key={mode}
-              initial={{ opacity: 0, x: mode === "signup" ? -10 : 10 }}
+              initial={{ opacity: 1, x: mode === "signup" ? -10 : 10 }}
               animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0 }}
+              exit={{ opacity: 1 }}
               transition={{ duration: 0.2 }}
             >
               <h2 className="text-2xl font-black text-white mb-1 tracking-tight">
@@ -158,7 +158,7 @@ export default function AuthPage() {
 
                 {error && (
                   <motion.div
-                    initial={{ opacity: 0, y: -4 }}
+                    initial={{ opacity: 1, y: -4 }}
                     animate={{ opacity: 1, y: 0 }}
                     className="flex items-start gap-2 p-3 bg-rose-500/10 border border-rose-500/20 rounded-xl"
                   >

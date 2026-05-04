@@ -202,27 +202,27 @@ export default function StudioPage() {
   const btn = buttonConfig();
 
   return (
-    <div className="w-full min-h-[calc(100vh-4rem)] flex flex-col bg-[#0a0a0a]">
+    <div className="w-full min-h-[calc(100vh-4rem)] flex flex-col bg-[#fdfdfd] pt-16">
       {/* ── Page heading ──────────────────────────────────────────────────────── */}
-      <div className="px-4 md:px-6 pt-8 pb-4 max-w-7xl mx-auto w-full">
-        <h1 className="text-3xl md:text-4xl font-semibold tracking-tight text-white">
+      <div className="px-4 md:px-6 pt-12 pb-8 max-w-7xl mx-auto w-full text-center">
+        <h1 className="text-4xl md:text-6xl font-black tracking-tighter text-[#0f172a]">
           Virtual Try-On{" "}
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#bef264] to-[#ecfccb]">
+          <span className="text-[#bef264]">
             Studio
           </span>
         </h1>
-        <p className="text-white/40 mt-2 text-sm">
-          Upload your photo and a garment image — Vexa AI will generate the look.
+        <p className="text-slate-500 mt-4 text-lg font-medium max-w-2xl mx-auto">
+          Upload your photo and a garment image — Vexa AI will generate the look in seconds.
         </p>
       </div>
 
       {/* ── Main panels ───────────────────────────────────────────────────────── */}
-      <div className="flex-1 px-4 md:px-6 pb-4 max-w-7xl mx-auto w-full">
-        <div className="flex flex-col md:flex-row gap-4 md:gap-6">
+      <div className="flex-1 px-4 md:px-6 pb-20 max-w-7xl mx-auto w-full">
+        <div className="flex flex-col lg:flex-row gap-8">
 
           {/* ── Left panel (40%) ──────────────────────────────────────────── */}
-          <div className="w-full md:w-[40%] flex flex-col gap-4">
-            <div className="bg-white/5 rounded-2xl border border-white/10 p-6 flex flex-col gap-6">
+          <div className="w-full lg:w-[40%] flex flex-col gap-6">
+            <div className="glass-panel p-8 flex flex-col gap-8 border border-slate-100 shadow-2xl shadow-slate-200/50">
 
               <ImageUploadBox
                 label="Person Photo"
@@ -231,10 +231,10 @@ export default function StudioPage() {
                 onChange={setPersonUrl}
                 onClear={() => { setPersonUrl(null); setPersonUploading(false); }}
                 onUploadingChange={setPersonUploading}
-                height="h-48 md:h-72"
+                height="h-64 md:h-80"
               />
 
-              <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-6">
                 <ImageUploadBox
                   label="Garment Image"
                   sublabel="Flat-lay or model photo works"
@@ -242,20 +242,20 @@ export default function StudioPage() {
                   onChange={setGarmentUrl}
                   onClear={() => { setGarmentUrl(null); setGarmentUploading(false); }}
                   onUploadingChange={setGarmentUploading}
-                  height="h-48 md:h-64"
+                  height="h-64 md:h-80"
                 />
 
                 {/* Category pills */}
-                <div className="flex gap-2 flex-wrap">
+                <div className="flex gap-3 flex-wrap">
                   {CATEGORIES.map((cat) => (
                     <button
                       key={cat.id}
                       type="button"
                       onClick={() => setCategory(cat.id)}
-                      className={`px-4 py-2 rounded-full text-sm font-medium transition-all duration-150 cursor-pointer ${
+                      className={`px-6 py-3 rounded-full text-sm font-bold uppercase tracking-widest transition-all ${
                         category === cat.id
-                          ? "bg-[#bef264] text-black"
-                          : "bg-white/5 text-white/50 border border-white/10 hover:text-white/80"
+                          ? "bg-[#bef264] text-black shadow-lg shadow-lime-500/30"
+                          : "bg-slate-50 text-slate-400 border border-slate-200 hover:text-slate-600"
                       }`}
                     >
                       {cat.label}
@@ -267,29 +267,29 @@ export default function StudioPage() {
           </div>
 
           {/* ── Right panel (60%) ─────────────────────────────────────────── */}
-          <div className="w-full md:w-[60%] flex flex-col">
-            <div className="bg-white/5 rounded-2xl border border-white/10 p-6 flex flex-col h-full min-h-[500px] md:min-h-[600px]">
-              <p className="text-white/60 text-xs font-medium uppercase tracking-wider mb-3">
+          <div className="w-full lg:w-[60%] flex flex-col">
+            <div className="glass-panel p-8 flex flex-col h-full min-h-[600px] border border-slate-100 shadow-2xl shadow-slate-200/50">
+              <p className="text-slate-400 text-xs font-bold uppercase tracking-widest mb-6">
                 Try-On Result
               </p>
 
-              <div className="flex-1 relative rounded-xl overflow-hidden flex items-center justify-center bg-black/20 border border-white/5">
+              <div className="flex-1 relative rounded-2xl overflow-hidden flex items-center justify-center bg-slate-50/50 border border-slate-100">
                 <AnimatePresence mode="wait">
 
                   {/* Idle */}
                   {status === "idle" && (
                     <motion.div
                       key="idle"
-                      initial={{ opacity: 0 }}
+                      initial={{ opacity: 1 }}
                       animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      className="flex flex-col items-center gap-3 text-center p-8"
+                      exit={{ opacity: 1 }}
+                      className="flex flex-col items-center gap-4 text-center p-8"
                     >
-                      <div className="w-16 h-16 rounded-2xl border-2 border-dashed border-white/10 flex items-center justify-center">
-                        <div className="w-6 h-6 rounded-sm bg-white/10" />
+                      <div className="w-20 h-20 rounded-3xl bg-white border border-slate-100 flex items-center justify-center shadow-sm">
+                        <Shirt className="w-8 h-8 text-slate-200" />
                       </div>
-                      <p className="text-white/30 text-sm">
-                        Your try-on will appear here
+                      <p className="text-slate-400 font-medium">
+                        Your professional try-on result will appear here
                       </p>
                     </motion.div>
                   )}
@@ -298,28 +298,22 @@ export default function StudioPage() {
                   {status === "loading" && (
                     <motion.div
                       key="loading"
-                      initial={{ opacity: 0 }}
+                      initial={{ opacity: 1 }}
                       animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      className="flex flex-col items-center gap-4 text-center p-8"
+                      exit={{ opacity: 1 }}
+                      className="flex flex-col items-center gap-6 text-center p-8"
                     >
                       <div className="relative">
-                        <Loader2 className="w-12 h-12 text-[#bef264] animate-spin" />
-                        <div className="absolute inset-0 rounded-full bg-[#bef264]/10 blur-xl" />
+                        <Loader2 className="w-16 h-16 text-[#bef264] animate-spin" />
+                        <div className="absolute inset-0 rounded-full bg-[#bef264]/20 blur-2xl" />
                       </div>
-                      <p className="text-white/60 text-sm font-medium">
-                        Generating try-on with Vexa AI…
-                      </p>
-                      <p className="text-white/30 text-xs">
-                        Usually 15–60 s · may take up to 2 min on first use
-                      </p>
-                      {/* shimmer bar */}
-                      <div className="w-48 h-1 rounded-full bg-white/10 overflow-hidden mt-2">
-                        <motion.div
-                          className="h-full bg-gradient-to-r from-transparent via-[#bef264]/60 to-transparent"
-                          animate={{ x: ["-100%", "200%"] }}
-                          transition={{ duration: 1.5, repeat: Infinity, ease: "linear" }}
-                        />
+                      <div className="space-y-2">
+                        <p className="text-[#0f172a] text-xl font-black">
+                          Vexa AI is working...
+                        </p>
+                        <p className="text-slate-500 text-sm font-medium">
+                          Draping your clothing with high-precision physics.
+                        </p>
                       </div>
                     </motion.div>
                   )}
@@ -328,10 +322,9 @@ export default function StudioPage() {
                   {status === "ready" && resultUrl && (
                     <motion.div
                       key="result"
-                      initial={{ opacity: 0, scale: 1.02 }}
+                      initial={{ opacity: 1, scale: 1.05 }}
                       animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.5, ease: "easeOut" }}
+                      exit={{ opacity: 1 }}
                       className="absolute inset-0"
                     >
                       <img
@@ -342,10 +335,10 @@ export default function StudioPage() {
                       <button
                         type="button"
                         onClick={handleDownload}
-                        className="absolute bottom-4 right-4 flex items-center gap-2 px-3 py-2 rounded-xl bg-black/60 backdrop-blur-md border border-white/10 text-white/80 hover:text-white text-xs font-medium transition-all hover:bg-black/80"
+                        className="absolute bottom-6 right-6 flex items-center gap-2 px-5 py-3 rounded-2xl bg-[#0f172a] text-white hover:bg-slate-800 font-bold text-sm transition-all shadow-xl"
                       >
-                        <Download className="w-3.5 h-3.5" />
-                        Save
+                        <Download className="w-4 h-4" />
+                        Download
                       </button>
                     </motion.div>
                   )}
@@ -354,21 +347,21 @@ export default function StudioPage() {
                   {status === "error" && (
                     <motion.div
                       key="error"
-                      initial={{ opacity: 0 }}
+                      initial={{ opacity: 1 }}
                       animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
+                      exit={{ opacity: 1 }}
                       className="flex flex-col items-center gap-4 text-center p-8"
                     >
-                      <div className="w-12 h-12 rounded-2xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center">
-                        <RotateCcw className="w-5 h-5 text-rose-400" />
+                      <div className="w-16 h-16 rounded-2xl bg-rose-50 flex items-center justify-center">
+                        <RotateCcw className="w-6 h-6 text-rose-400" />
                       </div>
-                      <p className="text-rose-400 text-sm font-medium max-w-xs">
+                      <p className="text-rose-500 font-bold">
                         {errorMsg}
                       </p>
                       <button
                         type="button"
                         onClick={handleReset}
-                        className="px-4 py-2 rounded-xl bg-white/5 border border-white/10 text-white/60 hover:text-white text-xs transition-colors"
+                        className="px-6 py-2 rounded-xl bg-slate-100 text-slate-600 font-bold hover:bg-slate-200 transition-colors"
                       >
                         Try Again
                       </button>
@@ -382,11 +375,11 @@ export default function StudioPage() {
       </div>
 
       {/* ── Bottom bar ────────────────────────────────────────────────────────── */}
-      <div className="sticky bottom-0 bg-[#0a0a0a]/90 backdrop-blur-md border-t border-white/10 z-20">
-        <div className="max-w-7xl mx-auto px-4 md:px-6 h-16 flex flex-col sm:flex-row items-center justify-between gap-2 py-2 sm:py-0">
+      <div className="sticky bottom-0 bg-white/80 backdrop-blur-xl border-t border-slate-100 z-20">
+        <div className="max-w-7xl mx-auto px-4 md:px-6 h-20 flex items-center justify-between">
           <p
-            className={`text-sm ${
-              status === "error" ? "text-rose-400" : "text-white/50"
+            className={`text-sm font-bold uppercase tracking-widest ${
+              status === "error" ? "text-rose-500" : "text-slate-400"
             }`}
           >
             {statusText()}
@@ -395,12 +388,14 @@ export default function StudioPage() {
             type="button"
             disabled={btn.disabled}
             onClick={btn.onClick}
-            className={`w-full sm:w-auto px-8 py-3 rounded-xl text-sm font-semibold transition-all duration-200 ${btn.className}`}
+            className={`px-12 py-4 rounded-2xl text-base font-black uppercase tracking-widest transition-all shadow-2xl ${btn.className} ${status === 'ready' ? '' : 'shadow-lime-500/40'}`}
           >
             {btn.label}
           </button>
         </div>
       </div>
     </div>
+  );
+}
   );
 }

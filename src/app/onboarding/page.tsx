@@ -122,7 +122,7 @@ function OnboardingWizard() {
 
       <AnimatePresence mode="wait">
         {step === 1 && (
-          <motion.div key="step1" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="text-center space-y-6 mt-12">
+          <motion.div key="step1" initial={{ opacity: 1 }} animate={{ opacity: 1 }} exit={{ opacity: 1 }} className="text-center space-y-6 mt-12">
             <div className="w-16 h-16 bg-[#bef264]/10 rounded-2xl flex items-center justify-center mx-auto mb-6 border border-[#bef264]/20">
               <Sparkles className="w-8 h-8 text-[#bef264]" />
             </div>
@@ -137,7 +137,7 @@ function OnboardingWizard() {
         )}
 
         {step === 2 && (
-          <motion.div key="step2" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }} className="space-y-6">
+          <motion.div key="step2" initial={{ opacity: 1, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 1, x: -20 }} className="space-y-6">
             <div className="mb-8">
               <h2 className="text-3xl font-bold text-white mb-2 tracking-tight">Face Capture</h2>
               <p className="text-white/50">Upload a straight-facing photo. We strictly extract and delete the original RGB data respecting GDPR compliance.</p>
@@ -154,7 +154,7 @@ function OnboardingWizard() {
         )}
 
         {step === 3 && (
-          <motion.div key="step3" initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: -20 }}>
+          <motion.div key="step3" initial={{ opacity: 1, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 1, x: -20 }}>
             <div className="mb-8">
               <h2 className="text-3xl font-bold text-white mb-2 tracking-tight">Body Matrix</h2>
               <p className="text-white/50">Precise geometry enforces accurate fabric draping during the virtual try-on.</p>
@@ -168,7 +168,7 @@ function OnboardingWizard() {
         )}
 
         {step === 4 && (
-          <motion.div key="step4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center py-32 text-center min-h-[50vh]">
+          <motion.div key="step4" initial={{ opacity: 1 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center py-32 text-center min-h-[50vh]">
             {generateError ? (
               <>
                 <div className="w-16 h-16 rounded-full bg-orange-500/20 flex items-center justify-center mb-6">
@@ -196,7 +196,7 @@ function OnboardingWizard() {
         )}
 
         {step === 5 && (
-          <motion.div key="step5" initial={{ opacity: 0, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="space-y-8 max-w-md mx-auto">
+          <motion.div key="step5" initial={{ opacity: 1, scale: 0.95 }} animate={{ opacity: 1, scale: 1 }} className="space-y-8 max-w-md mx-auto">
             <div className="text-center mt-6">
               <div className="w-12 h-12 bg-white/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-white/20">
                 <Sparkles className="w-6 h-6 text-white" />

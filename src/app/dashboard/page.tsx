@@ -35,7 +35,7 @@ function maskKey(key: string): string {
 function StatCard({ icon: Icon, label, value, trend, isLoading }: { icon: React.ComponentType<{ className?: string }>; label: string; value: string | number; trend?: string, isLoading?: boolean }) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 1, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       whileHover={{ y: -5, transition: { duration: 0.2 } }}
       className="glass-panel p-6 rounded-2xl border border-white/5 hover:border-[#bef264]/30 transition-all duration-300 group relative overflow-hidden"
@@ -172,14 +172,14 @@ export default function DashboardPage() {
       <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
         <div>
           <motion.h1 
-            initial={{ opacity: 0, x: -20 }}
+            initial={{ opacity: 1, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             className="text-4xl md:text-5xl font-black text-white tracking-tighter mb-3"
           >
             VEXA <span className="text-[#bef264]">HUB</span>
           </motion.h1>
           <motion.div 
-            initial={{ opacity: 0 }}
+            initial={{ opacity: 1 }}
             animate={{ opacity: 1 }}
             transition={{ delay: 0.2 }}
             className="flex flex-wrap items-center gap-4 text-white/40"
@@ -235,7 +235,7 @@ export default function DashboardPage() {
 
       <AnimatePresence mode="wait">
         {activeTab === 'overview' && (
-          <motion.div key="overview" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-8">
+          <motion.div key="overview" initial={{ opacity: 1, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 1 }} className="space-y-8">
             <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
               <StatCard isLoading={isLoading} icon={Users} label="Total Users" value={stats?.total_users?.toLocaleString() || 0} />
               <StatCard isLoading={isLoading} icon={Globe} label="Total API Keys" value={stats?.total_keys?.toLocaleString() || 0} />
@@ -269,7 +269,7 @@ export default function DashboardPage() {
         )}
 
         {activeTab === 'analytics' && (
-          <motion.div key="analytics" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-8">
+          <motion.div key="analytics" initial={{ opacity: 1, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 1 }} className="space-y-8">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                <StatCard isLoading={isLoading} icon={CheckCircle} label="Global Success Rate" value={`${analytics?.successRate ?? 100}%`} />
                <StatCard isLoading={isLoading} icon={Clock} label="Avg API Response Time" value={`${analytics?.avgResponseTime ?? 0} ms`} />
@@ -325,7 +325,7 @@ export default function DashboardPage() {
         )}
 
         {activeTab === 'keys' && (
-          <motion.div key="keys" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-4">
+          <motion.div key="keys" initial={{ opacity: 1, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 1 }} className="space-y-4">
             <div className="flex items-center justify-between">
               <h2 className="text-white font-semibold">Marketplace API Keys</h2>
               <button
@@ -401,7 +401,7 @@ export default function DashboardPage() {
         )}
 
         {activeTab === 'usage' && (
-          <motion.div key="usage" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="space-y-6">
+          <motion.div key="usage" initial={{ opacity: 1, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 1 }} className="space-y-6">
             <div className="glass-panel p-6 rounded-2xl border border-white/10">
               <h2 className="text-white font-semibold mb-6 flex items-center gap-2">
                  <ShieldCheck className="w-5 h-5 text-[#bef264]" /> Quota Tracking

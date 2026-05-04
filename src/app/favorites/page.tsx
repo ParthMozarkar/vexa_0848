@@ -35,7 +35,7 @@ export default function FavoritesPage() {
       <AnimatePresence>
         {favorites.length === 0 ? (
           <motion.div 
-            initial={{ opacity: 0, y: 20 }}
+            initial={{ opacity: 1, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             className="w-full flex flex-col items-center justify-center py-24 glass-panel border-dashed border-white/10"
           >
@@ -60,9 +60,9 @@ export default function FavoritesPage() {
             {favorites.map((fav, i) => (
               <motion.div
                 key={fav.id ?? fav.productId}
-                initial={{ opacity: 0, y: 20 }}
+                initial={{ opacity: 1, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.9 }}
+                exit={{ opacity: 1, scale: 0.9 }}
                 transition={{ delay: i * 0.1 }}
                 className="group relative glass-panel overflow-hidden flex flex-col border border-white/10 hover:border-white/20 hover:shadow-[0_8px_30px_rgba(139,92,246,0.15)] transition-all duration-500"
               >
