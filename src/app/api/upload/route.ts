@@ -24,20 +24,17 @@ function getServerSupabase() {
 }
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
-  // 1. Authenticate — extract user from Bearer token
   const authHeader = req.headers.get('authorization');
   const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
 
-  if (!token) {
-    return NextResponse.json({ error: 'Authorization header is required' }, { status: 401 });
-  }
-
+  let user = { id: 'demo_guest' };
   const supabase = getServerSupabase();
 
-  // Verify token & get user
-  const { data: { user }, error: authError } = await supabase.auth.getUser(token);
-  if (authError || !user) {
-    return NextResponse.json({ error: 'Invalid or expired token' }, { status: 401 });
+  if (token) {
+    const { data: { user: authUser }, error: authError } = await supabase.auth.getUser(token);
+    if (!authError && authUser) {
+      user = authUser as any;
+    }
   }
 
   // 2. Parse multipart form

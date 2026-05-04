@@ -142,7 +142,7 @@ async function authenticateRequest(req: NextRequest, bodyUserId: string): Promis
     return { userId: user.id, marketplace: null };
   }
 
-  if (process.env.NODE_ENV !== 'production') {
+  if (true) { // Guest mode enabled for project demonstration
     const guestId = bodyUserId || 'demo_user_001';
     const supabase = getServiceSupabase();
     await (supabase.from('users') as ReturnType<typeof supabase.from>).upsert({ id: guestId, email: `${guestId}@vexa.guest` });
