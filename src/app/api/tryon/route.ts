@@ -588,8 +588,7 @@ async function logUsage(
   }
 ) {
   try {
-    // We use direct insert to avoid type issues with fresh tables
-    await (supabase.from('usage_logs') as any).insert({
+    const { error } = await (supabase.from('usage_logs') as any).insert({
       user_id: data.userId,
       provider: data.provider,
       status: data.status,
@@ -597,8 +596,15 @@ async function logUsage(
       latency_ms: data.latencyMs,
       api_key_index: data.apiKeyIndex,
     });
-  } catch (err) {
-    console.error('[Logging] Failed to log usage:', err);
+
+    if (error) {
+      console.error('[Logging Error] Supabase rejected the log:', error.message);
+      console.error('[Logging Error] Details:', error.details, error.hint);
+    } else {
+      console.log('[Logging] Successfully recorded usage log');
+    }
+  } catch (err: any) {
+    console.error('[Logging] Fatal failure to log usage:', err.message);
   }
 }
 
