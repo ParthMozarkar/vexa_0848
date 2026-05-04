@@ -3,42 +3,42 @@
 @tailwind utilities;
 
 :root {
-  --background: #040408;
-  --foreground: #E8E8F0;
-  --primary: #5B4BF5;
+  --background: #f8f7f2;
+  --foreground: #1a1a1a;
+  --primary: #4A6741;
   --primary-foreground: #FFFFFF;
-  --secondary: #0D0D1A;
-  --secondary-foreground: #E8E8F0;
-  --accent: #00D4FF;
-  --accent-foreground: #040408;
-  --muted: #1A1A2E;
-  --muted-foreground: #8B8BA8;
-  --card: #0A0A14;
-  --card-foreground: #E8E8F0;
-  --border: #1A1A2E;
-  --input: #1A1A2E;
-  --ring: #5B4BF5;
+  --secondary: #f1f5f9;
+  --secondary-foreground: #1a1a1a;
+  --accent: #bef264;
+  --accent-foreground: #1a1a1a;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+  --card: #ffffff;
+  --card-foreground: #1a1a1a;
+  --border: #e2e8f0;
+  --input: #e2e8f0;
+  --ring: #4A6741;
   --radius: 0.75rem;
   --font-sans: var(--font-plus-jakarta-sans), sans-serif;
   --font-mono: var(--font-jetbrains-mono), monospace;
 }
 
 .dark {
-  --background: #040408;
-  --foreground: #E8E8F0;
-  --primary: #5B4BF5;
+  --background: #f8f7f2;
+  --foreground: #1a1a1a;
+  --primary: #4A6741;
   --primary-foreground: #FFFFFF;
-  --secondary: #0D0D1A;
-  --secondary-foreground: #E8E8F0;
-  --accent: #00D4FF;
-  --accent-foreground: #040408;
-  --muted: #1A1A2E;
-  --muted-foreground: #8B8BA8;
-  --card: #0A0A14;
-  --card-foreground: #E8E8F0;
-  --border: #1A1A2E;
-  --input: #1A1A2E;
-  --ring: #5B4BF5;
+  --secondary: #f1f5f9;
+  --secondary-foreground: #1a1a1a;
+  --accent: #bef264;
+  --accent-foreground: #1a1a1a;
+  --muted: #f1f5f9;
+  --muted-foreground: #64748b;
+  --card: #ffffff;
+  --card-foreground: #1a1a1a;
+  --border: #e2e8f0;
+  --input: #e2e8f0;
+  --ring: #4A6741;
 }
 
 @layer base {
@@ -66,10 +66,10 @@
     font-family: var(--font-mono);
   }
   .glass-card {
-    background: rgba(10, 10, 20, 0.6);
+    background: rgba(255, 255, 255, 0.7);
     backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
-    box-shadow: 0 0 0 1px rgba(0,0,0,0.5), 0 20px 40px -10px rgba(0,0,0,0.5);
+    border: 1px solid rgba(226, 232, 240, 0.5);
+    box-shadow: 0 4px 24px -4px rgba(0,0,0,0.06);
   }
   .glass-card::before {
     content: '';
@@ -77,26 +77,26 @@
     inset: 0;
     border-radius: inherit;
     padding: 1px;
-    background: linear-gradient(to bottom, rgba(255,255,255,0.12), transparent);
+    background: linear-gradient(to bottom, rgba(255,255,255,0.8), transparent);
     -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
     -webkit-mask-composite: xor;
     mask-composite: exclude;
     pointer-events: none;
   }
   .neon-glow-primary {
-    box-shadow: 0 0 20px rgba(91, 75, 245, 0.4), 0 0 60px rgba(91, 75, 245, 0.1);
+    box-shadow: 0 0 20px rgba(74, 103, 65, 0.3), 0 0 60px rgba(74, 103, 65, 0.1);
   }
   .neon-glow-accent {
-    box-shadow: 0 0 20px rgba(0, 212, 255, 0.4), 0 0 60px rgba(0, 212, 255, 0.1);
+    box-shadow: 0 0 20px rgba(190, 242, 100, 0.3), 0 0 60px rgba(190, 242, 100, 0.1);
   }
   .text-gradient-primary {
-    background: linear-gradient(135deg, #FFFFFF 0%, #A89EFF 50%, #00D4FF 100%);
+    background: linear-gradient(135deg, #4A6741 0%, #6b8c5e 50%, #bef264 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
   }
   .text-gradient-accent {
-    background: linear-gradient(135deg, #5B4BF5 0%, #00D4FF 100%);
+    background: linear-gradient(135deg, #4A6741 0%, #bef264 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -104,7 +104,7 @@
   .border-gradient-primary {
     border: 1px solid transparent;
     background: linear-gradient(var(--card), var(--card)) padding-box,
-                linear-gradient(135deg, #5B4BF5, #00D4FF) border-box;
+                linear-gradient(135deg, #4A6741, #bef264) border-box;
   }
 }
 
