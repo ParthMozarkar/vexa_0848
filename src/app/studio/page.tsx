@@ -176,7 +176,7 @@ export default function StudioPage() {
       return {
         label: "Try Again →",
         className:
-          "bg-white/10 border border-white/10 text-white hover:bg-white/15",
+          "bg-slate-100 border border-slate-200 text-foreground hover:bg-slate-200",
         disabled: false,
         onClick: handleReset,
       };
@@ -192,8 +192,8 @@ export default function StudioPage() {
     return {
       label: "Generate Try-On →",
       className: canGenerate
-        ? "bg-[#bef264] text-black hover:bg-[#a3e635] cursor-pointer"
-        : "bg-white/5 text-white/20 cursor-not-allowed border border-white/10",
+        ? "bg-[#4A6741] text-white hover:bg-[#3d5636] cursor-pointer shadow-lg shadow-[#4A6741]/20"
+        : "bg-slate-100 text-foreground/20 cursor-not-allowed border border-slate-200",
       disabled: !canGenerate,
       onClick: handleGenerate,
     };
@@ -202,12 +202,12 @@ export default function StudioPage() {
   const btn = buttonConfig();
 
   return (
-    <div className="w-full min-h-[calc(100vh-4rem)] flex flex-col bg-[#fdfdfd] pt-16">
+    <div className="w-full min-h-[calc(100vh-4rem)] flex flex-col bg-background pt-16">
       {/* ── Page heading ──────────────────────────────────────────────────────── */}
       <div className="px-4 md:px-6 pt-12 pb-8 max-w-7xl mx-auto w-full text-center">
-        <h1 className="text-4xl md:text-6xl font-black tracking-tighter text-[#0f172a]">
+        <h1 className="text-4xl md:text-6xl font-black tracking-tighter text-[#1a1a1a]">
           Virtual Try-On{" "}
-          <span className="text-[#bef264]">
+          <span className="text-[#4A6741]">
             Studio
           </span>
         </h1>
@@ -222,7 +222,7 @@ export default function StudioPage() {
 
           {/* ── Left panel (40%) ──────────────────────────────────────────── */}
           <div className="w-full lg:w-[40%] flex flex-col gap-6">
-            <div className="glass-panel p-8 flex flex-col gap-8 border border-slate-100 shadow-2xl shadow-slate-200/50">
+            <div className="bg-white rounded-3xl p-8 flex flex-col gap-8 border border-slate-100 shadow-xl shadow-slate-200/40">
 
               <ImageUploadBox
                 label="Person Photo"

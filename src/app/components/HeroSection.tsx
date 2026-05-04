@@ -51,7 +51,7 @@ export default function HeroSection() {
           <span className="relative z-10 text-base font-bold text-white tracking-tight">Book a Demo</span>
         </a>
 
-        <a href="/integration" className="flex items-center gap-2 border border-slate-200 hover:border-[#4A6741]/30 bg-white rounded-full px-6 py-3.5 text-sm font-bold text-[#1a1a1a] transition-all duration-300 group shadow-sm">
+        <a href="/studio" className="flex items-center gap-2 border border-slate-200 hover:border-[#4A6741]/30 bg-white rounded-full px-6 py-3.5 text-sm font-bold text-[#1a1a1a] transition-all duration-300 group shadow-sm">
           <span>Start Integration</span>
           <svg className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14m-7-7 7 7-7 7" />

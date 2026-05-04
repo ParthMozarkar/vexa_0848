@@ -11,9 +11,9 @@ export default function IntegrationDevCTA() {
             className="relative glass-card rounded-2xl p-8 overflow-hidden group opacity-100 animate-on-scroll"
             style={{ animation: 'animationIn 0.8s ease-out 0.2s forwards', opacity: 1 }}
           >
-            <div className="absolute top-0 right-0 w-40 h-40 rounded-full blur-[60px] pointer-events-none" style={{ background: 'rgba(91,75,245,0.12)' }} />
+            <div className="absolute top-0 right-0 w-40 h-40 rounded-full blur-[60px] pointer-events-none" style={{ background: 'rgba(74,103,65,0.1)' }} />
             <div className="relative z-10">
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-5" style={{ background: 'rgba(91,75,245,0.15)' }}>
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-5" style={{ background: 'rgba(74,103,65,0.15)' }}>
                 <svg className="w-6 h-6 text-primary" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="m6.75 7.5 3 2.25-3 2.25m4.5 0h3m-9 8.25h13.5A2.25 2.25 0 0 0 21 18V6a2.25 2.25 0 0 0-2.25-2.25H5.25A2.25 2.25 0 0 0 3 6v12a2.25 2.25 0 0 0 2.25 2.25Z" />
                 </svg>
@@ -97,7 +97,7 @@ export default function IntegrationDevCTA() {
           style={{ animation: 'animationIn 0.8s ease-out 0.5s forwards', opacity: 1 }}
         >
           <div className="flex items-center gap-4">
-            <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'rgba(91,75,245,0.15)' }}>
+            <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ background: 'rgba(74,103,65,0.15)' }}>
               <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M8.625 9.75a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H8.25m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0H12m4.125 0a.375.375 0 1 1-.75 0 .375.375 0 0 1 .75 0Zm0 0h-.375m-13.5 3.01c0 1.6 1.123 2.994 2.707 3.227 1.087.16 2.185.283 3.293.369V21l4.184-4.183a1.14 1.14 0 0 1 .778-.332 48.294 48.294 0 0 0 5.83-.498c1.585-.233 2.708-1.626 2.708-3.228V6.741c0-1.602-1.123-2.995-2.707-3.228A48.394 48.394 0 0 0 12 3c-2.392 0-4.744.175-7.043.513C3.373 3.746 2.25 5.14 2.25 6.741v6.018Z" />
               </svg>

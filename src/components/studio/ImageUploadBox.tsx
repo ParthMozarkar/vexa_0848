@@ -143,7 +143,7 @@ export function ImageUploadBox({
 
   return (
     <div className="w-full flex flex-col gap-2">
-      <p className="text-white/60 text-xs font-medium uppercase tracking-wider">
+      <p className="text-foreground/60 text-xs font-medium uppercase tracking-wider">
         {label}
       </p>
 
@@ -152,10 +152,10 @@ export function ImageUploadBox({
           transition-all duration-200 overflow-hidden
           ${
             isDragOver
-              ? "border-[#bef264]/40 bg-[#bef264]/5"
+              ? "border-[#4A6741]/40 bg-[#4A6741]/5"
               : value
-              ? "border-white/15 bg-white/5 cursor-default"
-              : "border-white/15 bg-white/5 hover:border-white/25 cursor-pointer"
+              ? "border-slate-200 bg-white cursor-default"
+              : "border-slate-200 bg-white hover:border-[#4A6741]/40 cursor-pointer"
           }`}
         onDrop={handleDrop}
         onDragOver={handleDragOver}
@@ -176,9 +176,9 @@ export function ImageUploadBox({
 
             {/* Uploading spinner */}
             {isUploading && (
-              <div className="absolute inset-0 bg-black/60 flex flex-col items-center justify-center gap-2">
-                <Loader2 className="w-8 h-8 text-[#bef264] animate-spin" />
-                <p className="text-white/60 text-xs">Uploading…</p>
+              <div className="absolute inset-0 bg-white/60 flex flex-col items-center justify-center gap-2 backdrop-blur-[2px]">
+                <Loader2 className="w-8 h-8 text-[#4A6741] animate-spin" />
+                <p className="text-foreground/60 text-xs">Uploading…</p>
               </div>
             )}
 
@@ -186,21 +186,21 @@ export function ImageUploadBox({
             <button
               type="button"
               onClick={(e) => { e.stopPropagation(); onClear(); }}
-              className="absolute top-3 right-3 w-8 h-8 rounded-full bg-black/60 backdrop-blur-sm border border-white/10 flex items-center justify-center text-white/70 hover:text-white hover:bg-black/80 transition-all z-10"
+              className="absolute top-3 right-3 w-8 h-8 rounded-full bg-white/80 backdrop-blur-sm border border-slate-200 flex items-center justify-center text-foreground/70 hover:text-foreground hover:bg-white transition-all z-10 shadow-sm"
             >
               <X className="w-4 h-4" />
             </button>
           </>
         ) : (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-6 text-center">
-            <div className="w-12 h-12 rounded-2xl bg-white/5 border border-white/10 flex items-center justify-center">
-              <UploadCloud className="w-6 h-6 text-white/40" />
+            <div className="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center">
+              <UploadCloud className="w-6 h-6 text-foreground/40" />
             </div>
             <div>
-              <p className="text-white/70 text-sm font-medium">{label}</p>
-              <p className="text-white/30 text-xs mt-1">{sublabel}</p>
+              <p className="text-foreground/70 text-sm font-medium">{label}</p>
+              <p className="text-foreground/30 text-xs mt-1">{sublabel}</p>
             </div>
-            <p className="text-white/20 text-xs">Drag &amp; drop or click to browse</p>
+            <p className="text-foreground/20 text-xs font-medium">Drag &amp; drop or click to browse</p>
           </div>
         )}
 

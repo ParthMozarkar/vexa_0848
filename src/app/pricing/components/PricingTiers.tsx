@@ -83,7 +83,7 @@ export default function PricingTiers() {
               }}
             >
               {tier?.highlight && (
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-xs font-mono font-semibold text-white" style={{ background: 'linear-gradient(135deg, #5B4BF5, #00D4FF)' }}>
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-4 py-1 rounded-full text-xs font-mono font-semibold text-white" style={{ background: 'linear-gradient(135deg, #4A6741, #3d5636)' }}>
                   Most Popular
                 </div>
               )}

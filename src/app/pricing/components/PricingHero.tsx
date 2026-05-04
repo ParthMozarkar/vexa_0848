@@ -3,7 +3,7 @@ import React from 'react';
 export default function PricingHero() {
   return (
     <section className="relative pt-40 pb-16 overflow-hidden text-center">
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[60rem] h-[30rem] rounded-full blur-[100px] pointer-events-none" style={{ background: 'rgba(91,75,245,0.12)' }} />
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[60rem] h-[30rem] rounded-full blur-[100px] pointer-events-none" style={{ background: 'rgba(74,103,65,0.1)' }} />
       <div className="max-w-4xl mx-auto px-6 relative z-10">
         <span
           className="text-xs font-mono tracking-widest uppercase text-accent mb-4 block"

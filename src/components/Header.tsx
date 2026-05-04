@@ -6,8 +6,8 @@ import { ArrowUpRight, Menu, X } from 'lucide-react';
 
 const navLinks = [
   { label: 'Product', href: '/' },
-  { label: '3D Try-On', href: '/3d' },
-  { label: 'Virtual Try-On', href: '/virtual-try-on' },
+  { label: '3D Try-On', href: '/studio' },
+  { label: 'Virtual Try-On', href: '/studio' },
   { label: 'Pricing', href: '/pricing' },
   { label: 'Integration', href: '/integration' },
 ];

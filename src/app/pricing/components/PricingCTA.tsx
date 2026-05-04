@@ -10,7 +10,7 @@ export default function PricingCTA() {
           style={{ animation: 'animationIn 0.8s ease-out 0.2s forwards', opacity: 1 }}
         >
           <div className="absolute inset-0 pointer-events-none">
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[30rem] h-[15rem] rounded-full blur-[60px]" style={{ background: 'rgba(91,75,245,0.12)' }} />
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[30rem] h-[15rem] rounded-full blur-[60px]" style={{ background: 'rgba(74,103,65,0.1)' }} />
           </div>
           <div className="relative z-10">
             <span className="text-xs font-mono tracking-widest uppercase text-accent mb-4 block">Enterprise Ready</span>

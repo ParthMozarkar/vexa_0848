@@ -47,8 +47,8 @@ export default function CTASection() {
                 </svg>
               </Link>
               <Link
-                href="/integration"
-                className="flex items-center gap-2 border border-border hover:border-white/20 bg-white/5 hover:bg-white/10 rounded-full px-7 py-4 text-sm font-medium text-foreground transition-all duration-300"
+                href="/studio"
+                className="flex items-center gap-2 border border-border hover:border-[#4A6741]/20 bg-white/5 hover:bg-white/10 rounded-full px-7 py-4 text-sm font-medium text-foreground transition-all duration-300"
               >
                 Start Integration
               </Link>
