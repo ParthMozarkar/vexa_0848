@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Download, Loader2, RotateCcw } from "lucide-react";
+import { Download, Loader2, RotateCcw, Shirt } from "lucide-react";
 import { ImageUploadBox } from "@/components/studio/ImageUploadBox";
 import { supabase } from "@/lib/supabase";
 import { useStore } from "@/store/useStore";
