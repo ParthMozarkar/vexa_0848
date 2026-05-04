@@ -10,7 +10,6 @@ import TestimonialsSection from '@/app/components/TestimonialsSection';
 import CTASection from '@/app/components/CTASection';
 import ScrollAnimationInit from '@/app/components/ScrollAnimationInit';
 import BookingFormSection from '@/components/BookingFormSection';
-import './marketing.css';
 
 export default function HomePage() {
   return (
