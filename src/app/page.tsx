@@ -8,6 +8,10 @@ import {
   ArrowRight, Sparkles, CheckCircle2, Zap, ShieldCheck,
   Ruler, Globe, Key, Layers, BarChart3, ChevronRight,
 } from "lucide-react";
+import Footer from "@/components/Footer";
+import FAQ from "@/components/FAQ";
+import Testimonials from "@/components/Testimonials";
+import BookingFormSection from "@/components/BookingFormSection";
 
 const INTEGRATIONS = ["Myntra", "AJIO", "Amazon Fashion", "Nykaa Fashion", "Meesho", "Flipkart"];
 
@@ -380,22 +384,13 @@ export default function LandingPage() {
           </motion.div>
         </div>
       </section>
+      
+      <Testimonials />
+      <FAQ />
+      <BookingFormSection />
 
       {/* Footer */}
-      <footer className="border-t border-white/5 py-10 px-4">
-        <div className="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-lg bg-[#bef264] flex items-center justify-center">
-              <Sparkles className="w-3 h-3 text-black" />
-            </div>
-            <span className="text-white font-semibold">VEXA</span>
-            <span className="text-white/30 text-sm">— AI 3D Body Avatar Platform</span>
-          </div>
-          <p className="text-white/30 text-sm">
-            © {new Date().getFullYear()} Vexa Technologies Inc. · Privacy · Terms · API Docs
-          </p>
-        </div>
-      </footer>
+      <Footer />
     </div>
   );
 }

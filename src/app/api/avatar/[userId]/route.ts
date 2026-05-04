@@ -17,10 +17,10 @@ function getServerSupabase() {
 
 export async function GET(
   req: NextRequest,
-  context: { params: Promise<{ userId: string }> | { userId: string } },
+  { params }: { params: Promise<{ userId: string }> },
 ): Promise<NextResponse> {
   try {
-    const params = await context.params;
+    const { userId } = await params;
 
     const authHeader = req.headers.get('authorization');
     const token = authHeader?.startsWith('Bearer ') ? authHeader.slice(7) : null;
@@ -33,14 +33,15 @@ export async function GET(
     if (authError || !user) {
       return NextResponse.json({ status: 'error', error: 'Unauthorized' }, { status: 401 });
     }
-    if (user.id !== params.userId) {
+    
+    if (user.id !== userId) {
       return NextResponse.json({ status: 'error', error: 'Forbidden' }, { status: 403 });
     }
 
     const { data } = await supabase
       .from('users')
       .select('avatar_url')
-      .eq('id', params.userId)
+      .eq('id', userId)
       .single() as { data: { avatar_url: string | null } | null };
 
     if (data?.avatar_url) {
