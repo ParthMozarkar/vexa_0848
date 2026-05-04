@@ -216,6 +216,11 @@ async function logUsage(supabase: SupabaseClient<Database>, data: any) {
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
   const startTime = Date.now();
+  
+  // DEBUG PING: See if the server is even reachable
+  if (req.headers.get('x-debug-ping') === 'true') {
+    return NextResponse.json({ status: 'alive', time: new Date().toISOString() });
+  }
   const ip = req.headers.get('x-forwarded-for') || '127.0.0.1';
   const ua = req.headers.get('user-agent') || '';
   let deviceInfo = "Windows";
