@@ -49,9 +49,9 @@ export default function IntegrationDevCTA() {
             className="relative glass-card rounded-2xl p-8 overflow-hidden group opacity-100 animate-on-scroll"
             style={{ animation: 'animationIn 0.8s ease-out 0.35s forwards', opacity: 1 }}
           >
-            <div className="absolute top-0 right-0 w-40 h-40 rounded-full blur-[60px] pointer-events-none" style={{ background: 'rgba(0,212,255,0.08)' }} />
+            <div className="absolute top-0 right-0 w-40 h-40 rounded-full blur-[60px] pointer-events-none" style={{ background: 'rgba(74,103,65,0.08)' }} />
             <div className="relative z-10">
-              <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-5" style={{ background: 'rgba(0,212,255,0.1)' }}>
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center mb-5" style={{ background: 'rgba(74,103,65,0.1)' }}>
                 <svg className="w-6 h-6 text-accent" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25" />
                 </svg>

@@ -12,7 +12,7 @@ const platforms = [
     name: 'Shopify',
     type: 'E-commerce',
     status: 'Official Plugin',
-    statusColor: '#22C55E',
+    statusColor: '#4A6741',
     icon: (
       <svg className="w-7 h-7" viewBox="0 0 109 124" fill="none">
         <path d="M74.7 14.8s-.3-1.6-1.4-1.6c-.1 0-2.3-.3-2.3-.3s-1.5-1.5-1.7-1.7V14l-5.6 1.7s-3.8-11.2-13-11.2c-.2 0-.4 0-.7.1C47.3 2.4 45.1 1 42.7 1 27.8 1 20.7 19.5 18.5 29l-10 3.1c-3.1 1-3.2 1-3.6 4L0 93l55.5 10.4L109 92.5 74.7 14.8z" fill="#95BF47"/>
@@ -25,7 +25,7 @@ const platforms = [
     name: 'WooCommerce',
     type: 'WordPress',
     status: 'Official Plugin',
-    statusColor: '#22C55E',
+    statusColor: '#4A6741',
     icon: (
       <svg className="w-7 h-7" viewBox="0 0 100 60" fill="none">
         <rect width="100" height="60" rx="8" fill="#7F54B3" />
@@ -37,7 +37,7 @@ const platforms = [
     name: 'Magento',
     type: 'E-commerce',
     status: 'Extension',
-    statusColor: '#F59E0B',
+    statusColor: '#8B7D3C',
     icon: (
       <svg className="w-7 h-7" viewBox="0 0 40 46" fill="none">
         <path d="M20 0L40 11.5V34.5L20 46L0 34.5V11.5L20 0Z" fill="#EE672F"/>
@@ -49,7 +49,7 @@ const platforms = [
     name: 'React Native',
     type: 'Mobile SDK',
     status: 'Native Module',
-    statusColor: '#00D4FF',
+    statusColor: '#6B8C5E',
     icon: (
       <svg className="w-7 h-7" viewBox="0 0 100 100" fill="none">
         <circle cx="50" cy="50" r="10" fill="#61DAFB"/>
@@ -63,7 +63,7 @@ const platforms = [
     name: 'Flutter',
     type: 'Mobile SDK',
     status: 'Dart Package',
-    statusColor: '#00D4FF',
+    statusColor: '#6B8C5E',
     icon: (
       <svg className="w-7 h-7" viewBox="0 0 100 124" fill="none">
         <polygon points="50,0 100,50 75,75 25,25" fill="#54C5F8"/>
@@ -76,7 +76,7 @@ const platforms = [
     name: 'Next.js',
     type: 'React Framework',
     status: 'SDK Ready',
-    statusColor: '#22C55E',
+    statusColor: '#4A6741',
     icon: (
       <svg className="w-7 h-7" viewBox="0 0 180 180" fill="none">
         <circle cx="90" cy="90" r="90" fill="white"/>
@@ -89,7 +89,7 @@ const platforms = [
     name: 'iOS Swift',
     type: 'Native SDK',
     status: 'CocoaPod',
-    statusColor: '#F59E0B',
+    statusColor: '#8B7D3C',
     icon: (
       <svg className="w-7 h-7" viewBox="0 0 100 100" fill="none">
         <rect width="100" height="100" rx="22" fill="#F05138"/>
@@ -101,7 +101,7 @@ const platforms = [
     name: 'Android',
     type: 'Native SDK',
     status: 'Maven Package',
-    statusColor: '#F59E0B',
+    statusColor: '#8B7D3C',
     icon: (
       <svg className="w-7 h-7" viewBox="0 0 100 100" fill="none">
         <rect width="100" height="100" rx="22" fill="#3DDC84"/>
