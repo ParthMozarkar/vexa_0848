@@ -201,8 +201,10 @@ async function resolveToPublicUrl(
       return r2Url;
     }
 
-    const { error } = await supabase.storage.from('avatars').upload(filename, buffer, { contentType: mime, upsert: true });
-    if (!error) {
+    const { error: upErr } = await supabase.storage.from('avatars').upload(filename, buffer, { contentType: mime, upsert: true });
+    if (upErr) {
+      console.error(`[TryOn] Supabase upload error (${label}):`, upErr.message);
+    } else {
       const { data: signed } = await supabase.storage.from('avatars').createSignedUrl(filename, 3600);
       if (signed?.signedUrl) {
         console.log(`[TryOn] ${label} data URI uploaded to Supabase Storage`);
