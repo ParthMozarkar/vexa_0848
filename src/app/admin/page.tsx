@@ -94,9 +94,10 @@ export default function AdminDashboard() {
 
   return (
     <div className="w-full min-h-screen flex flex-col bg-background">
+      <Header />
       
       {!isAuthenticated ? (
-        <div className="flex-1 flex items-center justify-center px-6 pt-20">
+        <div className="flex-1 flex items-center justify-center px-6 pt-32">
           <motion.div 
             initial={{ opacity: 0, scale: 0.95 }}
             animate={{ opacity: 1, scale: 1 }}
@@ -277,6 +278,7 @@ export default function AdminDashboard() {
         </div>
         </div>
       )}
+      <Footer />
     </div>
   );
 }
