@@ -574,13 +574,47 @@ export async function handleTryOn(
   };
 }
 
+// ─── Logging helper ─────────────────────────────────────────────────────────
+
+async function logUsage(
+  supabase: SupabaseClient<Database>,
+  data: {
+    userId?: string;
+    provider: string;
+    status: string;
+    errorMessage?: string;
+    latencyMs: number;
+    apiKeyIndex?: number;
+  }
+) {
+  try {
+    // We use direct insert to avoid type issues with fresh tables
+    await (supabase.from('usage_logs') as any).insert({
+      user_id: data.userId,
+      provider: data.provider,
+      status: data.status,
+      error_message: data.errorMessage?.slice(0, 500),
+      latency_ms: data.latencyMs,
+      api_key_index: data.apiKeyIndex,
+    });
+  } catch (err) {
+    console.error('[Logging] Failed to log usage:', err);
+  }
+}
+
 // ─── POST handler ─────────────────────────────────────────────────────────────
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
+  const startTime = Date.now();
+  const provider = getProvider();
+  let validatedUserId = 'anonymous';
+  
   const ip = req.headers.get('x-forwarded-for') || '127.0.0.1';
   if (await isRateLimited(ip, 10)) {
     return NextResponse.json({ error: 'Too many requests. Please wait 60 seconds.' }, { status: 429 });
   }
+
+  const supabase = getServiceSupabase();
 
   try {
     const body = await req.json();
@@ -592,11 +626,11 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     };
 
     if (!productId) {
-      return NextResponse.json({ error: 'productId is required' }, { status: 400 });
+      throw new Error('productId is required');
     }
 
     if (!userPhotoUrl || !productImageUrl) {
-      return NextResponse.json({ error: 'userPhotoUrl and productImageUrl are required' }, { status: 400 });
+      throw new Error('userPhotoUrl and productImageUrl are required');
     }
 
     const validatedPhotoUrl = validateSecureUrl(userPhotoUrl, 'userPhotoUrl');
@@ -604,17 +638,27 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
     const authResult = await authenticateRequest(req, userId ?? '');
     if (authResult instanceof NextResponse) return authResult;
+    
+    validatedUserId = authResult.userId;
 
-    const supabase = getServiceSupabase();
     const result = await handleTryOn(
       {
-        userId: authResult.userId,
+        userId: validatedUserId,
         productId,
         userPhotoUrl: validatedPhotoUrl,
         productImageUrl: validatedProductUrl,
       },
       supabase
     );
+
+    // LOG SUCCESS
+    await logUsage(supabase, {
+      userId: validatedUserId,
+      provider,
+      status: 'success',
+      latencyMs: Date.now() - startTime,
+      apiKeyIndex: provider === 'lightx' ? currentKeyIndex : 0
+    });
 
     return NextResponse.json({
       result_url: result.resultUrl,
@@ -628,7 +672,18 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   } catch (err: unknown) {
     const error = err instanceof Error ? err : new Error(String(err));
+    const latency = Date.now() - startTime;
     console.error('[TryOn] Error:', error.message);
+
+    // LOG FAILURE
+    await logUsage(supabase, {
+      userId: validatedUserId,
+      provider,
+      status: 'error',
+      errorMessage: error.message,
+      latencyMs: latency,
+      apiKeyIndex: provider === 'lightx' ? currentKeyIndex : 0
+    });
 
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
