@@ -46,6 +46,10 @@ export default function AdminDashboard() {
     avgLatency: 0
   });
 
+  const [keyUsage, setKeyUsage] = useState<Record<number, number>>({
+    1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0
+  });
+
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     // Default credentials - you can move these to .env later
@@ -88,6 +92,25 @@ export default function AdminDashboard() {
 
       setStats({ total, success, failed, avgLatency });
     }
+
+    // Fetch total usage per key index
+    const { data: usageData } = await supabase
+      .from('usage_logs')
+      .select('api_key_index')
+      .eq('provider', 'lightx')
+      .eq('status', 'success');
+    
+    if (usageData) {
+      const counts: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
+      usageData.forEach(item => {
+        const idx = (item.api_key_index as number) || 1;
+        if (idx >= 1 && idx <= 6) {
+          counts[idx] = (counts[idx] || 0) + 1;
+        }
+      });
+      setKeyUsage(counts);
+    }
+
     setLoading(false);
   };
 
@@ -194,6 +217,59 @@ export default function AdminDashboard() {
               </div>
             </motion.div>
           ))}
+        </div>
+
+        {/* API Key Health Monitor */}
+        <div className="mb-12">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-lg font-black text-[#1a1a1a] flex items-center gap-2">
+              <Key className="w-5 h-5 text-[#4A6741]" />
+              LightX API Key Health
+            </h2>
+            <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-3 py-1 rounded-full border border-slate-100">
+              6 Keys Active · Rotation Enabled
+            </span>
+          </div>
+          
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+            {[1, 2, 3, 4, 5, 6].map((keyIdx, i) => {
+              const used = keyUsage[keyIdx] || 0;
+              const limit = 5000;
+              const percent = Math.min((used / limit) * 100, 100);
+              
+              return (
+                <motion.div
+                  key={keyIdx}
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: i * 0.05 }}
+                  className="bg-white p-5 rounded-[2rem] border border-slate-100 shadow-lg shadow-slate-200/20"
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Key #{keyIdx}</span>
+                    <div className={`w-2 h-2 rounded-full ${used > 4500 ? 'bg-rose-500' : 'bg-emerald-500'} animate-pulse`} />
+                  </div>
+                  
+                  <div className="flex flex-col gap-1 mb-4">
+                    <span className="text-xl font-black text-[#1a1a1a]">{used}</span>
+                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Credits Used</span>
+                  </div>
+
+                  <div className="w-full h-2 bg-slate-50 rounded-full overflow-hidden border border-slate-100">
+                    <motion.div 
+                      initial={{ width: 0 }}
+                      animate={{ width: `${percent}%` }}
+                      className={`h-full ${percent > 90 ? 'bg-rose-500' : 'bg-[#4A6741]'}`}
+                    />
+                  </div>
+                  <div className="flex justify-between mt-2">
+                    <span className="text-[8px] font-black text-slate-300 uppercase">0</span>
+                    <span className="text-[8px] font-black text-slate-300 uppercase">5K</span>
+                  </div>
+                </motion.div>
+              );
+            })}
+          </div>
         </div>
 
         {/* Logs Table */}
