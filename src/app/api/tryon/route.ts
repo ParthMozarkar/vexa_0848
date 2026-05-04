@@ -1,6 +1,7 @@
 /**
  * POST /api/tryon
  * Core try-on engine — supports Fashn.ai and LightX (toggled via TRYON_PROVIDER env).
+ * Deployment Heartbeat: 2026-05-04
  */
 
 import { NextRequest, NextResponse } from 'next/server';
