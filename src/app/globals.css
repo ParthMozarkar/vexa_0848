@@ -11,6 +11,24 @@
   --color-panel-border: rgba(255, 255, 255, 0.08);
 }
 
+.marketing-theme {
+  --background: #f8f7f2;
+  --foreground: #1a1a1a;
+  --primary: #4A6741;
+  --primary-foreground: #FFFFFF;
+  --secondary: #e6e4d9;
+  --secondary-foreground: #1a1a1a;
+  --accent: #4A6741;
+  --accent-foreground: #ffffff;
+  --muted: #e6e4d9;
+  --muted-foreground: #475569;
+  --card: #ffffff;
+  --card-foreground: #1a1a1a;
+  --border: rgba(74, 103, 65, 0.15);
+  --input: rgba(74, 103, 65, 0.15);
+  --ring: #4A6741;
+}
+
 @layer base {
   :root {
     --background: #0f0f0f;

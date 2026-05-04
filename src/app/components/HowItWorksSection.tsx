@@ -42,7 +42,7 @@ export default function HowItWorksSection() {
           WebkitMaskImage: 'linear-gradient(180deg, transparent, black 10%, black 70%, transparent)'
         }}>
         
-        <span className="text-[12vw] lg:text-[10rem] font-extrabold whitespace-nowrap tracking-tighter" style={{ color: 'rgba(255,255,255,0.025)' }}>
+        <span className="text-[12vw] lg:text-[10rem] font-extrabold whitespace-nowrap tracking-tighter" style={{ color: 'rgba(74, 103, 65, 0.05)' }}>
           HOW IT WORKS
         </span>
       </div>
@@ -81,7 +81,7 @@ export default function HowItWorksSection() {
                 className="object-cover object-center group-hover:scale-105 transition-transform duration-700"
                 sizes="(max-width: 1024px) 100vw, 33vw" />
               
-                <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, transparent 40%, rgba(4,4,8,0.9) 100%)' }} />
+                <div className="absolute inset-0" style={{ background: 'linear-gradient(to bottom, transparent 40%, rgba(248,247,242,0.9) 100%)' }} />
                 {/* Step number overlay */}
                 <div
                 className="absolute top-4 left-4 text-6xl font-extrabold font-mono leading-none"

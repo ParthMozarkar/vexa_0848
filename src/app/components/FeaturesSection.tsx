@@ -74,10 +74,10 @@ const features = [
     ),
     visual: (
       <div className="relative h-28 p-3 font-mono text-xs overflow-hidden">
-        <div className="text-muted-foreground/60 mb-1">// 3 lines to integrate</div>
-        <div><span style={{ color: '#A78BFA' }}>import</span> <span className="text-white">VEXA</span> <span style={{ color: '#A78BFA' }}>from</span> <span style={{ color: '#00D4FF' }}>&apos;@vexa/sdk&apos;</span></div>
-        <div className="mt-1"><span style={{ color: '#A78BFA' }}>const</span> <span className="text-white">sdk</span> = <span className="text-white">VEXA</span>.<span style={{ color: '#5B4BF5' }}>init</span>(<span style={{ color: '#00D4FF' }}>&apos;key&apos;</span>)</div>
-        <div className="mt-1"><span className="text-white">sdk</span>.<span style={{ color: '#5B4BF5' }}>render</span>(<span style={{ color: '#00D4FF' }}>&apos;#container&apos;</span>)</div>
+        <div className="text-muted-foreground/80 mb-1">// 3 lines to integrate</div>
+        <div><span style={{ color: '#4A6741' }}>import</span> <span className="text-[#1a1a1a] font-bold">VEXA</span> <span style={{ color: '#4A6741' }}>from</span> <span style={{ color: '#059669' }}>&apos;@vexa/sdk&apos;</span></div>
+        <div className="mt-1"><span style={{ color: '#4A6741' }}>const</span> <span className="text-[#1a1a1a] font-bold">sdk</span> = <span className="text-[#1a1a1a] font-bold">VEXA</span>.<span style={{ color: '#059669' }}>init</span>(<span style={{ color: '#059669' }}>&apos;key&apos;</span>)</div>
+        <div className="mt-1"><span className="text-[#1a1a1a] font-bold">sdk</span>.<span style={{ color: '#059669' }}>render</span>(<span style={{ color: '#059669' }}>&apos;#container&apos;</span>)</div>
       </div>
     ),
   },
