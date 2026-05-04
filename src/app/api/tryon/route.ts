@@ -105,6 +105,19 @@ function getServiceSupabase(): SupabaseClient<Database> {
   return createClient<Database>(url, key, { auth: { persistSession: false } });
 }
 
+async function ensureBucketExists(supabase: SupabaseClient<Database>, bucketName: string) {
+  try {
+    const { data: buckets } = await supabase.storage.listBuckets();
+    const exists = buckets?.some(b => b.name === bucketName);
+    if (!exists) {
+      console.log(`[Supabase] Creating missing bucket: ${bucketName}`);
+      await supabase.storage.createBucket(bucketName, { public: true });
+    }
+  } catch (err) {
+    console.error(`[Supabase] Failed to check/create bucket ${bucketName}:`, err);
+  }
+}
+
 // ─── Auth helpers ─────────────────────────────────────────────────────────────
 
 interface AuthResult {
@@ -201,6 +214,7 @@ async function resolveToPublicUrl(
       return r2Url;
     }
 
+    await ensureBucketExists(supabase, 'avatars');
     const { error: upErr } = await supabase.storage.from('avatars').upload(filename, buffer, { contentType: mime, upsert: true });
     if (upErr) {
       console.error(`[TryOn] Supabase upload error (${label}):`, upErr.message);
