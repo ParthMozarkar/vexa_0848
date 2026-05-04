@@ -215,22 +215,19 @@ async function resolveToPublicUrl(
       return r2Url;
     }
 
-    await ensureBucketExists(supabase, 'avatars');
     const { error: upErr } = await supabase.storage.from('avatars').upload(filename, buffer, { contentType: mime, upsert: true });
     if (upErr) {
       console.error(`[TryOn] Supabase upload error (${label}):`, upErr.message);
-    } else {
-      const { data: signed } = await supabase.storage.from('avatars').createSignedUrl(filename, 3600);
-      if (signed?.signedUrl) {
-        console.log(`[TryOn] ${label} data URI uploaded to Supabase Storage`);
-        return signed.signedUrl;
-      }
+      throw new Error(`${label}: Supabase upload failed — ${upErr.message}`);
+    }
+    
+    const { data: signed } = await supabase.storage.from('avatars').createSignedUrl(filename, 3600);
+    if (signed?.signedUrl) {
+      console.log(`[TryOn] ${label} data URI uploaded to Supabase Storage`);
+      return signed.signedUrl;
     }
 
-    throw new Error(
-      `${label}: could not upload data URI to any public storage. ` +
-      'Configure R2_ACCOUNT_ID / R2_BUCKET_NAME or Supabase Storage.',
-    );
+    throw new Error(`${label}: upload succeeded but could not generate a signed URL.`);
   }
 
   throw new Error(`${label}: unsupported URL scheme — expected http(s):// or data:`);
@@ -494,6 +491,7 @@ export async function handleTryOn(
   }
 
   // 2. Resolve both images to public HTTP URLs (handles data: URIs)
+  await ensureBucketExists(supabase, 'avatars');
   const [resolvedPersonUrl, resolvedGarmentUrl] = await Promise.all([
     resolveToPublicUrl(userPhotoUrl, 'userPhotoUrl', userId, supabase),
     resolveToPublicUrl(productImageUrl, 'productImageUrl', userId, supabase),
