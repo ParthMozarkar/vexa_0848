@@ -27,6 +27,29 @@
   --border: rgba(74, 103, 65, 0.15);
   --input: rgba(74, 103, 65, 0.15);
   --ring: #4A6741;
+
+  .glass-card {
+    background: rgba(253, 251, 247, 0.85);
+    backdrop-filter: blur(12px);
+    border: 1px solid rgba(209, 203, 189, 0.5);
+    box-shadow: 0 4px 24px -4px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+  }
+
+  .text-gradient-primary {
+    background: linear-gradient(135deg, #4A6741 0%, #6B8C5E 50%, #8B7D3C 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+
+  @keyframes animationIn {
+    0% { opacity: 0; transform: translateY(30px); filter: blur(8px); }
+    100% { opacity: 1; transform: translateY(0); filter: blur(0px); }
+  }
+
+  .animate-on-scroll {
+    animation: animationIn 0.8s ease-out forwards;
+  }
 }
 
 @layer base {
