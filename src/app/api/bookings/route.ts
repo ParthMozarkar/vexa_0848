@@ -3,28 +3,26 @@ import { createClient } from '@supabase/supabase-js';
 import { google } from 'googleapis';
 import { Resend } from 'resend';
 
-// Initialize Supabase Client
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
-const supabase = createClient(supabaseUrl, supabaseKey);
-
-// Initialize Resend
-const resend = new Resend(process.env.RESEND_API_KEY!);
-
-// Initialize Google Calendar
-const SCOPES = ['https://www.googleapis.com/auth/calendar.events'];
-const rawKey = process.env.GOOGLE_PRIVATE_KEY || '';
-const formattedKey = rawKey.replace(/\\n/g, '\n').replace(/^["']|["']$/g, '');
-
-const auth = new google.auth.JWT({
-  email: process.env.GOOGLE_CLIENT_EMAIL,
-  key: formattedKey,
-  scopes: SCOPES,
-});
-const calendar = google.calendar({ version: 'v3', auth });
-
 export async function POST(req: NextRequest) {
   try {
+    // Initialize clients at runtime (not build time)
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || '';
+    if (!supabaseUrl || !supabaseKey) {
+      return NextResponse.json({ error: 'Missing Supabase config' }, { status: 500 });
+    }
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    const resend = new Resend(process.env.RESEND_API_KEY || '');
+
+    const rawKey = process.env.GOOGLE_PRIVATE_KEY || '';
+    const formattedKey = rawKey.replace(/\\n/g, '\n').replace(/^["']|["']$/g, '');
+    const auth = new google.auth.JWT({
+      email: process.env.GOOGLE_CLIENT_EMAIL,
+      key: formattedKey,
+      scopes: ['https://www.googleapis.com/auth/calendar.events'],
+    });
+    const calendar = google.calendar({ version: 'v3', auth });
+
     const body = await req.json();
     const { name, email, company, slotDate, slotTime, platform, message } = body;
 
