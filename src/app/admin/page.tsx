@@ -46,7 +46,7 @@ export default function AdminDashboard() {
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     // Default credentials - you can move these to .env later
-    if (username === "admin" && password === "vexa_admin_2024") {
+    if (username === "admin" && password === "vexa@123") {
       setIsAuthenticated(true);
       setLoginError(false);
       localStorage.setItem("vexa_admin_auth", "true");
