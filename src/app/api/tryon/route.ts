@@ -585,6 +585,9 @@ async function logUsage(
     errorMessage?: string;
     latencyMs: number;
     apiKeyIndex?: number;
+    ipAddress?: string;
+    deviceInfo?: string;
+    userEmail?: string;
   }
 ) {
   try {
@@ -595,6 +598,9 @@ async function logUsage(
       error_message: data.errorMessage?.slice(0, 500),
       latency_ms: data.latencyMs,
       api_key_index: data.apiKeyIndex,
+      ip_address: data.ipAddress,
+      device_info: data.deviceInfo,
+      user_email: data.userEmail,
     });
 
     if (error) {
@@ -616,11 +622,30 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
   let validatedUserId = 'anonymous';
   
   const ip = req.headers.get('x-forwarded-for') || '127.0.0.1';
+  const userAgent = req.headers.get('user-agent') || 'unknown';
+  
+  // Simple OS detection
+  let deviceInfo = "Unknown Device";
+  if (userAgent.includes("Macintosh")) deviceInfo = "Mac";
+  else if (userAgent.includes("Windows")) deviceInfo = "Windows";
+  else if (userAgent.includes("iPhone") || userAgent.includes("iPad")) deviceInfo = "iOS";
+  else if (userAgent.includes("Android")) deviceInfo = "Android";
+  else if (userAgent.includes("Linux")) deviceInfo = "Linux";
+
   if (await isRateLimited(ip, 10)) {
     return NextResponse.json({ error: 'Too many requests. Please wait 60 seconds.' }, { status: 429 });
   }
 
   const supabase = getServiceSupabase();
+  const authResult = await validateRequest(req, supabase);
+  
+  let userEmail: string | undefined;
+  if (authResult.userId !== 'anonymous') {
+    validatedUserId = authResult.userId;
+    // Attempt to get email from user profile or metadata if available
+    const { data: userData } = await supabase.auth.admin.getUserById(validatedUserId);
+    userEmail = userData?.user?.email;
+  }
 
   try {
     const body = await req.json();
@@ -642,11 +667,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     const validatedPhotoUrl = validateSecureUrl(userPhotoUrl, 'userPhotoUrl');
     const validatedProductUrl = validateSecureUrl(productImageUrl, 'productImageUrl');
 
-    const authResult = await authenticateRequest(req, userId ?? '');
-    if (authResult instanceof NextResponse) return authResult;
-    
-    validatedUserId = authResult.userId;
-
     const result = await handleTryOn(
       {
         userId: validatedUserId,
@@ -663,7 +683,10 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       provider,
       status: 'success',
       latencyMs: Date.now() - startTime,
-      apiKeyIndex: provider === 'lightx' ? currentKeyIndex : 0
+      apiKeyIndex: provider === 'lightx' ? currentKeyIndex : 0,
+      ipAddress: ip,
+      deviceInfo: deviceInfo,
+      userEmail: userEmail
     });
 
     return NextResponse.json({
@@ -688,7 +711,10 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       status: 'error',
       errorMessage: error.message,
       latencyMs: latency,
-      apiKeyIndex: provider === 'lightx' ? currentKeyIndex : 0
+      apiKeyIndex: provider === 'lightx' ? currentKeyIndex : 0,
+      ipAddress: ip,
+      deviceInfo: deviceInfo,
+      userEmail: userEmail
     });
 
     return NextResponse.json({ error: error.message }, { status: 500 });

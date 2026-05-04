@@ -26,6 +26,9 @@ interface UsageLog {
   error_message: string;
   latency_ms: number;
   api_key_index: number;
+  ip_address: string;
+  device_info: string;
+  user_email: string;
 }
 
 export default function AdminDashboard() {
@@ -209,25 +212,43 @@ export default function AdminDashboard() {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-slate-50/50">
-                  <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Timestamp</th>
-                  <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">User</th>
+                  <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">User / Email</th>
+                  <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Location (IP)</th>
+                  <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Device</th>
                   <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Provider</th>
                   <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Status</th>
                   <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Latency</th>
-                  <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Key Idx</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
                 {logs.map((log) => (
                   <tr key={log.id} className="hover:bg-slate-50/30 transition-colors">
-                    <td className="px-8 py-4 text-xs font-medium text-slate-500">
-                      {new Date(log.timestamp).toLocaleString()}
+                    <td className="px-8 py-4">
+                      <div className="flex flex-col gap-1">
+                        <div className="flex items-center gap-2">
+                          <User className="w-3 h-3 text-slate-300" />
+                          <span className="text-xs font-bold text-slate-700 truncate max-w-[120px]">
+                            {log.user_id}
+                          </span>
+                        </div>
+                        {log.user_email && (
+                          <span className="text-[10px] text-slate-400 ml-5 font-medium">{log.user_email}</span>
+                        )}
+                      </div>
+                    </td>
+                    <td className="px-8 py-4">
+                      <span className="text-xs font-mono font-bold text-slate-400 bg-slate-50 px-2 py-1 rounded-md border border-slate-100">
+                        {log.ip_address || '0.0.0.0'}
+                      </span>
                     </td>
                     <td className="px-8 py-4">
                       <div className="flex items-center gap-2">
-                        <User className="w-3 h-3 text-slate-300" />
-                        <span className="text-xs font-bold text-slate-700 truncate max-w-[120px]">
-                          {log.user_id}
+                        <span className={`px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-widest ${
+                          log.device_info === 'Mac' ? 'bg-indigo-50 text-indigo-500' :
+                          log.device_info === 'Windows' ? 'bg-sky-50 text-sky-500' :
+                          'bg-slate-50 text-slate-400'
+                        }`}>
+                          {log.device_info || 'Unknown'}
                         </span>
                       </div>
                     </td>
@@ -256,12 +277,6 @@ export default function AdminDashboard() {
                     </td>
                     <td className="px-8 py-4 text-xs font-bold text-slate-600">
                       {(log.latency_ms / 1000).toFixed(2)}s
-                    </td>
-                    <td className="px-8 py-4">
-                      <div className="flex items-center gap-1 text-xs font-medium text-slate-400">
-                        <Key className="w-3 h-3" />
-                        {log.api_key_index}
-                      </div>
                     </td>
                   </tr>
                 ))}
