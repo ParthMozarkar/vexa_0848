@@ -112,7 +112,7 @@ export default function DemoSection() {
                 onClick={() => setActiveImage(i)}
                 className="w-14 h-20 rounded-xl overflow-hidden border-2 transition-all duration-300 focus:outline-none"
                 style={{
-                  borderColor: activeImage === i ? currentOutfit.color : 'rgba(255,255,255,0.1)',
+                  borderColor: activeImage === i ? currentOutfit.color : 'rgba(74, 103, 65, 0.2)',
                   boxShadow: activeImage === i ? `0 0 12px ${currentOutfit.color}60` : 'none'
                 }}
                 aria-label={`View outfit image ${i + 1}`}>

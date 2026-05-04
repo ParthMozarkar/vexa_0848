@@ -51,7 +51,7 @@ export default function BenefitsSection() {
   return (
     <section className="relative py-16 pb-24 overflow-hidden">
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60rem] h-[30rem] rounded-full blur-[100px]" style={{ background: 'rgba(91,75,245,0.06)' }} />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[60rem] h-[30rem] rounded-full blur-[100px]" style={{ background: 'rgba(74, 103, 65, 0.05)' }} />
       </div>
       <div className="max-w-7xl mx-auto px-6 relative z-10">
         <div

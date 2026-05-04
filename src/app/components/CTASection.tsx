@@ -11,13 +11,13 @@ export default function CTASection() {
         >
           {/* Background glow */}
           <div className="absolute inset-0 pointer-events-none">
-            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[40rem] h-[20rem] rounded-full blur-[80px]" style={{ background: 'rgba(91,75,245,0.15)' }} />
-            <div className="absolute bottom-0 right-1/4 w-[20rem] h-[15rem] rounded-full blur-[60px]" style={{ background: 'rgba(0,212,255,0.08)' }} />
+            <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[40rem] h-[20rem] rounded-full blur-[80px]" style={{ background: 'rgba(74,103,65,0.1)' }} />
+            <div className="absolute bottom-0 right-1/4 w-[20rem] h-[15rem] rounded-full blur-[60px]" style={{ background: 'rgba(74,103,65,0.05)' }} />
           </div>
 
           {/* Ghost text */}
           <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden">
-            <span className="text-[8vw] font-extrabold whitespace-nowrap tracking-tighter select-none" style={{ color: 'rgba(255,255,255,0.02)' }}>
+            <span className="text-[8vw] font-extrabold whitespace-nowrap tracking-tighter select-none" style={{ color: 'rgba(74,103,65,0.05)' }}>
               START BUILDING
             </span>
           </div>

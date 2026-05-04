@@ -14,6 +14,10 @@ import BookingFormSection from '@/components/BookingFormSection';
 export default function HomePage() {
   return (
     <main className="marketing-theme min-h-screen bg-background overflow-x-hidden text-foreground">
+      <style dangerouslySetInnerHTML={{ __html: `
+        body { background: none !important; animation: none !important; filter: none !important; background-color: var(--background) !important; }
+        body::before { display: none !important; }
+      `}} />
       <ScrollAnimationInit />
       <Header />
       <HeroSection />
