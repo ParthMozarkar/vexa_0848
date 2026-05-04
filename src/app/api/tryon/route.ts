@@ -41,6 +41,22 @@ const LIGHTX_POLL_INTERVAL_MS = 3000;
 const LIGHTX_MAX_POLLS = 40;
 const LIGHTX_FETCH_TIMEOUT_MS = 30_000;
 
+const LIGHTX_KEYS = [
+  process.env.LIGHTX_API_KEY,
+  process.env.LIGHTX_API_KEY_2,
+  process.env.LIGHTX_API_KEY_3,
+  process.env.LIGHTX_API_KEY_4,
+  process.env.LIGHTX_API_KEY_5,
+].filter(Boolean) as string[];
+
+let currentKeyIndex = 0;
+function getLightxKey() {
+  if (LIGHTX_KEYS.length === 0) return null;
+  const key = LIGHTX_KEYS[currentKeyIndex];
+  currentKeyIndex = (currentKeyIndex + 1) % LIGHTX_KEYS.length;
+  return key;
+}
+
 // ─── SSRF Protection ──────────────────────────────────────────────────────────
 
 const ALLOWED_STORAGE_ORIGIN = process.env.NEXT_PUBLIC_SUPABASE_URL
@@ -281,47 +297,64 @@ async function callFashnTryon(personImageUrl: string, garmentImageUrl: string, c
 // ─── LightX API call + polling ──────────────────────────────────────────────
 
 async function callLightxTryon(personImageUrl: string, garmentImageUrl: string, _category: string = 'tops'): Promise<string> {
-  const apiKey = process.env.LIGHTX_API_KEY;
-  if (!apiKey) {
-    throw new Error('LIGHTX_API_KEY is not configured');
+  if (LIGHTX_KEYS.length === 0) {
+    throw new Error('No LIGHTX_API_KEYS configured');
   }
 
-  // Step 1 — submit virtual try-on job
-  console.log('[LightX] Submitting virtual try-on job…');
-  const submitRes = await fetch(LIGHTX_TRYON_URL, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'x-api-key': apiKey,
-    },
-    body: JSON.stringify({
-      imageUrl: personImageUrl,
-      styleImageUrl: garmentImageUrl,
-    }),
-    signal: AbortSignal.timeout(LIGHTX_FETCH_TIMEOUT_MS),
-  });
+  let lastError: Error | null = null;
+  
+  // Try up to 3 keys if failures occur (failover)
+  const maxAttempts = Math.min(LIGHTX_KEYS.length, 3);
+  
+  for (let attempt = 0; attempt < maxAttempts; attempt++) {
+    const apiKey = getLightxKey();
+    if (!apiKey) break;
 
-  if (!submitRes.ok) {
-    const body = await submitRes.text().catch(() => '');
-    throw new Error(`[LightX] Submit failed ${submitRes.status}: ${body.slice(0, 300)}`);
+    try {
+      console.log(`[LightX] Attempt ${attempt + 1}: Submitting job using key index ${currentKeyIndex}...`);
+      const submitRes = await fetch(LIGHTX_TRYON_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-api-key': apiKey,
+        },
+        body: JSON.stringify({
+          imageUrl: personImageUrl,
+          styleImageUrl: garmentImageUrl,
+        }),
+        signal: AbortSignal.timeout(LIGHTX_FETCH_TIMEOUT_MS),
+      });
+
+      if (!submitRes.ok) {
+        const body = await submitRes.text().catch(() => '');
+        throw new Error(`[LightX] Submit failed ${submitRes.status}: ${body.slice(0, 300)}`);
+      }
+
+      const submitRaw = await submitRes.json();
+      console.log('[LightX] Submit raw response:', JSON.stringify(submitRaw).slice(0, 400));
+
+      const responseBody = submitRaw.body ?? submitRaw;
+      const orderId = responseBody.orderId;
+      
+      if (!orderId) {
+        throw new Error(`[LightX] Submit response missing orderId. Raw: ${JSON.stringify(submitRaw).slice(0, 300)}`);
+      }
+
+      // If we got an orderId, proceed to polling with this SAME apiKey
+      return await pollLightxStatus(orderId, apiKey);
+
+    } catch (err: any) {
+      console.warn(`[LightX] Attempt ${attempt + 1} failed:`, err.message);
+      lastError = err;
+      // Continue to next key
+    }
   }
 
-  const submitRaw = await submitRes.json();
-  console.log('[LightX] Submit raw response:', JSON.stringify(submitRaw).slice(0, 400));
+  throw lastError || new Error('[LightX] All attempts failed');
+}
 
-  // LightX may nest response under `body` or return flat
-  const responseBody = submitRaw.body ?? submitRaw;
-  const orderId = responseBody.orderId;
-  if (!orderId) {
-    throw new Error(`[LightX] Submit response missing orderId. Raw: ${JSON.stringify(submitRaw).slice(0, 300)}`);
-  }
-  console.log(`[LightX] Job created — orderId=${orderId}`);
-
-  // If the response already contains a completed output, return it immediately
-  if (responseBody.output && (responseBody.status === 'active' || responseBody.status === 'completed')) {
-    console.log(`[LightX] Immediate result: ${responseBody.output}`);
-    return responseBody.output;
-  }
+async function pollLightxStatus(orderId: string, apiKey: string): Promise<string> {
+  console.log(`[LightX] Job created — orderId=${orderId}. Starting poll...`);
 
   // Step 2 — poll for completion
   for (let poll = 1; poll <= LIGHTX_MAX_POLLS; poll++) {
