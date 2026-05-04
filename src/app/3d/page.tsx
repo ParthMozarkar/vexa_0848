@@ -5,7 +5,12 @@ import { motion } from "framer-motion";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Box, Sparkles, Rocket, Clock } from "lucide-react";
-import { InteractiveRobotSpline } from "@/components/ui/interactive-3d-robot";
+import dynamic from "next/dynamic";
+// PERF FIX: Dynamically import heavy 3D components with ssr: false
+const InteractiveRobotSpline = dynamic(() => import("@/components/ui/interactive-3d-robot").then(mod => mod.InteractiveRobotSpline), {
+  ssr: false,
+  loading: () => <div className="w-full h-[300px] sm:h-[340px] bg-muted animate-pulse rounded-[1.5rem]" />
+});
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { Application } from "@splinetool/runtime";
 

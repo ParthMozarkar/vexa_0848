@@ -42,17 +42,19 @@ export default function Header() {
             <Link
               key={link.href}
               href={link.href}
-              className="text-sm font-bold uppercase tracking-widest text-slate-400 hover:text-[#1a1a1a] transition-all"
+              // Added px-4 py-2 to drastically increase the clickable hit area
+              className="px-4 py-2 text-sm font-bold uppercase tracking-widest text-slate-400 hover:text-[#1a1a1a] transition-all"
             >
               {link.label}
             </Link>
           ))}
         </div>
 
-        <div className="hidden md:flex items-center gap-4">
+        <div className="hidden md:flex items-center gap-2">
           <Link
             href="/pricing"
-            className="text-sm font-bold text-slate-400 hover:text-[#1a1a1a] uppercase tracking-widest transition-colors"
+            // Added padding to increase hit area
+            className="px-4 py-2 text-sm font-bold text-slate-400 hover:text-[#1a1a1a] uppercase tracking-widest transition-colors"
           >
             Pricing
           </Link>

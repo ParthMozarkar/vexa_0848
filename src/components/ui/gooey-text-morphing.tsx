@@ -14,7 +14,8 @@ interface GooeyTextProps {
 export function GooeyText({
   texts,
   morphTime = 1,
-  cooldownTime = 0.25,
+  // PERF FIX: Increased default cooldown from 0.25 to 1.5 to reduce morph frequency
+  cooldownTime = 1.5,
   className,
   textClassName,
 }: GooeyTextProps) {
@@ -73,6 +74,10 @@ export function GooeyText({
     function animate() {
       if (cancelled) return;
       requestAnimationFrame(animate);
+      
+      // PERF FIX: Pause the rAF loop when the tab is hidden
+      if (document.hidden) return;
+
       const newTime = new Date();
       const shouldIncrementIndex = cooldown > 0;
       const dt = (newTime.getTime() - time.getTime()) / 1000;

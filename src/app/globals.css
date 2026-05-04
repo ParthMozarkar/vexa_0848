@@ -62,10 +62,9 @@
   }
 
   body {
-    background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 25%, #222222 50%, #1a1a1a 75%, #0f0f0f 100%);
+    /* PERF FIX: Replaced expensive animated gradient with static linear-gradient */
+    background: linear-gradient(135deg, #0f0f0f 0%, #1a1a1a 100%);
     background-attachment: fixed;
-    background-size: 400% 400%;
-    animation: gradientShift 15s ease infinite;
     color: var(--foreground);
     min-height: 100vh;
     position: relative;
@@ -89,7 +88,7 @@
       radial-gradient(circle at 70% 60%, rgba(156, 163, 175, 0.06) 0%, transparent 48%),
       radial-gradient(circle at 15% 15%, rgba(107, 114, 128, 0.06) 0%, transparent 45%);
     pointer-events: none;
-    animation: gradientFloat 15s ease-in-out infinite;
+    /* PERF FIX: Removed gradientFloat animation from ::before element */
     z-index: 1;
     filter: saturate(0.5);
   }
@@ -107,7 +106,7 @@
       repeating-linear-gradient(45deg, transparent, transparent 140px, rgba(107, 114, 128, 0.03) 140px, rgba(107, 114, 128, 0.03) 142px),
       repeating-linear-gradient(-45deg, transparent, transparent 140px, rgba(75, 85, 99, 0.03) 140px, rgba(75, 85, 99, 0.03) 142px);
     pointer-events: none;
-    animation: patternShift 30s linear infinite;
+    /* PERF FIX: Removed patternShift animation from ::after element */
     z-index: 1;
     mix-blend-mode: multiply;
   }

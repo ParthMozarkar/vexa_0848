@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
 function useIsClient() {
@@ -10,15 +10,9 @@ function useIsClient() {
 }
 
 export interface RippleGridProps {
-  /** Fixed N×N grid (ignored when `fillViewport` is true) */
   size?: number;
   filledCells?: Array<{ row: number; col: number }>;
-  /** Tile the viewport with square cells (even spread edge-to-edge) */
   fillViewport?: boolean;
-  /**
-   * Accent cells as fractions of grid (0–1), e.g. [0.1, 0.1] = near top-left.
-   * Only used when `fillViewport` is true (recomputed on resize).
-   */
   accentFractions?: Array<{ fr: number; fc: number }>;
   cellSize?: number;
   cellColor?: string;
@@ -30,24 +24,27 @@ export interface RippleGridProps {
   pulseDuration?: number;
   rippleDelay?: number;
   className?: string;
-  /**
-   * When true, any click on the page (capture phase) maps to the nearest cell
-   * and runs the ripple without blocking the real target. Inner cells use
-   * `pointer-events: none` so buttons and links stay fully interactive.
-   */
   reactToGlobalClicks?: boolean;
 }
 
+interface ActiveRipple {
+  row: number;
+  col: number;
+  startTime: number;
+}
+
+// PERF FIX: Replaced entire DOM-based grid with a single <canvas> element.
+// This eliminates 1500-2000+ DOM nodes and avoids layout thrashing.
 export function RippleGrid({
   size = 5,
   filledCells = [],
   fillViewport = false,
   accentFractions = [],
   cellSize = 50,
-  cellColor = "#fff",
-  filledCellColor = "#000",
-  pulseColor = "#76cefa",
-  borderColor = "#000",
+  cellColor = "transparent",
+  filledCellColor = "rgba(74, 103, 65, 0.03)",
+  pulseColor = "rgba(74, 103, 65, 0.12)",
+  borderColor = "rgba(74, 103, 65, 0.03)",
   borderWidth = 1,
   pulseScale = 1.1,
   pulseDuration = 300,
@@ -56,15 +53,10 @@ export function RippleGrid({
   reactToGlobalClicks = false,
 }: RippleGridProps) {
   const isClient = useIsClient();
-  const gridRef = useRef<HTMLDivElement>(null);
-  const uid = useId().replace(/:/g, "");
-  const safeId = uid.replace(/[^a-zA-Z0-9_-]/g, "x");
-  const cellClass = `ripple-cell-${safeId}`;
-  const keyName = `ripplePulse_${safeId}`;
-
-  // Start with 0 dims when fillViewport — avoids SSR/client hydration mismatch
-  // (SSR can't know window size; React 19 will tear down the tree on mismatch)
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  
   const [dims, setDims] = useState(() => fillViewport ? { cols: 0, rows: 0 } : { cols: size, rows: size });
+  const activeRipplesRef = useRef<ActiveRipple[]>([]);
 
   useEffect(() => {
     if (!fillViewport) {
@@ -85,132 +77,134 @@ export function RippleGrid({
     return () => window.removeEventListener("resize", measure);
   }, [fillViewport, size, cellSize]);
 
-  const cols = dims.cols;
-  const rows = dims.rows;
+  const { cols, rows } = dims;
 
   useEffect(() => {
-    const gridContainer = gridRef.current;
-    if (!gridContainer) return;
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
 
-    const runRipple = (clickedRow: number, clickedCol: number) => {
-      const cells = gridContainer.querySelectorAll(`.${cellClass}`);
+    let animationFrameId: number;
+    let isDrawing = true;
 
-      cells.forEach((cell) => {
-        const htmlCell = cell as HTMLElement;
-        const row = Number.parseInt(htmlCell.dataset.row || "0", 10);
-        const col = Number.parseInt(htmlCell.dataset.col || "0", 10);
+    const resizeCanvas = () => {
+      // PERF FIX: Use devicePixelRatio for sharp rendering on retina screens
+      const dpr = window.devicePixelRatio || 1;
+      canvas.width = cols * cellSize * dpr;
+      canvas.height = rows * cellSize * dpr;
+      canvas.style.width = `${cols * cellSize}px`;
+      canvas.style.height = `${rows * cellSize}px`;
+      ctx.scale(dpr, dpr);
+    };
 
-        const distance = Math.abs(row - clickedRow) + Math.abs(col - clickedCol);
+    resizeCanvas();
 
-        window.setTimeout(() => {
-          htmlCell.classList.add("pulse");
+    const isFilled = (row: number, col: number) => {
+      if (fillViewport && accentFractions.length > 0) {
+        const maxR = Math.max(0, rows - 1);
+        const maxC = Math.max(0, cols - 1);
+        return accentFractions.some(({ fr, fc }) => {
+          const tr = Math.round(Math.min(1, Math.max(0, fr)) * maxR);
+          const tc = Math.round(Math.min(1, Math.max(0, fc)) * maxC);
+          return tr === row && tc === col;
+        });
+      }
+      return filledCells.some((cell) => cell.row === row && cell.col === col);
+    };
 
-          window.setTimeout(() => {
-            htmlCell.classList.remove("pulse");
-          }, pulseDuration + 200);
-        }, distance * rippleDelay);
+    const filledGrid = Array.from({ length: rows }, (_, r) => 
+      Array.from({ length: cols }, (_, c) => isFilled(r, c))
+    );
+
+    const drawGrid = () => {
+      const now = performance.now();
+      ctx.clearRect(0, 0, canvas.width / (window.devicePixelRatio || 1), canvas.height / (window.devicePixelRatio || 1));
+
+      const ripples = activeRipplesRef.current;
+      
+      activeRipplesRef.current = ripples.filter(ripple => {
+        const maxDist = cols + rows;
+        return now - ripple.startTime < maxDist * rippleDelay + pulseDuration;
       });
+
+      for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+          let cellFill = filledGrid[r]?.[c] ? filledCellColor : cellColor;
+          let currentPulseScale = 1;
+
+          for (const ripple of activeRipplesRef.current) {
+            const distance = Math.abs(r - ripple.row) + Math.abs(c - ripple.col);
+            const cellStartTime = ripple.startTime + distance * rippleDelay;
+            const elapsed = now - cellStartTime;
+
+            if (elapsed > 0 && elapsed < pulseDuration) {
+              const progress = elapsed / pulseDuration;
+              const pulseIntensity = progress < 0.5 ? progress * 2 : (1 - progress) * 2;
+              
+              if (!filledGrid[r]?.[c]) {
+                cellFill = pulseColor;
+              }
+              currentPulseScale = 1 + (pulseScale - 1) * pulseIntensity;
+              break; 
+            }
+          }
+
+          const x = c * cellSize;
+          const y = r * cellSize;
+
+          if (cellFill !== "transparent") {
+            ctx.fillStyle = cellFill;
+            if (currentPulseScale !== 1) {
+              const offset = (cellSize * currentPulseScale - cellSize) / 2;
+              ctx.fillRect(x - offset, y - offset, cellSize * currentPulseScale, cellSize * currentPulseScale);
+            } else {
+              ctx.fillRect(x, y, cellSize, cellSize);
+            }
+          }
+
+          ctx.strokeStyle = borderColor;
+          ctx.lineWidth = borderWidth;
+          ctx.strokeRect(x, y, cellSize, cellSize);
+        }
+      }
+
+      if (isDrawing) {
+        animationFrameId = requestAnimationFrame(drawGrid);
+      }
     };
 
-    if (reactToGlobalClicks) {
-      const onDocumentClick = (event: MouseEvent) => {
-        const rect = gridContainer.getBoundingClientRect();
-        const x = event.clientX - rect.left;
-        const y = event.clientY - rect.top;
-        if (x < 0 || y < 0 || x > rect.width || y > rect.height) return;
-
-        const clickedCol = Math.min(cols - 1, Math.max(0, Math.floor(x / cellSize)));
-        const clickedRow = Math.min(rows - 1, Math.max(0, Math.floor(y / cellSize)));
-        runRipple(clickedRow, clickedCol);
-      };
-
-      document.addEventListener("click", onDocumentClick, true);
-      return () => document.removeEventListener("click", onDocumentClick, true);
-    }
-
-    const handleGridClick = (event: MouseEvent) => {
-      const target = event.target as HTMLElement;
-      if (!target.classList.contains(cellClass)) return;
-
-      const clickedRow = Number.parseInt(target.dataset.row || "0", 10);
-      const clickedCol = Number.parseInt(target.dataset.col || "0", 10);
-      runRipple(clickedRow, clickedCol);
-    };
-
-    gridContainer.addEventListener("click", handleGridClick);
+    drawGrid();
 
     return () => {
-      gridContainer.removeEventListener("click", handleGridClick);
+      isDrawing = false;
+      cancelAnimationFrame(animationFrameId);
     };
-  }, [
-    reactToGlobalClicks,
-    pulseDuration,
-    rippleDelay,
-    cols,
-    rows,
-    cellClass,
-    cellSize,
-  ]);
+  }, [cols, rows, cellSize, cellColor, filledCellColor, pulseColor, borderColor, borderWidth, pulseScale, pulseDuration, rippleDelay, fillViewport, accentFractions, filledCells]);
 
-  const isFilled = (row: number, col: number) => {
-    if (fillViewport && accentFractions.length > 0) {
-      const maxR = Math.max(0, rows - 1);
-      const maxC = Math.max(0, cols - 1);
-      return accentFractions.some(({ fr, fc }) => {
-        const tr = Math.round(Math.min(1, Math.max(0, fr)) * maxR);
-        const tc = Math.round(Math.min(1, Math.max(0, fc)) * maxC);
-        return tr === row && tc === col;
+  useEffect(() => {
+    if (!reactToGlobalClicks || !canvasRef.current) return;
+    
+    const onDocumentClick = (event: MouseEvent) => {
+      const rect = canvasRef.current!.getBoundingClientRect();
+      const x = event.clientX - rect.left;
+      const y = event.clientY - rect.top;
+      if (x < 0 || y < 0 || x > rect.width || y > rect.height) return;
+
+      const clickedCol = Math.min(cols - 1, Math.max(0, Math.floor(x / cellSize)));
+      const clickedRow = Math.min(rows - 1, Math.max(0, Math.floor(y / cellSize)));
+      
+      activeRipplesRef.current.push({
+        row: clickedRow,
+        col: clickedCol,
+        startTime: performance.now()
       });
-    }
-    return filledCells.some((cell) => cell.row === row && cell.col === col);
-  };
+    };
 
-  const cells: ReactNode[] = [];
-  for (let row = 0; row < rows; row++) {
-    for (let col = 0; col < cols; col++) {
-      cells.push(
-        <div
-          key={`${row}-${col}-${cols}-${rows}`}
-          className={cn(cellClass, isFilled(row, col) ? "filled" : "")}
-          data-row={row}
-          data-col={col}
-        />,
-      );
-    }
-  }
+    document.addEventListener("click", onDocumentClick, true);
+    return () => document.removeEventListener("click", onDocumentClick, true);
+  }, [reactToGlobalClicks, cols, rows, cellSize]);
 
-  const css = `
-.${cellClass} {
-  width: ${cellSize}px;
-  height: ${cellSize}px;
-  background-color: ${cellColor};
-  border: ${borderWidth}px solid ${borderColor};
-  box-sizing: border-box;
-  cursor: pointer;
-}
-.${cellClass}.filled {
-  background-color: ${filledCellColor};
-}
-.${cellClass}.pulse:not(.filled) {
-  animation: ${keyName} ${pulseDuration}ms forwards;
-}
-@keyframes ${keyName} {
-  0% {
-    background-color: ${cellColor};
-    transform: scale(1);
-  }
-  50% {
-    background-color: ${pulseColor};
-    transform: scale(${pulseScale});
-  }
-  100% {
-    background-color: ${cellColor};
-    transform: scale(1);
-  }
-}
-`;
-
-  // Don't render the grid at all on the server when fillViewport — no window to measure
   if (fillViewport && !isClient) return null;
 
   return (
@@ -223,22 +217,10 @@ export function RippleGrid({
         className,
       )}
     >
-      <div
-        ref={gridRef}
-        className={cn(
-          "grid shrink-0 gap-0",
-          reactToGlobalClicks ? "pointer-events-none" : "pointer-events-auto",
-        )}
-        style={{
-          width: cols * cellSize,
-          height: rows * cellSize,
-          gridTemplateColumns: `repeat(${cols}, ${cellSize}px)`,
-          gridTemplateRows: `repeat(${rows}, ${cellSize}px)`,
-        }}
-      >
-        {cells}
-        <style dangerouslySetInnerHTML={{ __html: css }} />
-      </div>
+      <canvas
+        ref={canvasRef}
+        className={cn("shrink-0", reactToGlobalClicks ? "pointer-events-none" : "pointer-events-auto")}
+      />
     </div>
   );
 }

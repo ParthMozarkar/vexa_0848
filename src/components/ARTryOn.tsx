@@ -1,6 +1,7 @@
 'use client';
 
 import React, { Suspense, useRef, useState } from 'react';
+import dynamic from 'next/dynamic';
 import { Canvas } from '@react-three/fiber';
 import { XR, createXRStore, useXR } from '@react-three/xr';
 import { useGLTF, Center, Environment } from '@react-three/drei';
@@ -44,7 +45,8 @@ interface ARTryOnProps {
   onClose: () => void;
 }
 
-export function ARTryOn({ clothingGlbUrl, productName, onClose }: ARTryOnProps) {
+// PERF FIX: Renamed to Impl and export via next/dynamic to avoid SSR overhead for Three/XR
+const ARTryOnImpl = ({ clothingGlbUrl, productName, onClose }: ARTryOnProps) => {
   const [arError, setArError] = useState<string | null>(null);
 
   const isSupported =
@@ -117,3 +119,9 @@ export function ARTryOn({ clothingGlbUrl, productName, onClose }: ARTryOnProps) 
     </div>
   );
 }
+
+// PERF FIX: Dynamic export with ssr: false
+export const ARTryOn = dynamic(() => Promise.resolve(ARTryOnImpl), {
+  ssr: false,
+  loading: () => <div className="flex items-center justify-center w-full h-screen bg-black text-white/50">Loading AR Engine...</div>
+});

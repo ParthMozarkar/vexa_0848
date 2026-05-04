@@ -3,7 +3,7 @@ import { GooeyText } from '@/components/ui/gooey-text-morphing';
 
 export default function HeroSection() {
   return (
-    <section className="relative min-h-screen flex flex-col items-center justify-center overflow-x-hidden overflow-y-visible pt-20 pb-12">
+    <section className="relative min-h-screen flex flex-col items-center justify-center pt-20 pb-12">
       {/* Ambient Background Glows — ripple grid is global in GlobalLayout */}
       <div className="fixed top-0 left-1/2 -translate-x-1/2 w-[80rem] h-[50rem] bg-primary/10 rounded-full blur-[120px] pointer-events-none z-[1]" />
       <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[40rem] h-[40rem] rounded-full blur-[100px] pointer-events-none z-[1]" style={{ background: 'rgba(0,212,255,0.04)' }} />
