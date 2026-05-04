@@ -47,6 +47,7 @@ const LIGHTX_KEYS = [
   process.env.LIGHTX_API_KEY_3,
   process.env.LIGHTX_API_KEY_4,
   process.env.LIGHTX_API_KEY_5,
+  process.env.LIGHTX_API_KEY_6,
 ].filter(Boolean) as string[];
 
 let currentKeyIndex = 0;
