@@ -79,14 +79,14 @@ curl -X POST https://api.vexa.io/v1/tryon \\
 ];
 
 const tokenColors: Record<string, string> = {
-  import: '#A78BFA',
-  from: '#A78BFA',
-  const: '#A78BFA',
-  return: '#A78BFA',
-  export: '#A78BFA',
-  function: '#A78BFA',
-  curl: '#00D4FF',
-  POST: '#F59E0B',
+  import: '#4A6741',
+  from: '#4A6741',
+  const: '#4A6741',
+  return: '#4A6741',
+  export: '#4A6741',
+  function: '#4A6741',
+  curl: '#8B7D3C',
+  POST: '#4A6741',
   GET: '#22C55E',
 };
 
@@ -99,10 +99,10 @@ function SimpleHighlight({ code, lang }: { code: string; lang: string }) {
             return <div key={i} className="text-muted-foreground/50">{line}</div>;
           }
           if (line.startsWith('curl')) {
-            return <div key={i}><span style={{ color: '#00D4FF' }}>curl</span><span className="text-foreground">{line.slice(4)}</span></div>;
+            return <div key={i}><span style={{ color: '#8B7D3C' }}>curl</span><span className="text-foreground">{line.slice(4)}</span></div>;
           }
           if (line.startsWith('{') || line.startsWith('}') || line.startsWith('  "')) {
-            return <div key={i} style={{ color: '#F59E0B' }}>{line}</div>;
+            return <div key={i} style={{ color: '#6B8C5E' }}>{line}</div>;
           }
           return <div key={i} className="text-foreground">{line}</div>;
         })}
@@ -122,13 +122,13 @@ function SimpleHighlight({ code, lang }: { code: string; lang: string }) {
                 return <span key={j} style={{ color: tokenColors[trimmed] }}>{part}</span>;
               }
               if (trimmed.startsWith("'") || trimmed.startsWith('"')) {
-                return <span key={j} style={{ color: '#F59E0B' }}>{part}</span>;
+                return <span key={j} style={{ color: '#8B7D3C' }}>{part}</span>;
               }
               if (trimmed.startsWith('//') || trimmed.startsWith('#')) {
                 return <span key={j} className="text-muted-foreground/50">{part}</span>;
               }
               if (trimmed.startsWith('<') || trimmed.startsWith('/>') || trimmed.startsWith('</')) {
-                return <span key={j} style={{ color: '#5B4BF5' }}>{part}</span>;
+                return <span key={j} style={{ color: '#4A6741' }}>{part}</span>;
               }
               return <span key={j} className="text-foreground">{part}</span>;
             })}

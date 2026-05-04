@@ -14,7 +14,7 @@ const features = [
     title: '3D Visualization',
     desc: 'Photorealistic garment rendering with fabric physics, lighting simulation, and dynamic shadow casting.',
     tag: 'Core Engine',
-    accent: '#5B4BF5',
+    accent: '#4A6741',
     colSpan: 'lg:col-span-1',
     icon: (
       <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
@@ -23,7 +23,7 @@ const features = [
     ),
     visual: (
       <div className="relative h-28 flex items-center justify-center">
-        <div className="w-16 h-16 rounded-xl border border-primary/40 flex items-center justify-center" style={{ background: 'rgba(91,75,245,0.1)' }}>
+        <div className="w-16 h-16 rounded-xl border border-primary/40 flex items-center justify-center" style={{ background: 'rgba(74,103,65,0.1)' }}>
           <div className="w-8 h-8 rounded-lg bg-primary/60 animate-pulse-glow" />
         </div>
         {[0,1,2]?.map(i => (
@@ -37,7 +37,7 @@ const features = [
     title: 'AI Body Mapping',
     desc: '68-point skeletal analysis from a single photo. Works across 200+ body types with 99.2% dimensional accuracy.',
     tag: 'AI Core',
-    accent: '#00D4FF',
+    accent: '#6B8C5E',
     colSpan: 'lg:col-span-1',
     icon: (
       <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
@@ -47,14 +47,14 @@ const features = [
     visual: (
       <div className="relative h-28 flex items-center justify-center">
         <svg viewBox="0 0 80 100" className="w-16 h-20 opacity-60">
-          <circle cx="40" cy="12" r="8" fill="none" stroke="#00D4FF" strokeWidth="1.5" />
-          <line x1="40" y1="20" x2="40" y2="55" stroke="#00D4FF" strokeWidth="1.5" />
-          <line x1="40" y1="30" x2="20" y2="45" stroke="#00D4FF" strokeWidth="1.5" />
-          <line x1="40" y1="30" x2="60" y2="45" stroke="#00D4FF" strokeWidth="1.5" />
-          <line x1="40" y1="55" x2="28" y2="80" stroke="#00D4FF" strokeWidth="1.5" />
-          <line x1="40" y1="55" x2="52" y2="80" stroke="#00D4FF" strokeWidth="1.5" />
+          <circle cx="40" cy="12" r="8" fill="none" stroke="#6B8C5E" strokeWidth="1.5" />
+          <line x1="40" y1="20" x2="40" y2="55" stroke="#6B8C5E" strokeWidth="1.5" />
+          <line x1="40" y1="30" x2="20" y2="45" stroke="#6B8C5E" strokeWidth="1.5" />
+          <line x1="40" y1="30" x2="60" y2="45" stroke="#6B8C5E" strokeWidth="1.5" />
+          <line x1="40" y1="55" x2="28" y2="80" stroke="#6B8C5E" strokeWidth="1.5" />
+          <line x1="40" y1="55" x2="52" y2="80" stroke="#6B8C5E" strokeWidth="1.5" />
           {[[40,12],[20,45],[60,45],[28,80],[52,80],[40,35],[40,55]]?.map(([cx,cy],i) => (
-            <circle key={i} cx={cx} cy={cy} r="2.5" fill="#00D4FF" opacity="0.8" />
+            <circle key={i} cx={cx} cy={cy} r="2.5" fill="#6B8C5E" opacity="0.8" />
           ))}
         </svg>
       </div>
@@ -86,7 +86,7 @@ const features = [
     title: 'Real-time Rendering Engine',
     desc: 'Sub-200ms render times powered by distributed GPU clusters. Stream photorealistic garment previews to any device, anywhere, at any scale. No client-side processing required.',
     tag: '<200ms p99',
-    accent: '#5B4BF5',
+    accent: '#4A6741',
     colSpan: 'lg:col-span-2',
     icon: (
       <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
@@ -102,8 +102,8 @@ const features = [
             style={{
               height: `${h * 0.22}px`,
               background: i % 3 === 0
-                ? 'linear-gradient(to top, #5B4BF5, #00D4FF)'
-                : 'rgba(91,75,245,0.3)',
+                ? 'linear-gradient(to top, #4A6741, #8B7D3C)'
+                : 'rgba(74,103,65,0.3)',
             }}
           />
         ))}
@@ -115,7 +115,7 @@ const features = [
     title: 'Multi-brand Support',
     desc: 'One integration powers unlimited brands. White-label ready with custom theming per storefront.',
     tag: 'Enterprise',
-    accent: '#F59E0B',
+    accent: '#8B7D3C',
     colSpan: 'lg:col-span-1',
     icon: (
       <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
@@ -126,7 +126,7 @@ const features = [
       <div className="h-20 flex items-center justify-center gap-3">
         {['A','B','C','D']?.map((l, i) => (
           <div key={i} className="w-10 h-10 rounded-xl flex items-center justify-center text-sm font-bold"
-            style={{ background: 'rgba(245,158,11,0.15)', color: '#F59E0B', border: '1px solid rgba(245,158,11,0.3)' }}>
+            style={{ background: 'rgba(139,125,60,0.15)', color: '#8B7D3C', border: '1px solid rgba(139,125,60,0.3)' }}>
             {l}
           </div>
         ))}
@@ -138,7 +138,7 @@ const features = [
     title: 'Analytics Dashboard',
     desc: 'Track try-on engagement, conversion lift, return rate delta, and size accuracy across every SKU. Exportable reports for your team.',
     tag: 'Insights',
-    accent: '#00D4FF',
+    accent: '#4A6741',
     colSpan: 'lg:col-span-3',
     icon: (
       <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
@@ -148,10 +148,10 @@ const features = [
     visual: (
       <div className="flex gap-8 items-end h-20 px-4">
         {[
-          { label: 'Try-ons', val: '2.4M', color: '#5B4BF5' },
-          { label: 'Conversions', val: '+312%', color: '#00D4FF' },
-          { label: 'Return ↓', val: '40%', color: '#A78BFA' },
-          { label: 'Accuracy', val: '99.2%', color: '#F59E0B' },
+          { label: 'Try-ons', val: '2.4M', color: '#4A6741' },
+          { label: 'Conversions', val: '+312%', color: '#6B8C5E' },
+          { label: 'Return ↓', val: '40%', color: '#8B7D3C' },
+          { label: 'Accuracy', val: '99.2%', color: '#4A6741' },
         ]?.map((stat, i) => (
           <div key={i} className="flex flex-col items-center gap-1">
             <div className="text-base font-bold font-mono" style={{ color: stat?.color }}>{stat?.val}</div>

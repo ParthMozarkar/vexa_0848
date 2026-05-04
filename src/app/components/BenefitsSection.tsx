@@ -5,7 +5,7 @@ const stats = [
     value: '40%',
     label: 'Fewer Returns',
     desc: 'Customers who try before they buy return 40% less on average across VEXA-integrated storefronts.',
-    accent: '#5B4BF5',
+    accent: '#4A6741',
     icon: (
       <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12 11.204 3.045a1.5 1.5 0 0 1 2.09-.003L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
@@ -16,7 +16,7 @@ const stats = [
     value: '3.1×',
     label: 'Higher Conversions',
     desc: 'Shoppers who use the virtual try-on feature convert at 3× the rate of those viewing standard images.',
-    accent: '#00D4FF',
+    accent: '#6B8C5E',
     icon: (
       <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 18 9 11.25l4.306 4.306a11.95 11.95 0 0 1 5.814-5.518l2.74-1.22m0 0-5.94-2.281m5.94 2.28-2.28 5.941" />
@@ -27,7 +27,7 @@ const stats = [
     value: '2 sec',
     label: 'Avatar Generation',
     desc: 'From photo upload to fully rendered 3D avatar in under 2 seconds. No waiting, no friction.',
-    accent: '#A78BFA',
+    accent: '#8B7D3C',
     icon: (
       <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
@@ -38,7 +38,7 @@ const stats = [
     value: '99.2%',
     label: 'Size Accuracy',
     desc: 'VEXA body mapping achieves 99.2% dimensional accuracy — reducing size-related returns to near zero.',
-    accent: '#F59E0B',
+    accent: '#4A6741',
     icon: (
       <svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
         <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />

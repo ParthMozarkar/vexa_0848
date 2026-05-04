@@ -4,7 +4,7 @@ import Link from 'next/link';
 export default function IntegrationHero() {
   return (
     <section className="relative pt-40 pb-16 overflow-hidden">
-      <div className="absolute top-0 right-0 w-[40rem] h-[30rem] rounded-full blur-[100px] pointer-events-none" style={{ background: 'rgba(0,212,255,0.07)' }} />
+      <div className="absolute top-0 right-0 w-[40rem] h-[30rem] rounded-full blur-[100px] pointer-events-none" style={{ background: 'rgba(74,103,65,0.07)' }} />
       <div className="max-w-7xl mx-auto px-6 relative z-10">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           <div>
@@ -71,30 +71,30 @@ export default function IntegrationHero() {
 
               <div className="text-muted-foreground/50 mb-3">// Initialize VEXA</div>
               <div className="mb-1">
-                <span style={{ color: '#A78BFA' }}>import</span>
+                <span style={{ color: '#4A6741' }}>import</span>
                 <span className="text-foreground"> VEXA </span>
-                <span style={{ color: '#A78BFA' }}>from</span>
-                <span style={{ color: '#00D4FF' }}> &apos;@vexa/sdk&apos;</span>
+                <span style={{ color: '#4A6741' }}>from</span>
+                <span style={{ color: '#8B7D3C' }}> &apos;@vexa/sdk&apos;</span>
               </div>
               <div className="mb-4">
-                <span style={{ color: '#A78BFA' }}>const</span>
+                <span style={{ color: '#4A6741' }}>const</span>
                 <span className="text-foreground"> sdk </span>
                 <span className="text-muted-foreground">= </span>
                 <span className="text-foreground">VEXA</span>
                 <span className="text-muted-foreground">.</span>
-                <span style={{ color: '#5B4BF5' }}>init</span>
+                <span style={{ color: '#4A6741' }}>init</span>
                 <span className="text-muted-foreground">(&#123;</span>
               </div>
               <div className="pl-4 mb-1">
-                <span style={{ color: '#00D4FF' }}>apiKey</span>
+                <span style={{ color: '#8B7D3C' }}>apiKey</span>
                 <span className="text-muted-foreground">: </span>
-                <span style={{ color: '#F59E0B' }}>&apos;vxa_live_...&apos;</span>
+                <span style={{ color: '#4A6741' }}>&apos;vxa_live_...&apos;</span>
                 <span className="text-muted-foreground">,</span>
               </div>
               <div className="pl-4 mb-4">
-                <span style={{ color: '#00D4FF' }}>container</span>
+                <span style={{ color: '#8B7D3C' }}>container</span>
                 <span className="text-muted-foreground">: </span>
-                <span style={{ color: '#F59E0B' }}>&apos;#try-on-widget&apos;</span>
+                <span style={{ color: '#4A6741' }}>&apos;#try-on-widget&apos;</span>
               </div>
               <div className="mb-6 text-muted-foreground">&#125;)</div>
 
@@ -102,11 +102,11 @@ export default function IntegrationHero() {
               <div>
                 <span className="text-foreground">sdk</span>
                 <span className="text-muted-foreground">.</span>
-                <span style={{ color: '#5B4BF5' }}>render</span>
+                <span style={{ color: '#4A6741' }}>render</span>
                 <span className="text-muted-foreground">(&#123;</span>
               </div>
               <div className="pl-4">
-                <span style={{ color: '#00D4FF' }}>productId</span>
+                <span style={{ color: '#8B7D3C' }}>productId</span>
                 <span className="text-muted-foreground">: productId</span>
               </div>
               <div className="text-muted-foreground">&#125;)</div>

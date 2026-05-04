@@ -8,7 +8,7 @@ const tiers = [
     period: '/mo',
     desc: 'For D2C startups and early-stage brands testing virtual try-on.',
     highlight: false,
-    accent: '#8B8BA8',
+    accent: '#6B8C5E',
     features: [
       '10,000 try-on renders/mo',
       '1 storefront integration',
@@ -27,7 +27,7 @@ const tiers = [
     period: '/mo',
     desc: 'For scaling fashion brands ready to make try-on a core conversion lever.',
     highlight: true,
-    accent: '#5B4BF5',
+    accent: '#4A6741',
     features: [
       '100,000 try-on renders/mo',
       '5 storefront integrations',
@@ -48,7 +48,7 @@ const tiers = [
     period: '',
     desc: 'For fashion groups, platform builders, and multi-brand portfolios.',
     highlight: false,
-    accent: '#00D4FF',
+    accent: '#8B7D3C',
     features: [
       'Unlimited renders',
       'Unlimited storefronts',

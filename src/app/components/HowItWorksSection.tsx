@@ -10,7 +10,7 @@ export default function HowItWorksSection() {
     detail: '1 photo → full 3D model',
     image: "https://images.unsplash.com/flagged/photo-1556138723-8f1bf9a28be4",
     imageAlt: 'Person taking a photo against a bright white wall, clean neutral clothing, well-lit indoor space',
-    accent: '#5B4BF5'
+    accent: '#4A6741'
   },
   {
     num: '02',
@@ -19,7 +19,7 @@ export default function HowItWorksSection() {
     detail: '68 body points mapped',
     image: "https://img.rocket.new/generatedImages/rocket_gen_img_1b669c127-1770082524794.png",
     imageAlt: '3D digital human avatar wireframe rendering on dark background, glowing blue mesh body scan, futuristic tech visualization',
-    accent: '#00D4FF'
+    accent: '#6B8C5E'
   },
   {
     num: '03',
@@ -28,7 +28,7 @@ export default function HowItWorksSection() {
     detail: 'Unlimited outfit swaps',
     image: "https://img.rocket.new/generatedImages/rocket_gen_img_14af37433-1777014634413.png",
     imageAlt: 'Fashion model wearing stylish outfit in clean studio setting, warm professional lighting, full body view against minimal background',
-    accent: '#A78BFA'
+    accent: '#8B7D3C'
   }];
 
 

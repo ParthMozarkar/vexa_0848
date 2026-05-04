@@ -167,7 +167,7 @@ export default function StudioPage() {
     if (status === "loading") {
       return {
         label: "Generating…",
-        className: "bg-[#bef264]/50 text-black/50 cursor-not-allowed",
+        className: "bg-[#4A6741]/50 text-white/50 cursor-not-allowed",
         disabled: true,
         onClick: () => {},
       };
@@ -176,7 +176,7 @@ export default function StudioPage() {
       return {
         label: "Try Again →",
         className:
-          "bg-slate-100 border border-slate-200 text-foreground hover:bg-slate-200",
+          "bg-[#4A6741] text-white hover:bg-[#3d5636] cursor-pointer shadow-lg shadow-[#4A6741]/20",
         disabled: false,
         onClick: handleReset,
       };
@@ -184,7 +184,7 @@ export default function StudioPage() {
     if (isUploading) {
       return {
         label: "Uploading…",
-        className: "bg-white/5 text-white/30 cursor-not-allowed border border-white/10",
+        className: "bg-slate-100 text-slate-300 cursor-not-allowed border border-slate-200",
         disabled: true,
         onClick: () => {},
       };
@@ -254,7 +254,7 @@ export default function StudioPage() {
                       onClick={() => setCategory(cat.id)}
                       className={`px-6 py-3 rounded-full text-sm font-bold uppercase tracking-widest transition-all ${
                         category === cat.id
-                          ? "bg-[#bef264] text-black shadow-lg shadow-lime-500/30"
+                          ? "bg-[#4A6741] text-white shadow-lg shadow-[#4A6741]/30"
                           : "bg-slate-50 text-slate-400 border border-slate-200 hover:text-slate-600"
                       }`}
                     >
