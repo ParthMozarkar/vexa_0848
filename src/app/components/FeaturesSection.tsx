@@ -63,7 +63,7 @@ const features = [
   {
     id: 'integration',
     title: 'Easy Integration',
-    desc: 'Drop-in SDK for React, Vue, and native mobile. Full REST API for custom implementations.',
+    desc: 'Drop-in Software Development Kit for React, Vue, and native mobile. Full REST API for custom implementations.',
     tag: 'Dev Ready',
     accent: '#A78BFA',
     colSpan: 'lg:col-span-1',

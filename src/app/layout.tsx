@@ -26,7 +26,7 @@ export const metadata: Metadata = {
     template: '%s | VEXA'
   },
   description: 'Revolutionize your fashion brand with VEXA\'s Virtual Try-On API. Reduce returns by 40% and increase conversions with AI-powered 3D garment visualization.',
-  keywords: ['Virtual Try-On', 'VEXA', 'Fashion AI', 'E-commerce SDK', 'AI Fashion', 'Virtual Fitting Room', 'Digital Garments'],
+  keywords: ['Virtual Try-On', 'VEXA', 'Fashion AI', 'E-commerce Software Development Kit', 'AI Fashion', 'Virtual Fitting Room', 'Digital Garments'],
   authors: [{ name: 'Vexa Team' }],
   creator: 'Vexa Solutions',
   openGraph: {

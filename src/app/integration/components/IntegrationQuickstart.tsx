@@ -155,7 +155,7 @@ export default function IntegrationQuickstart() {
             <span className="text-gradient-primary">Ship in hours.</span>
           </h2>
           <p className="text-muted-foreground text-sm max-w-xl mx-auto">
-            Full SDK support for React, Vue, and Vanilla JS. Or go direct with our REST API.
+            Full Software Development Kit support for React, Vue, and Vanilla JS. Or go direct with our REST API.
           </p>
         </div>
 
@@ -192,7 +192,7 @@ export default function IntegrationQuickstart() {
           <div className="px-6 py-4 border-t border-border bg-white/[0.01] flex flex-wrap items-center justify-between gap-4">
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-green-400 animate-pulse-glow" />
-              <span className="text-xs font-mono text-muted-foreground">SDK v3.2.1 · MIT License</span>
+              <span className="text-xs font-mono text-muted-foreground">Software Development Kit v3.2.1 · MIT License</span>
             </div>
             <div className="flex gap-4">
               <a href="#" className="text-xs font-mono text-accent hover:text-accent/80 transition-colors">

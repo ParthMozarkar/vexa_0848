@@ -10,7 +10,7 @@ const testimonials = [
   {
     name: "Michael Chen",
     role: "Tech Lead, Trendify",
-    text: "The SDK is incredibly easy to integrate. We had it running in less than a day."
+    text: "The Software Development Kit is incredibly easy to integrate. We had it running in less than a day."
   }
 ];
 

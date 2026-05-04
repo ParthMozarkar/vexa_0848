@@ -9,7 +9,7 @@ const faqs = [
   },
   {
     question: "Which platforms do you support?",
-    answer: "VEXA integrates seamlessly with Shopify, WooCommerce, Magento, and custom web applications via our React and JS SDKs."
+    answer: "VEXA integrates seamlessly with Shopify, WooCommerce, Magento, and custom web applications via our React and JavaScript Software Development Kits."
   },
   {
     question: "Can I use my own models?",

@@ -3,7 +3,7 @@ import React from 'react';
 export default function IntegrationArchitecture() {
   const nodes = [
     { id: 'client', label: 'Your App', sub: 'React / Vue / Native', x: 10, y: 42, color: '#8B8BA8' },
-    { id: 'sdk', label: 'VEXA SDK', sub: 'Drop-in widget', x: 30, y: 20, color: '#5B4BF5' },
+    { id: 'sdk', label: 'VEXA Software Development Kit', sub: 'Drop-in widget', x: 30, y: 20, color: '#5B4BF5' },
     { id: 'api', label: 'VEXA API', sub: 'REST / GraphQL', x: 30, y: 64, color: '#5B4BF5' },
     { id: 'ai', label: 'AI Engine', sub: 'Body mapping', x: 55, y: 20, color: '#00D4FF' },
     { id: 'render', label: 'Render Farm', sub: 'GPU cluster', x: 55, y: 64, color: '#00D4FF' },

@@ -4,7 +4,7 @@ const rows = [
   { feature: 'Try-on renders / month', starter: '10,000', growth: '100,000', enterprise: 'Unlimited' },
   { feature: 'Storefront integrations', starter: '1', growth: '5', enterprise: 'Unlimited' },
   { feature: 'API access (REST)', starter: true, growth: true, enterprise: true },
-  { feature: 'SDK (React / Vue / Mobile)', starter: false, growth: true, enterprise: true },
+  { feature: 'Software Development Kit (React / Vue / Mobile)', starter: false, growth: true, enterprise: true },
   { feature: 'Body mapping points', starter: '40', growth: '68', enterprise: '68 + custom' },
   { feature: 'Analytics dashboard', starter: 'Basic', growth: 'Full + export', enterprise: 'Custom BI' },
   { feature: 'Uptime SLA', starter: '99.5%', growth: '99.9%', enterprise: '99.99%' },

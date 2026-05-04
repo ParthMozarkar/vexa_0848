@@ -56,10 +56,12 @@
     "@react-three/drei": "^10.7.7",
     "@react-three/fiber": "^9.5.0",
     "@react-three/xr": "^6.6.29",
+    "@splinetool/react-spline": "^4.1.0",
     "@supabase/supabase-js": "^2.101.1",
     "@tailwindcss/forms": "^0.5.10",
     "@tailwindcss/typography": "^0.5.16",
     "@vercel/analytics": "^2.0.1",
+    "clsx": "^2.1.1",
     "framer-motion": "^12.38.0",
     "googleapis": "^144.0.0",
     "lucide-react": "^1.7.0",
@@ -68,6 +70,7 @@
     "react-dom": "19.0.3",
     "recharts": "^2.15.2",
     "resend": "^4.1.2",
+    "tailwind-merge": "^3.5.0",
     "three": "^0.183.2"
   },
   "devDependencies": {

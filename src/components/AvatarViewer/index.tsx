@@ -12,6 +12,7 @@
  */
 
 import React, { Suspense, useRef, useState } from 'react';
+import dynamic from 'next/dynamic';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, useGLTF, Environment, ContactShadows, Center } from '@react-three/drei';
 import type { Group } from 'three';
@@ -144,7 +145,8 @@ interface AvatarViewerProps {
   showControls?: boolean;
 }
 
-export function AvatarViewer({ avatarUrl, glbUrl, className = '', showControls = true }: AvatarViewerProps) {
+// PERF FIX: Renamed component to Impl and export via next/dynamic with ssr: false
+const AvatarViewerImpl = ({ avatarUrl, glbUrl, className = '', showControls = true }: AvatarViewerProps) => {
   const [isAutoRotate, setIsAutoRotate] = useState(true);
   const [zoom, setZoom] = useState(1);
   const [envPreset, setEnvPreset] = useState<'city' | 'studio' | 'sunset'>('city');
@@ -257,3 +259,9 @@ export function AvatarViewer({ avatarUrl, glbUrl, className = '', showControls =
     </div>
   );
 }
+
+// PERF FIX: Dynamic export with ssr: false prevents heavy Three.js dependencies from bloating the SSR pass
+export const AvatarViewer = dynamic(() => Promise.resolve(AvatarViewerImpl), {
+  ssr: false,
+  loading: () => <CanvasLoader />
+});

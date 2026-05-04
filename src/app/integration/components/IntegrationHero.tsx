@@ -26,7 +26,7 @@ export default function IntegrationHero() {
               className="text-muted-foreground text-lg leading-relaxed mb-8 max-w-lg"
               style={{ animation: 'animationIn 0.8s ease-out 0.3s forwards', opacity: 1 }}
             >
-              VEXA ships as a drop-in SDK and a full REST API. Works with any frontend stack. No ML expertise required.
+              VEXA ships as a drop-in Software Development Kit and a full REST API. Works with any frontend stack. No ML expertise required.
             </p>
             <div
               className="flex flex-wrap gap-4"
@@ -66,7 +66,7 @@ export default function IntegrationHero() {
               </div>
             </div>
             <div className="p-6 font-mono text-sm leading-relaxed">
-              <div className="text-muted-foreground/50 mb-3">// Install the SDK</div>
+              <div className="text-muted-foreground/50 mb-3">// Install the Software Development Kit</div>
               <div className="text-accent mb-4">$ npm install @vexa/sdk</div>
 
               <div className="text-muted-foreground/50 mb-3">// Initialize VEXA</div>
