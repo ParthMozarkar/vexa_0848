@@ -52,9 +52,6 @@ export default function Navbar() {
         </div>
 
         <div className="hidden md:flex items-center gap-4">
-          <Link href="/auth/login" className="text-sm font-bold text-slate-400 hover:text-[#1a1a1a] uppercase tracking-widest transition-colors">
-            View Pricing
-          </Link>
           <motion.button
             onClick={() => document.getElementById('booking-section')?.scrollIntoView({ behavior: 'smooth' })}
             whileHover={{ scale: 1.05 }}
