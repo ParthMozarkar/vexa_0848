@@ -51,13 +51,6 @@ export default function Header() {
         </div>
 
         <div className="hidden md:flex items-center gap-2">
-          <Link
-            href="/pricing"
-            // Added padding to increase hit area
-            className="px-4 py-2 text-sm font-bold text-slate-400 hover:text-[#1a1a1a] uppercase tracking-widest transition-colors"
-          >
-            Pricing
-          </Link>
           <a
             href="/#booking-section"
             className="bg-[#4A6741] text-white px-8 py-3 rounded-full text-xs font-black uppercase tracking-widest shadow-xl shadow-[#4A6741]/20 flex items-center gap-2 hover:scale-105 transition-all"
