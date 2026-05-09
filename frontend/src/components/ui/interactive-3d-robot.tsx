@@ -1,20 +1,12 @@
 "use client";
 
-import dynamic from "next/dynamic";
-import { Suspense } from "react";
 import { Loader2 } from "lucide-react";
-import type { SplineProps } from "@splinetool/react-spline-bundle";
-
 import { cn } from "@/lib/utils";
-
-const Spline = dynamic<SplineProps>(() => import("@splinetool/react-spline-bundle").then((mod) => mod.default), {
-  ssr: false,
-});
 
 export interface InteractiveRobotSplineProps {
   scene: string;
   className?: string;
-  onLoad?: SplineProps["onLoad"];
+  onLoad?: (spline: any) => void;
 }
 
 function SplineFallback({ className }: { className?: string }) {
@@ -32,9 +24,6 @@ function SplineFallback({ className }: { className?: string }) {
 }
 
 export function InteractiveRobotSpline({ scene, className, onLoad }: InteractiveRobotSplineProps) {
-  return (
-    <Suspense fallback={<SplineFallback className={className} />}>
-      <Spline scene={scene} className={className} onLoad={onLoad} />
-    </Suspense>
-  );
+  // @splinetool/react-spline-bundle is not installed — render fallback
+  return <SplineFallback className={className} />;
 }
