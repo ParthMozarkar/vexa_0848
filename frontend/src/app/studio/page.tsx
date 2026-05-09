@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useRef, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Download, Loader2, RotateCcw, Shirt } from "lucide-react";
 import { ImageUploadBox } from "@/components/studio/ImageUploadBox";
@@ -27,6 +27,9 @@ interface TryOnApiResponse {
   cached?: boolean;
 }
 
+// Frontend timeout — if the server hasn't responded in 150s, abort.
+const FETCH_TIMEOUT_MS = 150_000;
+
 // ── Studio Page ───────────────────────────────────────────────────────────────
 
 export default function StudioPage() {
@@ -38,6 +41,10 @@ export default function StudioPage() {
   const [status, setStatus] = useState<TryOnStatus>("idle");
   const [resultUrl, setResultUrl] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [elapsedSec, setElapsedSec] = useState(0);
+
+  const abortRef = useRef<AbortController | null>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const [personUploading, setPersonUploading] = useState(false);
   const [garmentUploading, setGarmentUploading] = useState(false);
@@ -45,11 +52,37 @@ export default function StudioPage() {
 
   const canGenerate = !!personUrl && !!garmentUrl && !isUploading && status !== "loading";
 
-  const handleGenerate = async () => {
+  // Elapsed-time ticker while loading
+  useEffect(() => {
+    if (status === "loading") {
+      setElapsedSec(0);
+      timerRef.current = setInterval(() => setElapsedSec((s) => s + 1), 1000);
+    } else {
+      if (timerRef.current) clearInterval(timerRef.current);
+      timerRef.current = null;
+    }
+    return () => { if (timerRef.current) clearInterval(timerRef.current); };
+  }, [status]);
+
+  // Cleanup abort controller on unmount
+  useEffect(() => {
+    return () => { abortRef.current?.abort(); };
+  }, []);
+
+  const handleGenerate = useCallback(async () => {
     if (!personUrl || !garmentUrl) {
       setErrorMsg("Please upload both images first.");
       return;
     }
+
+    // Abort any in-flight request
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    // Set a hard timeout so the UI never hangs forever
+    const timeoutId = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+
     setStatus("loading");
     setErrorMsg(null);
     setResultUrl(null);
@@ -71,9 +104,23 @@ export default function StudioPage() {
           ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
         },
         body: JSON.stringify(body),
+        signal: controller.signal,
       });
 
-      const data = (await res.json()) as TryOnApiResponse;
+      clearTimeout(timeoutId);
+
+      // Safely parse JSON — Vercel may return HTML on function timeout
+      const rawText = await res.text();
+      let data: TryOnApiResponse;
+      try {
+        data = JSON.parse(rawText) as TryOnApiResponse;
+      } catch {
+        // Server returned non-JSON (e.g. Vercel HTML timeout page)
+        if (res.status === 504 || rawText.includes("<!DOCTYPE")) {
+          throw new Error("The AI engine timed out. Please try again — it usually works on retry.");
+        }
+        throw new Error(`Server error (${res.status}). Please try again.`);
+      }
       if (!res.ok) throw new Error(data.error ?? `Error ${res.status}`);
 
       const url = data.result_url ?? data.resultUrl;
@@ -82,10 +129,15 @@ export default function StudioPage() {
       setResultUrl(url);
       setStatus("ready");
     } catch (err: any) {
-      setErrorMsg(err.message || "Something went wrong.");
+      clearTimeout(timeoutId);
+      if (err.name === "AbortError") {
+        setErrorMsg("Request timed out. The AI engine took too long — please try again.");
+      } else {
+        setErrorMsg(err.message || "Something went wrong.");
+      }
       setStatus("error");
     }
-  };
+  }, [personUrl, garmentUrl, category, currentUser]);
 
   const handleReset = () => {
     setStatus("idle");
@@ -177,6 +229,7 @@ export default function StudioPage() {
                     <motion.div key="loading" className="flex flex-col items-center gap-6 text-center p-8">
                       <Loader2 className="w-12 h-12 text-[#4A6741] animate-spin" />
                       <p className="text-[#0f172a] text-lg font-black">AI is processing...</p>
+                      <p className="text-slate-400 text-sm font-medium">{elapsedSec}s elapsed</p>
                     </motion.div>
                   )}
                   {status === "ready" && resultUrl && (
