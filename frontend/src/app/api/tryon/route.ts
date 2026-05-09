@@ -186,72 +186,91 @@ async function callFashnTryon(personImageUrl: string, garmentImageUrl: string, c
 }
 
 async function callLightxTryon(personImageUrl: string, garmentImageUrl: string): Promise<string> {
-  const apiKey = getLightxKey();
-  if (!apiKey) throw new Error('No LightX API key configured');
+  const maxRetries = Math.max(1, LIGHTX_KEYS.length);
+  let lastError: Error | null = null;
 
-  console.log('[LightX] Initiating try-on request...');
-  const res = await fetch(LIGHTX_TRYON_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey },
-    body: JSON.stringify({ imageUrl: personImageUrl, styleImageUrl: garmentImageUrl }),
-    signal: AbortSignal.timeout(LIGHTX_FETCH_TIMEOUT_MS),
-  });
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    const apiKey = getLightxKey();
+    if (!apiKey) throw new Error('No LightX API key configured');
 
-  if (!res.ok) {
-    const errText = await res.text().catch(() => 'unknown');
-    throw new Error(`LightX init failed (${res.status}): ${errText}`);
-  }
-
-  const data = await res.json();
-  const orderId = data.body?.orderId || data.orderId || data.body?.taskId || data.taskId;
-  
-  if (!orderId) {
-    console.error('[LightX] No orderId/taskId in response:', JSON.stringify(data));
-    const msg = data.body?.message || data.message || 'LightX did not return an order ID';
-    throw new Error(msg);
-  }
-
-  console.log(`[LightX] Order ${orderId} — polling started`);
-  for (let poll = 1; poll <= LIGHTX_MAX_POLLS; poll++) {
-    await new Promise(r => setTimeout(r, LIGHTX_POLL_INTERVAL_MS));
     try {
-      const sRes = await fetch(LIGHTX_STATUS_URL, {
+      console.log(`[LightX] Attempt ${attempt + 1}/${maxRetries} with key index...`);
+      const res = await fetch(LIGHTX_TRYON_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey },
-        body: JSON.stringify({ orderId }),
+        body: JSON.stringify({ imageUrl: personImageUrl, styleImageUrl: garmentImageUrl }),
         signal: AbortSignal.timeout(LIGHTX_FETCH_TIMEOUT_MS),
       });
-      const sData = await sRes.json();
-      const s = sData.body?.status || sData.status || sData.body?.state || sData.state;
-      const output = sData.body?.output || sData.output || sData.body?.result?.imageUrl || sData.result?.imageUrl;
-      console.log(`[LightX] Poll ${poll}/${LIGHTX_MAX_POLLS} — status: ${s}`);
 
-      if (s === 'active' || s === 'completed' || s === 'success') {
-        if (!output) {
-          if (s === 'active' || s === 'completed' || s === 'success') {
-             // If it's success but no output yet, maybe it's still processing or we missed the field
-             console.warn(`[LightX] Status is ${s} but output URL is missing:`, JSON.stringify(sData));
-             continue; 
-          }
-          throw new Error('LightX returned success but no output URL');
+      if (!res.ok) {
+        const errText = await res.text().catch(() => 'unknown');
+        throw new Error(`LightX init failed (${res.status}): ${errText}`);
+      }
+
+      const data = await res.json();
+      const orderId = data.body?.orderId || data.orderId || data.body?.taskId || data.taskId;
+
+      if (!orderId) {
+        const msg = data.body?.message || data.message || 'LightX did not return an order ID';
+        // If credits consumed, try next key
+        if (msg.includes('CREDITS_CONSUMED') || msg.includes('limit reached')) {
+          console.warn(`[LightX] Key exhausted, trying next key...`);
+          lastError = new Error(msg);
+          continue;
         }
-        return output;
+        console.error('[LightX] No orderId/taskId in response:', JSON.stringify(data));
+        throw new Error(msg);
       }
-      if (s === 'failed' || s === 'error') {
-        const errMsg = sData.body?.message || sData.message || sData.body?.error || sData.error || 'unknown error';
-        throw new Error(`LightX job failed: ${errMsg}`);
+
+      console.log(`[LightX] Order ${orderId} — polling started`);
+      for (let poll = 1; poll <= LIGHTX_MAX_POLLS; poll++) {
+        await new Promise(r => setTimeout(r, LIGHTX_POLL_INTERVAL_MS));
+        try {
+          const sRes = await fetch(LIGHTX_STATUS_URL, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey },
+            body: JSON.stringify({ orderId }),
+            signal: AbortSignal.timeout(LIGHTX_FETCH_TIMEOUT_MS),
+          });
+          const sData = await sRes.json();
+          const s = sData.body?.status || sData.status || sData.body?.state || sData.state;
+          const output = sData.body?.output || sData.output || sData.body?.result?.imageUrl || sData.result?.imageUrl;
+          console.log(`[LightX] Poll ${poll}/${LIGHTX_MAX_POLLS} — status: ${s}`);
+
+          if (s === 'active' || s === 'completed' || s === 'success') {
+            if (!output) {
+              if (s === 'active' || s === 'completed' || s === 'success') {
+                 console.warn(`[LightX] Status is ${s} but output URL is missing:`, JSON.stringify(sData));
+                 continue; 
+              }
+              throw new Error('LightX returned success but no output URL');
+            }
+            return output;
+          }
+          if (s === 'failed' || s === 'error') {
+            const errMsg = sData.body?.message || sData.message || sData.body?.error || sData.error || 'unknown error';
+            throw new Error(`LightX job failed: ${errMsg}`);
+          }
+        } catch (pollErr: any) {
+          if (pollErr.name === 'TimeoutError' || pollErr.name === 'AbortError') {
+            console.warn(`[LightX] Poll ${poll} timed out, retrying...`);
+            continue;
+          }
+          throw pollErr;
+        }
       }
-      // 'init' or any other status → keep polling
-    } catch (pollErr: any) {
-      // If it's a timeout on a single poll, keep going; rethrow other errors
-      if (pollErr.name === 'TimeoutError' || pollErr.name === 'AbortError') {
-        console.warn(`[LightX] Poll ${poll} timed out, retrying...`);
+      throw new Error('LightX timeout');
+    } catch (err: any) {
+      lastError = err;
+      if (err.message.includes('CREDITS_CONSUMED') || err.message.includes('limit reached')) {
+        console.warn(`[LightX] Attempt ${attempt + 1} failed due to credits. Rotating key...`);
         continue;
       }
-      throw pollErr;
+      throw err;
     }
   }
-  throw new Error('LightX timeout');
+
+  throw lastError || new Error('LightX failed after rotating all keys');
 }
 
 // ─── handleTryOn ──────────────────────────────────────────────────────────────
