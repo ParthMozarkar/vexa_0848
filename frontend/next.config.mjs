@@ -5,7 +5,7 @@ const nextConfig = {
   // PERF FIX: Disabled source maps in production to prevent shipping MBs of maps
   productionBrowserSourceMaps: false,
   distDir: process.env.DIST_DIR || '.next',
-  transpilePackages: ['@splinetool/react-spline', '@splinetool/runtime'],
+  transpilePackages: [],
 
   typescript: {
     ignoreBuildErrors: true,

@@ -27,7 +27,7 @@
         "./src/*"
       ],
       "@splinetool/react-spline-bundle": [
-        "./node_modules/@splinetool/react-spline/dist/react-spline.js"
+        "../node_modules/@splinetool/react-spline/dist/react-spline.js"
       ]
     }
   },
