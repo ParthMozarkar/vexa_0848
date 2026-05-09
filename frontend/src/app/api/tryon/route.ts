@@ -200,7 +200,7 @@ async function persistResultImage(
       console.warn(`[Persist] Failed to download (${res.status}), using original URL`);
       return imageUrl;
     }
-    const buffer = Buffer.from(await res.arrayBuffer());
+    const arrayBuffer = await res.arrayBuffer();
     const contentType = res.headers.get('content-type') || 'image/png';
 
     // Validate that we actually got an image, not an HTML error page
@@ -213,15 +213,16 @@ async function persistResultImage(
     const filename = `tryon_results/${userId}_${productId}_${Date.now()}.${ext}`;
 
     // Prefer Supabase Storage — generates proper signed URLs that browsers can load
-    try {
-      await supabase.storage.from('avatars').upload(filename, buffer, { contentType, upsert: true });
+    const { error: uploadError } = await supabase.storage.from('avatars').upload(filename, arrayBuffer, { contentType, upsert: true });
+    
+    if (uploadError) {
+      console.warn('[Persist] Supabase upload failed:', uploadError);
+    } else {
       const { data: signed } = await supabase.storage.from('avatars').createSignedUrl(filename, 86400 * 365);
       if (signed?.signedUrl) {
         console.log('[Persist] Saved to Supabase Storage');
         return signed.signedUrl;
       }
-    } catch (supaErr) {
-      console.warn('[Persist] Supabase upload failed:', supaErr);
     }
 
     // Fallback: return original New Black URL (valid for 48h)
