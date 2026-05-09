@@ -202,24 +202,30 @@ async function persistResultImage(
     }
     const buffer = Buffer.from(await res.arrayBuffer());
     const contentType = res.headers.get('content-type') || 'image/png';
+
+    // Validate that we actually got an image, not an HTML error page
+    if (contentType.includes('text/html') || contentType.includes('application/json')) {
+      console.warn('[Persist] Downloaded content is not an image, using original URL');
+      return imageUrl;
+    }
+
     const ext = contentType.split('/')[1]?.split(';')[0] || 'png';
     const filename = `tryon_results/${userId}_${productId}_${Date.now()}.${ext}`;
 
-    // Try R2 first
-    const r2Url = await uploadToR2(buffer, filename, contentType);
-    if (r2Url) {
-      console.log('[Persist] Saved to R2:', r2Url);
-      return r2Url;
+    // Prefer Supabase Storage — generates proper signed URLs that browsers can load
+    try {
+      await supabase.storage.from('avatars').upload(filename, buffer, { contentType, upsert: true });
+      const { data: signed } = await supabase.storage.from('avatars').createSignedUrl(filename, 86400 * 365);
+      if (signed?.signedUrl) {
+        console.log('[Persist] Saved to Supabase Storage');
+        return signed.signedUrl;
+      }
+    } catch (supaErr) {
+      console.warn('[Persist] Supabase upload failed:', supaErr);
     }
 
-    // Fallback to Supabase Storage
-    await supabase.storage.from('avatars').upload(filename, buffer, { contentType, upsert: true });
-    const { data: signed } = await supabase.storage.from('avatars').createSignedUrl(filename, 86400 * 365);
-    if (signed?.signedUrl) {
-      console.log('[Persist] Saved to Supabase Storage');
-      return signed.signedUrl;
-    }
-
+    // Fallback: return original New Black URL (valid for 48h)
+    console.warn('[Persist] All storage failed, using original URL (expires in 48h)');
     return imageUrl;
   } catch (err) {
     console.warn('[Persist] Failed to persist image, using original URL:', err);
