@@ -35,23 +35,8 @@ function getProvider(): TryOnProvider {
 const NEWBLACK_BASE_URL = 'https://thenewblack.ai/api/1.1/wf';
 const NEWBLACK_FETCH_TIMEOUT_MS = 120_000; // Synchronous — can take a while
 
-// Map Vexa categories to The New Black endpoints and their parameter names
-interface NewBlackEndpointInfo {
-  url: string;
-  clothingParamName: string;
-}
-
-function getNewBlackEndpoint(category: string = 'tops'): NewBlackEndpointInfo {
-  switch (category) {
-    case 'bottoms':
-      return { url: `${NEWBLACK_BASE_URL}/vto-bottom`, clothingParamName: 'bottom_photo' };
-    case 'one-pieces':
-      return { url: `${NEWBLACK_BASE_URL}/vto-dress`, clothingParamName: 'dress_photo' };
-    case 'tops':
-    default:
-      return { url: `${NEWBLACK_BASE_URL}/vto-top`, clothingParamName: 'top_photo' };
-  }
-}
+// The New Black uses a single vto_stream endpoint for all clothing try-ons
+const NEWBLACK_VTO_URL = `${NEWBLACK_BASE_URL}/vto_stream`;
 
 // ─── Fashn API constants ────────────────────────────────────────────────────────
 const FASHN_TRYON_URL = 'https://api.fashn.ai/v1/run';
@@ -253,15 +238,23 @@ async function callNewBlackTryon(
   const apiKey = process.env.NEWBLACK_API_KEY;
   if (!apiKey) throw new Error('No New Black API key configured');
 
-  const endpointInfo = getNewBlackEndpoint(category);
-  const url = `${endpointInfo.url}?api_key=${apiKey}`;
+  const url = `${NEWBLACK_VTO_URL}?api_key=${apiKey}`;
 
-  console.log(`[NewBlack] Calling ${endpointInfo.url} (category: ${category}, param: ${endpointInfo.clothingParamName})...`);
+  // Build a prompt hint from the category
+  const promptText = category === 'bottoms'
+    ? 'Put this bottom/pants on the model'
+    : category === 'one-pieces'
+      ? 'Put this dress/outfit on the model'
+      : 'Put this top/shirt on the model';
 
-  // The New Black uses multipart/form-data with category-specific parameter names
+  console.log(`[NewBlack] Calling vto_stream (category: ${category})...`);
+
+  // The New Black uses multipart/form-data with clothing_photo, prompt, and ratio
   const formData = new FormData();
   formData.append('model_photo', personImageUrl);
-  formData.append(endpointInfo.clothingParamName, garmentImageUrl);
+  formData.append('clothing_photo', garmentImageUrl);
+  formData.append('prompt', promptText);
+  formData.append('ratio', 'auto');
 
   const res = await fetch(url, {
     method: 'POST',
