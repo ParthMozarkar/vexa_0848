@@ -127,14 +127,37 @@ async function authenticateRequest(req: NextRequest, bodyUserId: string): Promis
 }
 
 async function resolveToPublicUrl(url: string, label: string, userId: string, supabase: SupabaseClient<Database>): Promise<string> {
+  if (!url) return '';
   if (url.startsWith('http')) return url;
+  
+  // Handle Supabase relative paths (e.g., 'uploads/xyz.png')
+  if (!url.startsWith('data:') && !url.includes(',')) {
+    try {
+      // If it looks like a Supabase path, we'll try to sign it.
+      // Most files in this repo are in the 'avatars' bucket.
+      const bucket = 'avatars';
+      const path = url;
+      
+      const { data: signed } = await supabase.storage.from(bucket).createSignedUrl(path, 3600);
+      if (signed?.signedUrl) return signed.signedUrl;
+    } catch (e) {
+      console.warn(`[resolveToPublicUrl] Failed to sign path ${url}:`, e);
+    }
+    return url;
+  }
+
+  // Handle Data URLs
   const [meta, b64] = url.split(',');
+  if (!b64) return url;
+
   const mime = meta?.slice(5).split(';')[0] || 'image/png';
   const ext = mime.split('/')[1] || 'png';
   const buffer = Buffer.from(b64, 'base64');
   const filename = `uploads/${userId}_${label}_${Date.now()}.${ext}`;
+  
   const r2Url = await uploadToR2(buffer, filename, mime);
   if (r2Url) return r2Url;
+  
   await supabase.storage.from('avatars').upload(filename, buffer, { contentType: mime, upsert: true });
   const { data: signed } = await supabase.storage.from('avatars').createSignedUrl(filename, 3600);
   return signed?.signedUrl || url;
@@ -180,10 +203,12 @@ async function callLightxTryon(personImageUrl: string, garmentImageUrl: string):
   }
 
   const data = await res.json();
-  const orderId = data.body?.orderId || data.orderId;
+  const orderId = data.body?.orderId || data.orderId || data.body?.taskId || data.taskId;
+  
   if (!orderId) {
-    console.error('[LightX] No orderId in response:', JSON.stringify(data));
-    throw new Error('LightX did not return an order ID');
+    console.error('[LightX] No orderId/taskId in response:', JSON.stringify(data));
+    const msg = data.body?.message || data.message || 'LightX did not return an order ID';
+    throw new Error(msg);
   }
 
   console.log(`[LightX] Order ${orderId} — polling started`);
@@ -197,16 +222,23 @@ async function callLightxTryon(personImageUrl: string, garmentImageUrl: string):
         signal: AbortSignal.timeout(LIGHTX_FETCH_TIMEOUT_MS),
       });
       const sData = await sRes.json();
-      const s = sData.body?.status || sData.status;
-      const output = sData.body?.output || sData.output;
+      const s = sData.body?.status || sData.status || sData.body?.state || sData.state;
+      const output = sData.body?.output || sData.output || sData.body?.result?.imageUrl || sData.result?.imageUrl;
       console.log(`[LightX] Poll ${poll}/${LIGHTX_MAX_POLLS} — status: ${s}`);
 
-      if (s === 'active' || s === 'completed') {
-        if (!output) throw new Error('LightX returned success but no output URL');
+      if (s === 'active' || s === 'completed' || s === 'success') {
+        if (!output) {
+          if (s === 'active' || s === 'completed' || s === 'success') {
+             // If it's success but no output yet, maybe it's still processing or we missed the field
+             console.warn(`[LightX] Status is ${s} but output URL is missing:`, JSON.stringify(sData));
+             continue; 
+          }
+          throw new Error('LightX returned success but no output URL');
+        }
         return output;
       }
-      if (s === 'failed') {
-        const errMsg = sData.body?.message || sData.message || 'unknown error';
+      if (s === 'failed' || s === 'error') {
+        const errMsg = sData.body?.message || sData.message || sData.body?.error || sData.error || 'unknown error';
         throw new Error(`LightX job failed: ${errMsg}`);
       }
       // 'init' or any other status → keep polling
