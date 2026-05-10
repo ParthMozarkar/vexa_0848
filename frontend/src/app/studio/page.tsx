@@ -1,6 +1,7 @@
 "use client";
 
-import React, { useState, useRef, useEffect, useCallback } from "react";
+import React, { useState, useRef, useEffect, useCallback, Suspense } from "react";
+import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Download, Loader2, RotateCcw, Shirt } from "lucide-react";
 import { ImageUploadBox } from "@/components/studio/ImageUploadBox";
@@ -48,12 +49,13 @@ const FETCH_TIMEOUT_MS = 300_000;
 
 // ── Studio Page ───────────────────────────────────────────────────────────────
 
-export default function StudioPage() {
+function StudioPageInner() {
   const { currentUser } = useStore();
+  const searchParams = useSearchParams();
 
   const [activeTab, setActiveTab] = useState<StudioTab>("tryon");
   const [personUrl, setPersonUrl] = useState<string | null>(null);
-  
+
   // Multi-item state
   const [garments, setGarments] = useState<GarmentItem[]>([]);
   
@@ -90,6 +92,16 @@ export default function StudioPage() {
   useEffect(() => {
     return () => { abortRef.current?.abort(); };
   }, []);
+
+  // Pre-fill garment from /design page redirect
+  useEffect(() => {
+    const garmentUrl = searchParams.get('garmentUrl');
+    const cat = (searchParams.get('category') ?? 'tops') as TryOnCategory;
+    if (garmentUrl) {
+      setGarments([{ id: `design_${Date.now()}`, url: garmentUrl, category: cat }]);
+      setActiveTab('tryon');
+    }
+  }, [searchParams]);
 
   const handleAddGarment = () => {
     if (tempGarmentUrl) {
@@ -517,5 +529,13 @@ export default function StudioPage() {
         )}
       </AnimatePresence>
     </div>
+  );
+}
+
+export default function StudioPage() {
+  return (
+    <Suspense fallback={null}>
+      <StudioPageInner />
+    </Suspense>
   );
 }

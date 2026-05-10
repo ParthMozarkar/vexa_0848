@@ -15,9 +15,7 @@ interface VideoGenResponse {
   type: 'video' | 'frames';
 }
 
-const TNB_BASE_URL = 'https://thenewblack.ai/api/1.1/wf';
-const TNB_POLL_INTERVAL_MS = 4000;
-const TNB_MAX_POLLS = 30;
+const BLACKBOX_BASE_URL = 'https://api.blackbox.ai/api/v1/video-gen';
 const DEFAULT_PROMPT = 'Fashion model naturally showcasing the outfit with elegant movements';
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
@@ -29,71 +27,35 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: 'imageUrl is required' }, { status: 400 });
     }
 
-    const apiKey = process.env.TNB_API_KEY || process.env.NEWBLACK_API_KEY;
+    const apiKey = process.env.BLACKBOX_API_KEY;
     if (!apiKey) {
-      return NextResponse.json({ error: 'TNB_API_KEY not configured' }, { status: 500 });
+      return NextResponse.json({ error: 'BLACKBOX_API_KEY not configured' }, { status: 500 });
     }
 
     const finalPrompt = prompt?.trim() && prompt.trim().length >= 3 ? prompt.trim() : DEFAULT_PROMPT;
-    const finalDuration = duration === '10' ? '10' : '5';
 
-    // Start video generation
     const form = new FormData();
-    form.append('image', imageUrl);
+    form.append('image_url', imageUrl);
     form.append('prompt', finalPrompt);
-    form.append('time', finalDuration);
+    form.append('duration', duration);
 
-    const startRes = await fetch(`${TNB_BASE_URL}/ai-video?api_key=${apiKey}`, {
+    const res = await fetch(BLACKBOX_BASE_URL, {
       method: 'POST',
+      headers: { 'Authorization': `Bearer ${apiKey}` },
       body: form,
-      signal: AbortSignal.timeout(30_000),
+      signal: AbortSignal.timeout(60_000),
     });
 
-    if (!startRes.ok) {
-      const errText = await startRes.text().catch(() => 'unknown');
-      throw new Error(`TNB video-gen failed (${startRes.status}): ${errText}`);
+    if (!res.ok) {
+      const errText = await res.text().catch(() => 'unknown');
+      throw new Error(`BlackBox video-gen failed (${res.status}): ${errText}`);
     }
 
-    const startText = (await startRes.text()).trim();
-
-    // Parse job ID
-    let jobId: string;
-    try {
-      const json = JSON.parse(startText) as Record<string, unknown>;
-      jobId = (json.id as string) || (json.job_id as string) || startText;
-    } catch {
-      jobId = startText;
+    const json = await res.json();
+    if (json.output_url) {
+      return NextResponse.json({ videoUrl: json.output_url, type: 'video' } satisfies VideoGenResponse);
     }
-
-    if (!jobId) throw new Error('TNB video-gen returned empty job ID');
-
-    // If start returned a URL directly, return it
-    if (jobId.startsWith('http')) {
-      return NextResponse.json({ videoUrl: jobId, type: 'video' } satisfies VideoGenResponse);
-    }
-
-    // Poll for result
-    for (let i = 0; i < TNB_MAX_POLLS; i++) {
-      await new Promise(r => setTimeout(r, TNB_POLL_INTERVAL_MS));
-
-      const pollForm = new FormData();
-      pollForm.append('id', jobId);
-
-      const pollRes = await fetch(`${TNB_BASE_URL}/results_video?api_key=${apiKey}`, {
-        method: 'POST',
-        body: pollForm,
-        signal: AbortSignal.timeout(30_000),
-      });
-
-      if (!pollRes.ok) continue;
-
-      const pollText = (await pollRes.text()).trim();
-      if (pollText && pollText.startsWith('http')) {
-        return NextResponse.json({ videoUrl: pollText, type: 'video' } satisfies VideoGenResponse);
-      }
-    }
-
-    throw new Error('TNB video-gen timeout after 2 minutes');
+    throw new Error('BlackBox API returned success but no output_url');
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error('[/api/studio/video-gen]', msg);

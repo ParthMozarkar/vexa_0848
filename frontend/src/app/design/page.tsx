@@ -1,7 +1,8 @@
 'use client';
 
 import React, { useState, useRef, useCallback } from 'react';
-import { Loader2, Download, AlertCircle } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Loader2, Download, AlertCircle, Sparkles, X } from 'lucide-react';
 import { ImageUploadBox } from '@/components/studio/ImageUploadBox';
 import { supabase } from '@/lib/supabase';
 import { useStore } from '@/store/useStore';
@@ -12,19 +13,42 @@ import Header from '@/components/Header';
 type DesignStep = 'design' | 'tryon';
 type DesignStatus =
   | 'idle'
+  | 'fetching_trends'
   | 'generating_design'
   | 'uploading_photo'
   | 'generating_tryon'
   | 'ready'
   | 'error';
 
+interface TrendResult {
+  title: string;
+  content: string;
+  designPrompt: string;
+}
+
+interface DesignApiResponse {
+  designImageUrl?: string;
+  error?: string;
+}
+
+interface TrendsApiResponse {
+  trends?: TrendResult[];
+  error?: string;
+}
+
+interface TryOnApiResponse {
+  result_url?: string;
+  resultUrl?: string;
+  error?: string;
+}
+
 const STYLES = ['Minimalist', 'Traditional', 'Streetwear', 'Formal', 'Casual', 'Luxury'];
 
 const DESIGN_CATEGORIES = [
-  { id: 'tops',       label: 'Tops' },
-  { id: 'bottoms',    label: 'Bottoms' },
+  { id: 'tops', label: 'Tops' },
+  { id: 'bottoms', label: 'Bottoms' },
   { id: 'one-pieces', label: 'Dresses' },
-  { id: 'shoes',      label: 'Shoes' },
+  { id: 'shoes', label: 'Shoes' },
 ];
 
 const EXAMPLE_PROMPTS = [
@@ -35,21 +59,11 @@ const EXAMPLE_PROMPTS = [
   'Classic white shirt with mandarin collar, relaxed fit',
 ];
 
-interface DesignApiResponse {
-  designImageUrl?: string;
-  error?: string;
-}
-
-interface TryOnApiResponse {
-  result_url?: string;
-  resultUrl?: string;
-  error?: string;
-}
-
 // ── Page ──────────────────────────────────────────────────────────────────────
 
 export default function DesignPage() {
   const { currentUser } = useStore();
+  const router = useRouter();
 
   const [prompt, setPrompt] = useState('');
   const [style, setStyle] = useState<string | null>(null);
@@ -63,6 +77,11 @@ export default function DesignPage() {
   const [elapsedSec, setElapsedSec] = useState(0);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
+  // Trend state
+  const [trends, setTrends] = useState<TrendResult[]>([]);
+  const [selectedTrend, setSelectedTrend] = useState<TrendResult | null>(null);
+  const [showTrends, setShowTrends] = useState(false);
+
   const startTimer = () => {
     setElapsedSec(0);
     timerRef.current = setInterval(() => setElapsedSec(s => s + 1), 1000);
@@ -70,6 +89,34 @@ export default function DesignPage() {
   const stopTimer = () => {
     if (timerRef.current) { clearInterval(timerRef.current); timerRef.current = null; }
   };
+
+  const handleFetchTrends = useCallback(async () => {
+    if (prompt.trim().length < 3) return;
+    setStatus('fetching_trends');
+    setErrorMsg(null);
+    setTrends([]);
+    setSelectedTrend(null);
+    setShowTrends(false);
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const res = await fetch('/api/studio/trends', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
+        },
+        body: JSON.stringify({ query: prompt.trim(), style: style ?? undefined, category }),
+      });
+      const data = (await res.json()) as TrendsApiResponse;
+      const results = data.trends ?? [];
+      setTrends(results);
+      setShowTrends(results.length > 0);
+      setStatus('idle');
+    } catch {
+      setStatus('idle');
+    }
+  }, [prompt, style, category]);
 
   const handleGenerateDesign = useCallback(async () => {
     if (prompt.trim().length < 3) return;
@@ -88,7 +135,13 @@ export default function DesignPage() {
           'Content-Type': 'application/json',
           ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
         },
-        body: JSON.stringify({ prompt: prompt.trim(), style: style ?? undefined, category }),
+        body: JSON.stringify({
+          prompt: prompt.trim(),
+          style: style ?? undefined,
+          category,
+          trendContext: selectedTrend ? `${selectedTrend.title}: ${selectedTrend.content}` : undefined,
+          designPrompt: selectedTrend?.designPrompt ?? undefined,
+        }),
       });
       const data = (await res.json()) as DesignApiResponse;
       stopTimer();
@@ -101,7 +154,7 @@ export default function DesignPage() {
       setErrorMsg(err instanceof Error ? err.message : String(err));
       setStatus('error');
     }
-  }, [prompt, style, category]);
+  }, [prompt, style, category, selectedTrend]);
 
   const handleTryOn = useCallback(async () => {
     if (!designImageUrl || !personUrl) return;
@@ -189,10 +242,15 @@ export default function DesignPage() {
     setStep('design');
     setPrompt('');
     setStyle(null);
+    setTrends([]);
+    setSelectedTrend(null);
+    setShowTrends(false);
   };
 
   const isGeneratingDesign = status === 'generating_design';
   const isGeneratingTryon = status === 'generating_tryon' || status === 'uploading_photo';
+  const isFetchingTrends = status === 'fetching_trends';
+  const canGenerate = prompt.trim().length >= 3 && !isGeneratingDesign && !isFetchingTrends;
 
   return (
     <div className="w-full min-h-screen flex flex-col bg-[#0f172a]">
@@ -203,7 +261,7 @@ export default function DesignPage() {
           Design from <span className="text-[#bef264]">Text</span>
         </h1>
         <p className="text-white/40 mt-2 text-sm">
-          Describe any garment → AI generates it → Try it on yourself
+          Describe any garment → discover trends → AI generates it → Try it on yourself
         </p>
       </div>
 
@@ -211,15 +269,16 @@ export default function DesignPage() {
         <div className="flex flex-col lg:flex-row gap-6">
 
           {/* Left column — controls */}
-          <div className="w-full lg:w-[420px] flex-shrink-0 flex flex-col gap-4">
+          <div className="w-full lg:w-[440px] flex-shrink-0 flex flex-col gap-4">
+
             {/* Prompt */}
             <div className="relative">
               <textarea
-                rows={6}
+                rows={5}
                 maxLength={500}
                 value={prompt}
                 onChange={e => setPrompt(e.target.value)}
-                placeholder="Describe a garment in detail — fabric, color, fit, style..."
+                placeholder="Describe a garment — e.g. Anime T-shirt, silk kurta, oversized hoodie..."
                 className="w-full bg-white/5 border border-white/10 focus:border-[#bef264] rounded-2xl p-4 text-white placeholder:text-white/30 resize-none outline-none transition-colors text-sm"
               />
               <p className="absolute bottom-3 right-4 text-white/30 text-xs">{prompt.length} / 500</p>
@@ -278,19 +337,72 @@ export default function DesignPage() {
               </div>
             </div>
 
+            {/* Discover Trends button */}
+            <button
+              onClick={handleFetchTrends}
+              disabled={prompt.trim().length < 3 || isFetchingTrends || isGeneratingDesign}
+              className={`w-full py-3 rounded-2xl font-semibold text-sm flex items-center justify-center gap-2 transition-all border ${
+                prompt.trim().length >= 3 && !isFetchingTrends && !isGeneratingDesign
+                  ? 'border-[#bef264]/40 text-[#bef264] hover:bg-[#bef264]/10'
+                  : 'border-white/10 text-white/20 cursor-not-allowed'
+              }`}
+            >
+              {isFetchingTrends
+                ? <><Loader2 className="w-4 h-4 animate-spin" /> Fetching trends...</>
+                : <><Sparkles className="w-4 h-4" /> Discover Trends</>}
+            </button>
+
+            {/* Trend results */}
+            {showTrends && trends.length > 0 && (
+              <div className="flex flex-col gap-2">
+                <div className="flex items-center justify-between">
+                  <p className="text-white/40 text-[10px] uppercase tracking-wider font-bold">
+                    Trending Now — pick one to inspire your design
+                  </p>
+                  <button onClick={() => setShowTrends(false)} className="text-white/30 hover:text-white/60 transition-colors">
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+                <div className="flex flex-col gap-1.5 max-h-64 overflow-y-auto pr-1">
+                  {trends.map((trend, i) => (
+                    <button
+                      key={i}
+                      onClick={() => setSelectedTrend(selectedTrend?.title === trend.title ? null : trend)}
+                      className={`text-left px-3 py-2.5 rounded-xl text-xs transition-all border ${
+                        selectedTrend?.title === trend.title
+                          ? 'bg-[#bef264]/10 border-[#bef264]/40 text-white'
+                          : 'bg-white/5 border-white/10 text-white/60 hover:text-white hover:border-white/20'
+                      }`}
+                    >
+                      <p className="font-semibold leading-snug">{trend.title}</p>
+                      <p className="text-white/40 mt-0.5 line-clamp-2 leading-relaxed">{trend.content}</p>
+                    </button>
+                  ))}
+                </div>
+                {selectedTrend && (
+                  <p className="text-[#bef264] text-[10px] flex items-center gap-1">
+                    <Sparkles className="w-3 h-3" />
+                    Trend selected — AI will incorporate this into your design
+                  </p>
+                )}
+              </div>
+            )}
+
             {/* Generate button */}
             <button
               onClick={handleGenerateDesign}
-              disabled={prompt.trim().length < 3 || isGeneratingDesign}
+              disabled={!canGenerate}
               className={`w-full py-4 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 transition-all ${
-                prompt.trim().length >= 3 && !isGeneratingDesign
+                canGenerate
                   ? 'bg-[#bef264] text-black hover:bg-[#a3e635]'
                   : 'bg-white/10 text-white/30 cursor-not-allowed'
               }`}
             >
               {isGeneratingDesign
-                ? <><Loader2 className="w-4 h-4 animate-spin" /> Generating...</>
-                : 'Generate Design →'}
+                ? <><Loader2 className="w-4 h-4 animate-spin" /> Generating... {elapsedSec}s</>
+                : selectedTrend
+                  ? 'Generate with Trend →'
+                  : 'Generate Design →'}
             </button>
           </div>
 
@@ -299,17 +411,22 @@ export default function DesignPage() {
 
             {/* Design result / placeholder */}
             {!designImageUrl && step === 'design' && (
-              <div className={`flex-1 min-h-[400px] rounded-2xl border border-dashed border-white/10 flex flex-col items-center justify-center gap-3 text-center p-8 ${isGeneratingDesign ? '' : ''}`}>
+              <div className="flex-1 min-h-[400px] rounded-2xl border border-dashed border-white/10 flex flex-col items-center justify-center gap-3 text-center p-8">
                 {isGeneratingDesign ? (
                   <>
                     <div className="w-full max-w-xs h-[400px] rounded-xl bg-gradient-to-r from-white/5 via-white/10 to-white/5 animate-pulse" />
                     <p className="text-white/40 text-sm">Creating your design... {elapsedSec}s</p>
+                    {selectedTrend && (
+                      <p className="text-[#bef264]/60 text-xs flex items-center gap-1">
+                        <Sparkles className="w-3 h-3" /> Infusing trend: {selectedTrend.title.slice(0, 50)}
+                      </p>
+                    )}
                   </>
                 ) : (
                   <>
                     <p className="text-white/20 text-4xl">✦</p>
                     <p className="text-white/40 text-sm">Your design appears here</p>
-                    <p className="text-white/20 text-xs">Then try it on yourself in one click</p>
+                    <p className="text-white/20 text-xs">Discover trends, then generate</p>
                   </>
                 )}
               </div>
@@ -329,6 +446,10 @@ export default function DesignPage() {
               <div className="flex flex-col gap-4">
                 <div className="rounded-2xl overflow-hidden border border-white/10">
                   <img src={designImageUrl} alt="Generated design" className="w-full object-contain max-h-[480px]" />
+                  <p className="text-white/30 text-[10px] text-center py-1.5 bg-white/[0.02] tracking-wide">
+                    AI-generated · DALL-E 3 · flat-lay
+                    {selectedTrend ? ' · trend-enhanced' : ''}
+                  </p>
                 </div>
                 <div className="flex gap-3">
                   <button
@@ -338,7 +459,11 @@ export default function DesignPage() {
                     <Download className="w-4 h-4" /> Download Design
                   </button>
                   <button
-                    onClick={() => setStep('tryon')}
+                    onClick={() => {
+                      if (!designImageUrl) return;
+                      const params = new URLSearchParams({ garmentUrl: designImageUrl, category });
+                      router.push(`/studio?${params.toString()}`);
+                    }}
                     className="flex-1 py-3 rounded-xl bg-[#bef264] text-black text-sm font-bold hover:bg-[#a3e635] transition-colors"
                   >
                     Try This On Me →
