@@ -5,7 +5,7 @@ import Navbar from './Navbar';
 import Footer from './Footer';
 import { RippleGrid } from '@/components/ui/ripple-grid';
 
-const MARKETING_ROUTES = ['/', '/3d', '/virtual-try-on', '/pricing', '/integration', '/studio', '/admin'];
+const MARKETING_ROUTES = ['/', '/3d', '/virtual-try-on', '/pricing', '/integration', '/studio', '/admin', '/design', '/video-tryon'];
 
 export default function GlobalLayout({ children }: { children: React.ReactNode }) {
   // SSR / first paint can yield null — treat as home so marketing shell + theme vars apply

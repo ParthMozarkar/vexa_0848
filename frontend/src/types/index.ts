@@ -53,12 +53,16 @@ export interface AvatarRecord {
 
 // ─── Try-On ──────────────────────────────────────────────────────────────────
 
+export type TryOnCategory =
+  | 'tops' | 'bottoms' | 'one-pieces'
+  | 'shoes' | 'bags' | 'accessories' | 'jewelry';
+
 export interface TryOnRequest {
   userId: string;
   productId: string;
   userPhotoUrl: string;
   productImageUrl: string;
-  category?: 'tops' | 'bottoms' | 'one-pieces';
+  category?: TryOnCategory;
 }
 
 export interface TryOnResult {
@@ -193,36 +197,27 @@ export interface VideoJobStatusResponse {
   errorMessage: string | null;
 }
 
-// ─── Fashn.ai Virtual Try-On ───────────────────────────────────────────────────
+// ─── The New Black AI ─────────────────────────────────────────────────────────
 
-export interface FashnRunResponse {
-  id: string;
-}
-
-export interface FashnStatusResponse {
-  id: string;
-  status: string; // 'starting', 'processing', 'completed', 'failed'
-  output?: string[];
+export interface TNBJobResponse {
+  id?: string;
+  status?: string;
+  response?: string;
+  output?: string | string[];
   error?: string;
 }
 
-// ─── LightX Virtual Try-On ────────────────────────────────────────────────────
-
-export interface LightXTryOnResponse {
-  statusCode: number;
-  body: {
-    orderId: string;
-    status: string; // 'init', 'active', 'failed'
-    output?: string; // result image URL when completed
-  };
+export interface ModelGenResponse {
+  modelImageUrl: string;
 }
 
-export interface LightXStatusResponse {
-  statusCode: number;
-  body: {
-    orderId: string;
-    status: string; // 'active', 'failed', 'completed'
-    output?: string; // result image URL
-    error?: string;
-  };
+export interface DesignResponse {
+  designImageUrl: string;
+  prompt: string;
+}
+
+export interface VideoGenResponse {
+  videoUrl?: string;
+  frameUrls?: string[];
+  type: 'video' | 'frames';
 }

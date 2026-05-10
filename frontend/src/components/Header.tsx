@@ -8,6 +8,8 @@ const navLinks = [
   { label: 'Product', href: '/' },
   { label: '3D Try-On', href: '/3d' },
   { label: 'Virtual Try-On', href: '/studio' },
+  { label: '✦ Design', href: '/design' },
+  { label: 'Video', href: '/video-tryon' },
   { label: 'Pricing', href: '/pricing' },
   { label: 'Integration', href: '/integration' },
 ];
@@ -36,14 +38,12 @@ export default function Header() {
           <span className="text-xl font-black text-[#1a1a1a] tracking-tighter">VEXA</span>
         </Link>
 
-        {/* Desktop Nav */}
-        <div className="hidden md:flex items-center gap-8">
+        <div className="hidden md:flex items-center gap-5">
           {navLinks.map((link) => (
             <Link
               key={link.href}
               href={link.href}
-              // Added px-4 py-2 to drastically increase the clickable hit area
-              className="px-4 py-2 text-sm font-bold uppercase tracking-widest text-slate-400 hover:text-[#1a1a1a] transition-all"
+              className="px-2 py-2 text-sm font-bold uppercase tracking-widest text-slate-400 hover:text-[#1a1a1a] transition-all whitespace-nowrap"
             >
               {link.label}
             </Link>
