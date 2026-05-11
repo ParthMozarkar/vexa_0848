@@ -2,11 +2,12 @@
 
 import React, { useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2, Download, AlertCircle, Sparkles, X } from 'lucide-react';
+import { Loader2, Download, AlertCircle, Sparkles, X, ArrowRight, RotateCcw } from 'lucide-react';
 import { ImageUploadBox } from '@/components/studio/ImageUploadBox';
 import { supabase } from '@/lib/supabase';
 import { useStore } from '@/store/useStore';
 import Header from '@/components/Header';
+import { motion, AnimatePresence } from 'framer-motion';
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -66,7 +67,7 @@ export default function DesignPage() {
   const router = useRouter();
 
   const [prompt, setPrompt] = useState('');
-  const [style, setStyle] = useState<string | null>(null);
+  const [style, setStyle] = useState<string | null>('Minimalist');
   const [category, setCategory] = useState('tops');
   const [step, setStep] = useState<DesignStep>('design');
   const [status, setStatus] = useState<DesignStatus>('idle');
@@ -241,7 +242,7 @@ export default function DesignPage() {
     setErrorMsg(null);
     setStep('design');
     setPrompt('');
-    setStyle(null);
+    setStyle('Minimalist');
     setTrends([]);
     setSelectedTrend(null);
     setShowTrends(false);
@@ -253,35 +254,37 @@ export default function DesignPage() {
   const canGenerate = prompt.trim().length >= 3 && !isGeneratingDesign && !isFetchingTrends;
 
   return (
-    <div className="w-full min-h-screen flex flex-col bg-[#0f172a]">
+    <div className="w-full min-h-screen flex flex-col bg-[#f8f7f2] text-[#1a1a1a] selection:bg-[#4A6741]/10">
       <Header />
 
-      <div className="px-4 md:px-6 pt-24 pb-8 max-w-7xl mx-auto w-full">
-        <h1 className="text-4xl md:text-5xl font-black tracking-tighter text-white">
-          Design from <span className="text-[#bef264]">Text</span>
+      <div className="px-4 md:px-6 pt-32 pb-8 max-w-7xl mx-auto w-full">
+        <h1 className="text-5xl md:text-6xl font-black tracking-tight text-[#1a1a1a]">
+          Design from <span className="text-[#4A6741]">Text</span>
         </h1>
-        <p className="text-white/40 mt-2 text-sm">
+        <p className="text-slate-500 mt-2 text-lg font-medium">
           Describe any garment → discover trends → AI generates it → Try it on yourself
         </p>
       </div>
 
       <div className="flex-1 px-4 md:px-6 pb-20 max-w-7xl mx-auto w-full">
-        <div className="flex flex-col lg:flex-row gap-6">
+        <div className="flex flex-col lg:flex-row gap-12">
 
           {/* Left column — controls */}
-          <div className="w-full lg:w-[440px] flex-shrink-0 flex flex-col gap-4">
+          <div className="flex-1 flex flex-col gap-8">
 
             {/* Prompt */}
-            <div className="relative">
+            <div className="bg-white rounded-[2rem] p-2 border border-slate-200 shadow-xl shadow-slate-200/50">
               <textarea
-                rows={5}
-                maxLength={500}
+                rows={6}
                 value={prompt}
                 onChange={e => setPrompt(e.target.value)}
                 placeholder="Describe a garment — e.g. Anime T-shirt, silk kurta, oversized hoodie..."
-                className="w-full bg-white/5 border border-white/10 focus:border-[#bef264] rounded-2xl p-4 text-white placeholder:text-white/30 resize-none outline-none transition-colors text-sm"
+                className="w-full bg-transparent border-none rounded-3xl p-6 text-lg focus:outline-none transition-all resize-none outline-none"
               />
-              <p className="absolute bottom-3 right-4 text-white/30 text-xs">{prompt.length} / 500</p>
+              <div className="px-6 pb-4 flex justify-between items-center text-xs font-bold uppercase tracking-widest text-slate-400">
+                <span>{prompt.length}/500</span>
+                <span>AI Prompting Enabled</span>
+              </div>
             </div>
 
             {/* Example prompts */}
@@ -290,50 +293,52 @@ export default function DesignPage() {
                 <button
                   key={p}
                   onClick={() => setPrompt(p)}
-                  className="text-xs px-3 py-1.5 rounded-full bg-white/5 border border-white/10 text-white/50 hover:text-white hover:border-white/30 transition-all"
+                  className="px-4 py-2 rounded-full bg-white border border-slate-200 text-xs font-bold text-slate-500 hover:border-[#4A6741] hover:text-[#4A6741] transition-all whitespace-nowrap shadow-sm"
                 >
                   {p.slice(0, 32)}...
                 </button>
               ))}
             </div>
 
-            {/* Style */}
-            <div>
-              <p className="text-white/40 text-[10px] uppercase tracking-wider font-bold mb-2">Style</p>
-              <div className="flex flex-wrap gap-2">
-                {STYLES.map(s => (
-                  <button
-                    key={s}
-                    onClick={() => setStyle(style === s ? null : s)}
-                    className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-                      style === s
-                        ? 'bg-[#bef264] text-black'
-                        : 'bg-white/5 border border-white/10 text-white/50 hover:text-white'
-                    }`}
-                  >
-                    {s}
-                  </button>
-                ))}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {/* Style */}
+              <div className="flex flex-col gap-3">
+                <p className="text-xs font-black uppercase tracking-widest text-[#4A6741]">Style</p>
+                <div className="flex flex-wrap gap-2">
+                  {STYLES.map(s => (
+                    <button
+                      key={s}
+                      onClick={() => setStyle(style === s ? null : s)}
+                      className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all border ${
+                        style === s
+                          ? 'bg-[#4A6741] border-[#4A6741] text-white shadow-lg shadow-[#4A6741]/20'
+                          : 'bg-white border-slate-200 text-slate-400 hover:border-slate-300'
+                      }`}
+                    >
+                      {s}
+                    </button>
+                  ))}
+                </div>
               </div>
-            </div>
 
-            {/* Category */}
-            <div>
-              <p className="text-white/40 text-[10px] uppercase tracking-wider font-bold mb-2">Category</p>
-              <div className="flex flex-wrap gap-2">
-                {DESIGN_CATEGORIES.map(c => (
-                  <button
-                    key={c.id}
-                    onClick={() => setCategory(c.id)}
-                    className={`px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-                      category === c.id
-                        ? 'bg-[#bef264] text-black'
-                        : 'bg-white/5 border border-white/10 text-white/50 hover:text-white'
-                    }`}
-                  >
-                    {c.label}
-                  </button>
-                ))}
+              {/* Category */}
+              <div className="flex flex-col gap-3">
+                <p className="text-xs font-black uppercase tracking-widest text-[#4A6741]">Category</p>
+                <div className="flex flex-wrap gap-2">
+                  {DESIGN_CATEGORIES.map(c => (
+                    <button
+                      key={c.id}
+                      onClick={() => setCategory(c.id)}
+                      className={`px-5 py-2.5 rounded-xl text-xs font-bold transition-all border ${
+                        category === c.id
+                          ? 'bg-[#4A6741] border-[#4A6741] text-white shadow-lg shadow-[#4A6741]/20'
+                          : 'bg-white border-slate-200 text-slate-400 hover:border-slate-300'
+                      }`}
+                    >
+                      {c.label}
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
 
@@ -341,10 +346,10 @@ export default function DesignPage() {
             <button
               onClick={handleFetchTrends}
               disabled={prompt.trim().length < 3 || isFetchingTrends || isGeneratingDesign}
-              className={`w-full py-3 rounded-2xl font-semibold text-sm flex items-center justify-center gap-2 transition-all border ${
+              className={`w-full py-5 rounded-[2rem] font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 transition-all border ${
                 prompt.trim().length >= 3 && !isFetchingTrends && !isGeneratingDesign
-                  ? 'border-[#bef264]/40 text-[#bef264] hover:bg-[#bef264]/10'
-                  : 'border-white/10 text-white/20 cursor-not-allowed'
+                  ? 'bg-white border-[#4A6741]/20 text-[#4A6741] hover:bg-[#4A6741]/5 shadow-sm'
+                  : 'bg-slate-50 border-slate-100 text-slate-300 cursor-not-allowed'
               }`}
             >
               {isFetchingTrends
@@ -353,199 +358,165 @@ export default function DesignPage() {
             </button>
 
             {/* Trend results */}
-            {showTrends && trends.length > 0 && (
-              <div className="flex flex-col gap-2">
-                <div className="flex items-center justify-between">
-                  <p className="text-white/40 text-[10px] uppercase tracking-wider font-bold">
-                    Trending Now — pick one to inspire your design
-                  </p>
-                  <button onClick={() => setShowTrends(false)} className="text-white/30 hover:text-white/60 transition-colors">
-                    <X className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-                <div className="flex flex-col gap-1.5 max-h-64 overflow-y-auto pr-1">
-                  {trends.map((trend, i) => (
-                    <button
-                      key={i}
-                      onClick={() => setSelectedTrend(selectedTrend?.title === trend.title ? null : trend)}
-                      className={`text-left px-3 py-2.5 rounded-xl text-xs transition-all border ${
-                        selectedTrend?.title === trend.title
-                          ? 'bg-[#bef264]/10 border-[#bef264]/40 text-white'
-                          : 'bg-white/5 border-white/10 text-white/60 hover:text-white hover:border-white/20'
-                      }`}
-                    >
-                      <p className="font-semibold leading-snug">{trend.title}</p>
-                      <p className="text-white/40 mt-0.5 line-clamp-2 leading-relaxed">{trend.content}</p>
+            <AnimatePresence>
+              {showTrends && trends.length > 0 && (
+                <motion.div 
+                  initial={{ opacity: 0, height: 0 }}
+                  animate={{ opacity: 1, height: 'auto' }}
+                  exit={{ opacity: 0, height: 0 }}
+                  className="flex flex-col gap-4 bg-white/50 backdrop-blur-xl p-6 rounded-[2.5rem] border border-slate-100"
+                >
+                  <div className="flex items-center justify-between">
+                    <p className="text-[#4A6741] text-[10px] uppercase tracking-widest font-black">
+                      Trending Now — pick one to inspire your design
+                    </p>
+                    <button onClick={() => setShowTrends(false)} className="text-slate-400 hover:text-slate-600">
+                      <X className="w-4 h-4" />
                     </button>
-                  ))}
-                </div>
-                {selectedTrend && (
-                  <p className="text-[#bef264] text-[10px] flex items-center gap-1">
-                    <Sparkles className="w-3 h-3" />
-                    Trend selected — AI will incorporate this into your design
-                  </p>
-                )}
-              </div>
-            )}
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {trends.map((trend, i) => (
+                      <button
+                        key={i}
+                        onClick={() => setSelectedTrend(selectedTrend?.title === trend.title ? null : trend)}
+                        className={`text-left px-5 py-4 rounded-2xl transition-all border ${
+                          selectedTrend?.title === trend.title
+                            ? 'bg-[#4A6741]/10 border-[#4A6741] text-[#1a1a1a]'
+                            : 'bg-white border-slate-100 text-slate-500 hover:border-slate-200'
+                        }`}
+                      >
+                        <p className="text-sm font-black mb-1">{trend.title}</p>
+                        <p className="text-xs opacity-60 line-clamp-2 leading-relaxed">{trend.content}</p>
+                      </button>
+                    ))}
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
 
             {/* Generate button */}
             <button
               onClick={handleGenerateDesign}
               disabled={!canGenerate}
-              className={`w-full py-4 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 transition-all ${
+              className={`w-full py-6 rounded-[2.5rem] font-black uppercase tracking-widest text-sm flex items-center justify-center gap-3 transition-all ${
                 canGenerate
-                  ? 'bg-[#bef264] text-black hover:bg-[#a3e635]'
-                  : 'bg-white/10 text-white/30 cursor-not-allowed'
+                  ? 'bg-[#4A6741] text-white shadow-2xl shadow-[#4A6741]/30 hover:scale-[1.02] active:scale-95'
+                  : 'bg-slate-100 text-slate-300 cursor-not-allowed'
               }`}
             >
               {isGeneratingDesign
-                ? <><Loader2 className="w-4 h-4 animate-spin" /> Generating... {elapsedSec}s</>
+                ? <><Loader2 className="w-5 h-5 animate-spin" /> Generating... {elapsedSec}s</>
                 : selectedTrend
-                  ? 'Generate with Trend →'
-                  : 'Generate Design →'}
+                  ? <>Generate with Trend <ArrowRight className="w-5 h-5" /></>
+                  : <>Generate Design <ArrowRight className="w-5 h-5" /></>}
             </button>
           </div>
 
           {/* Right column — results */}
-          <div className="flex-1 flex flex-col gap-4">
+          <div className="lg:w-[45%] flex flex-col">
+            <div className="flex-1 bg-white border border-slate-100 rounded-[3rem] shadow-2xl shadow-slate-200/50 relative overflow-hidden flex flex-col items-center justify-center min-h-[500px]">
 
-            {/* Design result / placeholder */}
-            {!designImageUrl && step === 'design' && (
-              <div className="flex-1 min-h-[400px] rounded-2xl border border-dashed border-white/10 flex flex-col items-center justify-center gap-3 text-center p-8">
-                {isGeneratingDesign ? (
-                  <>
-                    <div className="w-full max-w-xs h-[400px] rounded-xl bg-gradient-to-r from-white/5 via-white/10 to-white/5 animate-pulse" />
-                    <p className="text-white/40 text-sm">Creating your design... {elapsedSec}s</p>
-                    {selectedTrend && (
-                      <p className="text-[#bef264]/60 text-xs flex items-center gap-1">
-                        <Sparkles className="w-3 h-3" /> Infusing trend: {selectedTrend.title.slice(0, 50)}
-                      </p>
+              <AnimatePresence mode="wait">
+                {/* Idle / Initial State */}
+                {!designImageUrl && step === 'design' && (
+                  <motion.div 
+                    key="idle"
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 1.1 }}
+                    className="flex flex-col items-center gap-6 text-center p-12"
+                  >
+                    {isGeneratingDesign ? (
+                      <div className="flex flex-col items-center gap-8">
+                        <div className="relative w-40 h-40">
+                          <div className="absolute inset-0 rounded-full border-4 border-slate-50" />
+                          <div className="absolute inset-0 rounded-full border-4 border-t-[#4A6741] animate-spin" />
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <Shirt className="w-12 h-12 text-[#4A6741]" />
+                          </div>
+                        </div>
+                        <div>
+                          <p className="text-[#1a1a1a] text-xl font-black mb-2">Vexa AI is creating...</p>
+                          <p className="text-slate-400 font-medium animate-pulse">{elapsedSec}s elapsed</p>
+                        </div>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="w-20 h-20 rounded-full bg-slate-50 flex items-center justify-center">
+                          <Sparkles className="w-8 h-8 text-[#4A6741]/40" />
+                        </div>
+                        <div>
+                          <h3 className="text-xl font-bold text-[#1a1a1a] mb-2">Your design appears here</h3>
+                          <p className="text-slate-400 text-sm font-medium">Then try it on yourself with one click</p>
+                        </div>
+                      </>
                     )}
-                  </>
-                ) : (
-                  <>
-                    <p className="text-white/20 text-4xl">✦</p>
-                    <p className="text-white/40 text-sm">Your design appears here</p>
-                    <p className="text-white/20 text-xs">Discover trends, then generate</p>
-                  </>
+                  </motion.div>
                 )}
-              </div>
-            )}
 
-            {status === 'error' && (
-              <div className="flex flex-col items-center gap-3 p-8 rounded-2xl border border-rose-500/20 bg-rose-500/5 text-center">
-                <AlertCircle className="w-8 h-8 text-rose-400" />
-                <p className="text-rose-400 text-sm">{errorMsg}</p>
-                <button onClick={reset} className="px-4 py-2 rounded-xl bg-white/10 text-white text-xs font-medium hover:bg-white/20 transition-colors">
-                  Try Again
-                </button>
-              </div>
-            )}
-
-            {designImageUrl && step === 'design' && (
-              <div className="flex flex-col gap-4">
-                <div className="rounded-2xl overflow-hidden border border-white/10">
-                  <img src={designImageUrl} alt="Generated design" className="w-full object-contain max-h-[480px]" />
-                  <p className="text-white/30 text-[10px] text-center py-1.5 bg-white/[0.02] tracking-wide">
-                    AI-generated · DALL-E 3 · flat-lay
-                    {selectedTrend ? ' · trend-enhanced' : ''}
-                  </p>
-                </div>
-                <div className="flex gap-3">
-                  <button
-                    onClick={() => handleDownload(designImageUrl, 'design')}
-                    className="flex-1 py-3 rounded-xl border border-white/20 text-white/70 text-sm font-medium flex items-center justify-center gap-2 hover:bg-white/5 transition-colors"
+                {/* Error State */}
+                {status === 'error' && (
+                  <motion.div 
+                    key="error"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="flex flex-col items-center gap-6 p-12 text-center"
                   >
-                    <Download className="w-4 h-4" /> Download Design
-                  </button>
-                  <button
-                    onClick={() => {
-                      if (!designImageUrl) return;
-                      const params = new URLSearchParams({ garmentUrl: designImageUrl, category });
-                      router.push(`/studio?${params.toString()}`);
-                    }}
-                    className="flex-1 py-3 rounded-xl bg-[#bef264] text-black text-sm font-bold hover:bg-[#a3e635] transition-colors"
+                    <div className="w-16 h-16 rounded-full bg-rose-50 flex items-center justify-center">
+                      <AlertCircle className="w-8 h-8 text-rose-500" />
+                    </div>
+                    <p className="text-rose-500 font-black">{errorMsg}</p>
+                    <button onClick={reset} className="px-8 py-4 rounded-2xl bg-slate-100 text-slate-600 font-bold hover:bg-slate-200 transition-all">
+                      Try Again
+                    </button>
+                  </motion.div>
+                )}
+
+                {/* Design Ready State */}
+                {designImageUrl && step === 'design' && (
+                  <motion.div 
+                    key="design-ready"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="absolute inset-0 flex flex-col"
                   >
-                    Try This On Me →
-                  </button>
-                </div>
-              </div>
-            )}
-
-            {/* Try-on step */}
-            {step === 'tryon' && designImageUrl && (
-              <div className="flex flex-col gap-4">
-                <div className="flex flex-col md:flex-row gap-4">
-                  {/* Locked design */}
-                  <div className="flex-1">
-                    <p className="text-white/40 text-[10px] uppercase tracking-wider font-bold mb-2">Your Design</p>
-                    <div className="rounded-2xl overflow-hidden border border-white/10 h-64">
-                      <img src={designImageUrl} alt="Design" className="w-full h-full object-contain" />
+                    <div className="flex-1 bg-slate-50/50 flex items-center justify-center p-8">
+                      <img src={designImageUrl} alt="Generated design" className="max-h-full object-contain drop-shadow-2xl" />
                     </div>
-                  </div>
-                  {/* Person upload */}
-                  <div className="flex-1">
-                    <p className="text-white/40 text-[10px] uppercase tracking-wider font-bold mb-2">Your Photo</p>
-                    <div className="rounded-2xl overflow-hidden border border-white/10 h-64">
-                      <ImageUploadBox
-                        label="Full-body photo"
-                        sublabel="Upload a full-body photo"
-                        value={personUrl}
-                        onChange={setPersonUrl}
-                        onClear={() => setPersonUrl(null)}
-                        height="h-64"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <button
-                  onClick={handleTryOn}
-                  disabled={!personUrl || isGeneratingTryon}
-                  className={`w-full py-4 rounded-2xl font-bold text-sm flex items-center justify-center gap-2 transition-all ${
-                    personUrl && !isGeneratingTryon
-                      ? 'bg-[#bef264] text-black hover:bg-[#a3e635]'
-                      : 'bg-white/10 text-white/30 cursor-not-allowed'
-                  }`}
-                >
-                  {isGeneratingTryon
-                    ? <><Loader2 className="w-4 h-4 animate-spin" /> Generating... {elapsedSec}s</>
-                    : 'Try On →'}
-                </button>
-
-                {tryOnResultUrl && status === 'ready' && (
-                  <div className="flex flex-col gap-4">
-                    <div className="flex flex-col md:flex-row gap-3">
-                      <div className="flex-1 rounded-2xl overflow-hidden border border-white/10">
-                        <p className="text-white/40 text-xs text-center py-1 bg-white/5">Before</p>
-                        <img src={personUrl ?? ''} alt="Before" className="w-full object-contain max-h-80" />
+                    <div className="p-8 bg-white/80 backdrop-blur-md border-t border-slate-100 flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <button
+                          onClick={() => {
+                            const params = new URLSearchParams({ garmentUrl: designImageUrl, category });
+                            router.push(`/studio?${params.toString()}`);
+                          }}
+                          className="px-8 py-4 rounded-[1.5rem] bg-[#4A6741] text-white font-black uppercase text-sm tracking-widest hover:scale-105 transition-all shadow-xl shadow-[#4A6741]/20"
+                        >
+                          Try on Yourself
+                        </button>
+                        <button onClick={() => handleDownload(designImageUrl, 'design')} className="p-4 rounded-2xl bg-slate-50 text-slate-600 hover:bg-slate-100 transition-all">
+                          <Download className="w-5 h-5" />
+                        </button>
                       </div>
-                      <div className="flex-1 rounded-2xl overflow-hidden border border-[#bef264]/30">
-                        <p className="text-[#bef264] text-xs text-center py-1 bg-[#bef264]/5">After VEXA</p>
-                        <img src={tryOnResultUrl} alt="After" className="w-full object-contain max-h-80" />
-                      </div>
-                    </div>
-                    <div className="flex gap-3">
-                      <button
-                        onClick={() => handleDownload(tryOnResultUrl, 'tryon-result')}
-                        className="flex-1 py-3 rounded-xl border border-white/20 text-white/70 text-sm font-medium flex items-center justify-center gap-2 hover:bg-white/5 transition-colors"
-                      >
-                        <Download className="w-4 h-4" /> Save Result
-                      </button>
-                      <button
-                        onClick={reset}
-                        className="flex-1 py-3 rounded-xl bg-white/10 text-white text-sm font-medium hover:bg-white/20 transition-colors"
-                      >
-                        Design Another
+                      <button onClick={reset} className="text-slate-400 text-xs font-black uppercase tracking-widest hover:text-[#1a1a1a] transition-all flex items-center gap-2">
+                        <RotateCcw className="w-4 h-4" /> Start Over
                       </button>
                     </div>
-                  </div>
+                  </motion.div>
                 )}
-              </div>
-            )}
+              </AnimatePresence>
+
+            </div>
           </div>
         </div>
       </div>
     </div>
   );
 }
+
+const Shirt = ({ className }: { className?: string }) => (
+  <svg className={className} fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5V12m0 0l3.75-3.75M12 12L8.25 8.25" />
+    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5a3.375 3.375 0 100 6.75 3.375 3.375 0 000-6.75z" />
+  </svg>
+);
