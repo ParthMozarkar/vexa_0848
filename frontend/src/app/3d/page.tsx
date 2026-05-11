@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import Header from "@/components/Header";
 import Footer from "@/components/Footer";
 import { Box, Sparkles, Rocket, Clock } from "lucide-react";
+import ComingSoonOverlay from "@/components/ui/ComingSoonOverlay";
 import dynamic from "next/dynamic";
 // PERF FIX: Dynamically import heavy 3D components with ssr: false
 const InteractiveRobotSpline = dynamic(() => import("@/components/ui/interactive-3d-robot").then(mod => mod.InteractiveRobotSpline), {
@@ -40,6 +41,10 @@ export default function ThreeDComingSoon() {
   return (
     <main className="relative min-h-screen flex flex-col">
       <Header />
+      <ComingSoonOverlay 
+        title="3D Studio" 
+        description="Experience hyper-realistic 3D garment physics and 360° visualization. Launching soon." 
+      />
 
       <section className="relative w-full overflow-hidden">
         <div className="pointer-events-none absolute inset-0 z-0">
