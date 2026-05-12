@@ -1,5 +1,6 @@
 import React from 'react';
 import { Sparkles, ArrowRight, ChevronDown } from 'lucide-react';
+import { GooeyText } from '@/components/ui/gooey-text-morphing';
 
 export default function HeroSection() {
   return (
@@ -29,8 +30,19 @@ export default function HeroSection() {
         }}
       >
         <span className="block text-gradient-primary pb-2">See It On You.</span>
-        <span className="mt-4 block w-full max-w-[min(100%,48rem)] mx-auto text-slate-500 opacity-90" style={{ fontSize: 'clamp(2.5rem, 10vw, 6.5rem)' }}>
-          Before You Buy.
+        <span className="mt-2 block w-full max-w-[min(100%,48rem)] mx-auto">
+          <GooeyText
+            texts={[
+              'Before You Buy.',
+              'Try It On Virtually.',
+              'Fewer Returns.',
+              'One Software Development Kit.',
+            ]}
+            morphTime={1}
+            cooldownTime={1.5}
+            className="font-[900] tracking-tighter"
+            textClassName="text-slate-500 opacity-90 text-[clamp(2.5rem,10vw,6.5rem)] font-[900] tracking-tighter leading-none"
+          />
         </span>
       </h1>
 
@@ -78,6 +90,28 @@ export default function HeroSection() {
         </div>
       </div>
 
+      {/* Card 2: Live Avatars */}
+      <div
+        className="hidden sm:block glass-card rounded-[2rem] p-6 absolute top-[22%] right-[4%] md:right-[8%] w-56 md:w-64 animate-float-2 border-slate-200/60 bg-white/60 shadow-2xl shadow-slate-200/10"
+        style={{ zIndex: 20 }}
+      >
+        <div className="flex items-center gap-2 mb-4">
+          <div className="w-6 h-6 rounded-md bg-[#4A6741]/10 flex items-center justify-center">
+            <svg className="w-3 h-3 text-[#4A6741]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
+            </svg>
+          </div>
+          <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">Live Avatars</span>
+        </div>
+        <div className="text-4xl font-black text-[#1a1a1a] mb-1 tracking-tighter">2.4M+</div>
+        <div className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">generated this month</div>
+        <div className="flex gap-1 mt-4 items-end">
+          {[40, 65, 55, 80, 70, 90, 75]?.map((h, i) => (
+            <div key={i} className="flex-1 rounded-sm" style={{ height: `${h * 0.3}px`, background: i === 6 ? '#4A6741' : 'rgba(74,103,65,0.3)' }} />
+          ))}
+        </div>
+      </div>
+
       {/* Card 3: Return Rate */}
       <div
         className="hidden sm:block glass-card rounded-[2rem] p-6 absolute bottom-[15%] left-[6%] md:left-[10%] w-64 md:w-72 animate-float-3 border-slate-200/60 bg-white/60 shadow-2xl shadow-slate-200/10"
@@ -106,6 +140,36 @@ export default function HeroSection() {
               <div className="h-full rounded-full bg-[#4A6741]" style={{ width: '35%' }} />
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Card 4: API Latency */}
+      <div
+        className="hidden sm:block glass-card rounded-[2rem] p-6 absolute bottom-[15%] right-[6%] md:right-[10%] w-64 md:w-72 animate-float-4 border-slate-200/60 bg-white/60 shadow-2xl shadow-slate-200/10"
+        style={{ zIndex: 20 }}
+      >
+        <div className="flex items-center gap-2 mb-4">
+          <svg className="w-4 h-4 text-[#4A6741]" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
+          </svg>
+          <span className="text-[10px] font-black uppercase tracking-widest text-slate-400">API Latency</span>
+        </div>
+        <div className="text-4xl font-black text-[#1a1a1a] mb-1 tracking-tighter">
+          <span className="text-[#4A6741]">&lt;200</span>
+          <span className="text-lg text-slate-500 font-normal">ms</span>
+        </div>
+        <div className="text-[10px] text-slate-500 font-bold uppercase tracking-wider">p99 render time</div>
+        <div className="mt-4 flex items-end gap-1">
+          {[60, 45, 80, 55, 70, 40, 65, 50, 75, 45]?.map((h, i) => (
+            <div
+              key={i}
+              className="flex-1 rounded-sm"
+              style={{
+                height: `${h * 0.25}px`,
+                background: i === 9 ? '#4A6741' : 'rgba(74,103,65,0.3)',
+              }}
+            />
+          ))}
         </div>
       </div>
 
