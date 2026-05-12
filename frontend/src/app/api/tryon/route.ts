@@ -146,28 +146,23 @@ function parseTNBResponse(responseText: string): string {
  * HEDGING: Fire multiple requests and take the first one that returns a VALID result.
  * This effectively cuts down P99 latency by 40-50% on Bubble/TNB.
  */
-async function raceTNBRequests(factory: () => Promise<string>, count: number = 2): Promise<string> {
-  const attempts = Array.from({ length: count }, () => factory());
-  return Promise.any(attempts);
-}
-
 async function callTNB(personImageUrl: string, garmentImageUrl: string, category: TryOnCategory): Promise<string> {
   const apiKey = process.env.TNB_API_KEY || process.env.NEWBLACK_API_KEY;
   if (!apiKey) throw new Error('TNB_API_KEY not configured');
 
   const endpoint = category === 'shoes' ? 'vto-shoes' : 'vto_stream';
-  const formData = new FormData();
-  formData.append('model_photo', personImageUrl);
-  
-  if (category === 'shoes') {
-    formData.append('shoes_photo', garmentImageUrl);
-  } else {
-    formData.append('clothing_photo', garmentImageUrl);
-    formData.append('prompt', `Put this ${category} on the model`);
-    formData.append('ratio', 'auto');
-  }
 
   const runRequest = async () => {
+    const formData = new FormData();
+    formData.append('model_photo', personImageUrl);
+    if (category === 'shoes') {
+      formData.append('shoes_photo', garmentImageUrl);
+    } else {
+      formData.append('clothing_photo', garmentImageUrl);
+      formData.append('prompt', `Put this ${category} on the model`);
+      formData.append('ratio', 'auto');
+    }
+
     const res = await fetch(`https://thenewblack.ai/api/1.1/wf/${endpoint}?api_key=${apiKey}`, {
       method: 'POST',
       body: formData,
@@ -177,8 +172,31 @@ async function callTNB(personImageUrl: string, garmentImageUrl: string, category
     return parseTNBResponse(await res.text());
   };
 
-  // Use hedging (2 parallel requests) to ensure speed and reliability
-  return raceTNBRequests(runRequest, 2);
+  // TAIL HEDGING: Start 1st request, wait 3s, then start backup if 1st isn't done.
+  // This is safer for rate limits and often faster than just waiting for one.
+  return new Promise<string>((resolve, reject) => {
+    let resolved = false;
+    const errors: Error[] = [];
+
+    const attempt = async (id: number) => {
+      try {
+        const result = await runRequest();
+        if (!resolved) {
+          resolved = true;
+          resolve(result);
+        }
+      } catch (e: any) {
+        errors.push(e);
+        if (errors.length >= 2) reject(new Error(`AI service busy: ${errors[0].message}`));
+      }
+    };
+
+    attempt(1);
+    setTimeout(() => { if (!resolved) attempt(2); }, 3000);
+    
+    // Safety timeout
+    setTimeout(() => { if (!resolved) reject(new Error('Generation timed out')); }, FETCH_TIMEOUT_MS);
+  });
 }
 
 export async function handleTryOn(input: any, supabase: SupabaseClient<Database>) {
