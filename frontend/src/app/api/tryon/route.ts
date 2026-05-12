@@ -181,6 +181,35 @@ async function callTNB(personImageUrl: string, garmentImageUrl: string, category
   return raceTNBRequests(runRequest, 2);
 }
 
+export async function handleTryOn(input: any, supabase: SupabaseClient<Database>) {
+  const { userId, userPhotoUrl, productImageUrl, productId, category, garments } = input;
+
+  // 1. Parallel Asset Resolution (Saves 2-4s)
+  const itemsToProcess = garments || (productImageUrl ? [{ url: productImageUrl, category: category ?? 'tops' }] : []);
+  
+  // 2. Initial Resolution
+  const [personUrlFinal, garmentUrlFinal] = await Promise.all([
+    resolveToPublicUrl(userPhotoUrl, 'person', userId, supabase),
+    resolveToPublicUrl(itemsToProcess[0].url, 'garment', userId, supabase)
+  ]);
+
+  // 3. Call AI with Hedging
+  const resUrl = await callTNB(personUrlFinal, garmentUrlFinal, itemsToProcess[0].category as TryOnCategory);
+
+  // 4. Fire-and-forget Background Persistence
+  Promise.resolve().then(async () => {
+    try {
+      const persistedUrl = await persistResultImage(resUrl, userId, productId, supabase);
+      await (supabase.from('tryon_results') as any).upsert({
+        user_id: userId, product_id: productId, result_url: persistedUrl,
+        fit_label: 'True to size', recommended_size: 'M', status: 'ready',
+      });
+    } catch (e) { console.warn('Background persist failed', e); }
+  });
+
+  return { resultUrl: resUrl, status: 'ready', fitLabel: 'True to size', recommendedSize: 'M', fitScore: 85 };
+}
+
 export async function POST(req: NextRequest): Promise<NextResponse> {
   const startTime = Date.now();
   const supabase = getServiceSupabase();
@@ -190,30 +219,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     const auth = await authenticateRequest(req, userId);
     if (auth instanceof NextResponse) return auth;
 
-    // 1. Parallel Asset Resolution (Saves 2-4s)
-    const itemsToProcess = garments || (productImageUrl ? [{ url: productImageUrl, category: category ?? 'tops' }] : []);
-    
-    // 2. Initial Resolution
-    const [personUrlFinal, garmentUrlFinal] = await Promise.all([
-      resolveToPublicUrl(userPhotoUrl, 'person', auth.userId, supabase),
-      resolveToPublicUrl(itemsToProcess[0].url, 'garment', auth.userId, supabase)
-    ]);
+    const result = await handleTryOn({ userId: auth.userId, productId, userPhotoUrl, productImageUrl, category, garments }, supabase);
 
-    // 3. Call AI with Hedging
-    const resUrl = await callTNB(personUrlFinal, garmentUrlFinal, itemsToProcess[0].category as TryOnCategory);
-
-    // 4. Fire-and-forget Background Persistence
-    Promise.resolve().then(async () => {
-      try {
-        const persistedUrl = await persistResultImage(resUrl, auth.userId, productId, supabase);
-        await (supabase.from('tryon_results') as any).upsert({
-          user_id: auth.userId, product_id: productId, result_url: persistedUrl,
-          fit_label: 'True to size', recommended_size: 'M', status: 'ready',
-        });
-      } catch (e) { console.warn('Background persist failed', e); }
-    });
-
-    return NextResponse.json({ resultUrl: resUrl, status: 'ready', fitLabel: 'True to size', recommendedSize: 'M', fitScore: 85 });
+    return NextResponse.json(result);
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
     console.error('[/api/tryon] ERROR:', message);
