@@ -63,8 +63,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       finalDesignPrompt = chatData.choices?.[0]?.message?.content?.trim() ?? prompt.trim();
     }
 
-    // 2. Define the image generation prompt
-    const generationPrompt = `Top-down overhead flat lay photograph of a ${finalDesignPrompt}, clean white background, bird's-eye view, crisp studio lighting, no people.`;
+    // 2. Define the image generation prompt (Slicing to ensure we never hit the 1000 char OpenAI limit)
+    const sanitizedPrompt = finalDesignPrompt.slice(0, 850);
+    const generationPrompt = `Top-down overhead flat lay photograph of a ${sanitizedPrompt}, clean white background, bird's-eye view, crisp studio lighting, no people.`;
 
     // 3. Generate Image (DALL-E 3)
     const dalleResponse = await fetch('https://api.openai.com/v1/images/generations', {
