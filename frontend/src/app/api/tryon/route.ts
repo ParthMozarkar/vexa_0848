@@ -161,12 +161,18 @@ async function callBlackBoxTryOn(personImageUrl: string, garmentImageUrl: string
   }
 
   const responseText = (await res.text()).trim();
+  
+  // TNB sometimes returns a JSON string containing the URL
+  if (responseText.startsWith('{')) {
+    try {
+      const json = JSON.parse(responseText);
+      const url = json.response || json.url || json.output_url || json.image;
+      if (url && typeof url === 'string' && url.startsWith('http')) return url;
+    } catch { /* fall through */ }
+  }
+
   if (responseText.startsWith('http')) return responseText;
-  try {
-    const json = JSON.parse(responseText) as Record<string, unknown>;
-    const url = (json.response as string) || (json.url as string) || (json.output_url as string);
-    if (url?.startsWith('http')) return url;
-  } catch { /* fall through */ }
+  
   throw new Error(`TNB Try-On returned unexpected format: ${responseText.slice(0, 100)}`);
 }
 
@@ -186,14 +192,23 @@ export async function handleTryOn(input: any, supabase: SupabaseClient<Database>
     }
   } catch { }
 
-  const pUrl = await resolveToPublicUrl(userPhotoUrl, 'person', userId, supabase);
-  let resUrl = pUrl;
   const itemsToProcess = garments || (productImageUrl ? [{ url: productImageUrl, category: category ?? 'tops' }] : []);
+  let resUrl = '';
 
-  for (const item of itemsToProcess) {
-    const gUrl = await resolveToPublicUrl(item.url, 'garment', userId, supabase);
-    const cat = item.category as TryOnCategory;
-    resUrl = await callBlackBoxTryOn(resUrl, gUrl, cat);
+  // PERF: Resolve all initial assets in parallel to shave off 2-4 seconds
+  if (itemsToProcess.length === 1) {
+    const [personUrlFinal, garmentUrlFinal] = await Promise.all([
+      resolveToPublicUrl(userPhotoUrl, 'person', userId, supabase),
+      resolveToPublicUrl(itemsToProcess[0].url, 'garment', userId, supabase)
+    ]);
+    resUrl = await callBlackBoxTryOn(personUrlFinal, garmentUrlFinal, itemsToProcess[0].category as TryOnCategory);
+  } else {
+    // For sequential multi-item, we still resolve person first
+    resUrl = await resolveToPublicUrl(userPhotoUrl, 'person', userId, supabase);
+    for (const item of itemsToProcess) {
+      const gUrl = await resolveToPublicUrl(item.url, 'garment', userId, supabase);
+      resUrl = await callBlackBoxTryOn(resUrl, gUrl, item.category as TryOnCategory);
+    }
   }
 
   const rec = { fitLabel: 'True to size', recommendedSize: 'M' };
@@ -248,7 +263,11 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     }
 
     await logUsage(supabase, { userId: auth.userId, status: 'success', latencyMs: Date.now() - startTime, ipAddress: ip, deviceInfo, userEmail: email });
-    return NextResponse.json({ ...result, status: 'ready' });
+    const finalResultUrl = result.resultUrl.startsWith('http') && !result.resultUrl.includes('supabase.co')
+      ? `/api/proxy?url=${encodeURIComponent(result.resultUrl)}`
+      : result.resultUrl;
+
+    return NextResponse.json({ ...result, resultUrl: finalResultUrl, status: 'ready' });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
     await logUsage(supabase, { userId: 'anonymous', status: 'error', errorMessage: message, latencyMs: Date.now() - startTime, ipAddress: ip, deviceInfo });
