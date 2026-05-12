@@ -318,26 +318,6 @@ function StudioPageInner() {
                   height="h-64 lg:h-[400px]"
                 />
                 <SizeCompass personUrl={personUrl} />
-
-                {/* Vibe Generation (Background) */}
-                <div className="mt-6 border-t border-slate-100 pt-6">
-                  <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-3">Background Vibe</p>
-                  <div className="grid grid-cols-2 gap-2">
-                    {['Studio White', 'Streetwear City', 'Sunset Beach', 'Luxury Runway'].map(vibe => (
-                      <button
-                        key={vibe}
-                        onClick={() => setSelectedVibe(vibe)}
-                        className={`text-xs font-bold py-2 px-3 rounded-xl border transition-all ${
-                          selectedVibe === vibe 
-                          ? "bg-[#4A6741] border-[#4A6741] text-white" 
-                          : "bg-slate-50 border-slate-200 text-slate-500 hover:border-[#4A6741]/50"
-                        }`}
-                      >
-                        {vibe}
-                      </button>
-                    ))}
-                  </div>
-                </div>
               </div>
             </div>
 
@@ -388,31 +368,6 @@ function StudioPageInner() {
                     {status === "ready" && resultUrl && (
                       <motion.div key="result" className="absolute inset-0">
                         <img src={resultUrl} alt="Result" className="w-full h-full object-contain" />
-                        
-                        {/* Action Buttons Overlay */}
-                        <div className="absolute bottom-6 left-0 right-0 flex flex-wrap justify-center gap-3 px-4 z-10">
-                          <button 
-                            onClick={() => setIsSavedToCloset(true)} 
-                            className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl font-bold text-xs shadow-xl transition-all ${
-                              isSavedToCloset ? "bg-[#3d5636] text-white" : "bg-[#4A6741] text-white hover:bg-[#3d5636] hover:scale-105"
-                            }`}
-                          >
-                            {isSavedToCloset ? "✓ Saved to Closet" : "Save to Virtual Closet"}
-                          </button>
-                          
-                          <button 
-                            onClick={() => setIsSharedToSocial(true)} 
-                            className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl font-bold text-xs shadow-xl transition-all ${
-                              isSharedToSocial ? "bg-[#3d5636] text-white" : "bg-white text-[#4A6741] hover:bg-slate-50 hover:scale-105"
-                            }`}
-                          >
-                            {isSharedToSocial ? "✓ Exported to Instagram" : "Export to Instagram"}
-                          </button>
-
-                          <button onClick={handleDownload} className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-[#0f172a] text-white font-bold text-xs shadow-xl hover:scale-105 transition-all">
-                            <Download className="w-4 h-4" /> Download
-                          </button>
-                        </div>
                       </motion.div>
                     )}
                     {status === "error" && (
@@ -424,6 +379,42 @@ function StudioPageInner() {
                     )}
                   </AnimatePresence>
                 </div>
+
+                {/* Action Buttons BELOW image */}
+                {status === "ready" && resultUrl && (
+                  <div className="mt-6 flex flex-wrap justify-center gap-3 z-10">
+                    <button 
+                      onClick={() => setIsSavedToCloset(true)} 
+                      className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl font-bold text-xs shadow-xl transition-all ${
+                        isSavedToCloset ? "bg-[#3d5636] text-white" : "bg-[#4A6741] text-white hover:bg-[#3d5636] hover:scale-105"
+                      }`}
+                    >
+                      {isSavedToCloset ? "✓ Saved to Closet" : "Save to Virtual Closet"}
+                    </button>
+                    
+                    <button 
+                      onClick={() => setIsSharedToSocial(true)} 
+                      className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl font-bold text-xs shadow-xl transition-all ${
+                        isSharedToSocial ? "bg-[#3d5636] text-white" : "bg-white text-[#4A6741] hover:bg-slate-50 hover:scale-105"
+                      }`}
+                    >
+                      {isSharedToSocial ? "✓ Exported to Instagram" : "Export to Instagram"}
+                    </button>
+
+                    <button 
+                      onClick={() => {
+                        const link = document.createElement('a');
+                        link.href = resultUrl;
+                        link.download = `vexa_tryon_${Date.now()}.png`;
+                        link.click();
+                      }}
+                      className="flex items-center gap-2 px-6 py-2.5 rounded-2xl bg-[#0f172a] text-white font-bold text-xs hover:bg-black transition-all shadow-xl hover:scale-105"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      Download
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
 
