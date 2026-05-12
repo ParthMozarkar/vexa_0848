@@ -26,6 +26,24 @@ interface DesignResponse {
   prompt: string;
 }
 
+async function persistResultImage(imageUrl: string, userId: string, supabase: any): Promise<string> {
+  try {
+    const res = await fetch(imageUrl, { signal: AbortSignal.timeout(30_000) });
+    if (!res.ok) return imageUrl;
+    const arrayBuffer = await res.arrayBuffer();
+    const contentType = res.headers.get('content-type') || 'image/png';
+    const ext = contentType.split('/')[1]?.split(';')[0] || 'png';
+    const filename = `design_results/${userId}_${Date.now()}.${ext}`;
+
+    const { error: uploadError } = await supabase.storage.from('avatars').upload(filename, arrayBuffer, { contentType, upsert: true });
+    if (!uploadError) {
+      const { data: signed } = await supabase.storage.from('avatars').createSignedUrl(filename, 86400 * 365);
+      if (signed?.signedUrl) return signed.signedUrl;
+    }
+    return imageUrl;
+  } catch { return imageUrl; }
+}
+
 export async function POST(req: NextRequest): Promise<NextResponse> {
   try {
     const body = (await req.json()) as DesignRequest;
@@ -47,10 +65,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     } else {
       const chatRes = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json', 
-          'Authorization': `Bearer ${openaiKey.trim()}` 
-        },
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${openaiKey.trim()}` },
         body: JSON.stringify({
           model: 'gpt-4o-mini',
           messages: [
@@ -100,51 +115,40 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     const anakinKey = process.env.ANAKIN_API_KEY;
     if (!imageUrl && anakinKey) {
       try {
-        console.log('Trying Anakin fallback for design...');
         const anakinRes = await fetch('https://api.anakin.ai/v1/quick_run', {
           method: 'POST',
           headers: { 'X-Anakin-Api-Key': anakinKey, 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            appId: 'L9mjwX5v', // Standard DALL-E 3 App ID on Anakin
-            inputs: { 'Prompt': generationPrompt }
-          }),
+          body: JSON.stringify({ appId: 'L9mjwX5v', inputs: { 'Prompt': generationPrompt } }),
         });
         const data = await anakinRes.json();
-        // Anakin usually returns result in data.result or data.outputs
         imageUrl = data?.result || data?.outputs?.url || data?.outputs?.image;
       } catch (e) { console.warn('Anakin fallback failed', e); }
     }
 
     if (!imageUrl) {
       const openAiMsg = finalDalleData.error?.message || '';
-      throw new Error(
-        openAiMsg.includes('does not exist') 
-        ? `OpenAI Project Error: Your API key lacks DALL-E permissions. Please enable DALL-E 3 in your OpenAI Project Settings or provide a different key.`
-        : openAiMsg || 'AI design service is currently unavailable.'
-      );
+      throw new Error(openAiMsg.includes('does not exist') ? 'OpenAI Project Error' : openAiMsg || 'Design failed');
     }
 
-    // 6. Save to History (Fire-and-forget)
+    // 6. PERSISTENCE: Save to permanent storage & history
     const supabase = getServiceSupabase();
     Promise.resolve().then(async () => {
       try {
+        const persistedUrl = await persistResultImage(imageUrl!, userId, supabase);
         await (supabase.from('design_history') as any).insert({
           user_id: userId,
           original_prompt: prompt,
           ai_prompt: finalDesignPrompt,
-          result_url: imageUrl,
+          result_url: persistedUrl,
           category: category,
           style: style || 'modern',
           created_at: new Date().toISOString()
         });
-      } catch (e) { console.error('Failed to save design history:', e); }
+        console.log('[/api/studio/design] Design history saved.');
+      } catch (e) { console.warn('Failed to save design history', e); }
     });
 
-    return NextResponse.json({ 
-      designImageUrl: imageUrl, 
-      prompt: finalDesignPrompt 
-    });
-
+    return NextResponse.json({ designImageUrl: imageUrl, prompt: finalDesignPrompt });
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error('[/api/studio/design] Error:', msg);
