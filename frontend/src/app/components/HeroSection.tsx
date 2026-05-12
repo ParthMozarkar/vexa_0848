@@ -28,9 +28,9 @@ export default function HeroSection() {
           opacity: 0,
         }}
       >
-        <span className="block text-[#1a1a1a]">See It On You.</span>
-        <span className="mt-4 block w-full max-w-[min(100%,48rem)] mx-auto text-slate-400 opacity-80" style={{ fontSize: 'clamp(2.5rem, 10vw, 6.5rem)' }}>
-          Fewer Returns.
+        <span className="block text-gradient-primary pb-2">See It On You.</span>
+        <span className="mt-4 block w-full max-w-[min(100%,48rem)] mx-auto text-slate-500 opacity-90" style={{ fontSize: 'clamp(2.5rem, 10vw, 6.5rem)' }}>
+          Before You Buy.
         </span>
       </h1>
 
