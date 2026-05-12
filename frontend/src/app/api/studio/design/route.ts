@@ -1,10 +1,19 @@
 import { NextRequest, NextResponse } from 'next/server';
-import OpenAI from 'openai';
+import { createClient } from '@supabase/supabase-js';
+import type { Database } from '@/types/database';
 
 export const runtime = 'nodejs';
 export const maxDuration = 120;
 
+function getServiceSupabase() {
+  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
+  if (!url || !key) throw new Error('Supabase environment variables missing');
+  return createClient<Database>(url, key, { auth: { persistSession: false } });
+}
+
 interface DesignRequest {
+  userId?: string;
   prompt: string;
   style?: string;
   category?: string;
@@ -20,13 +29,10 @@ interface DesignResponse {
 export async function POST(req: NextRequest): Promise<NextResponse> {
   try {
     const body = (await req.json()) as DesignRequest;
-    const { prompt, style, category = 'tops', trendContext, designPrompt } = body;
+    const { userId = 'anonymous', prompt, style, category = 'tops', trendContext, designPrompt } = body;
 
     if (!prompt?.trim() || prompt.trim().length < 3) {
       return NextResponse.json({ error: 'Prompt must be at least 3 characters' }, { status: 400 });
-    }
-    if (prompt.length > 500) {
-      return NextResponse.json({ error: 'Prompt must be under 500 characters' }, { status: 400 });
     }
 
     const openaiKey = process.env.OPENAI_API_KEY;
@@ -34,90 +40,97 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: 'OPENAI_API_KEY not configured' }, { status: 500 });
     }
 
-    const openai = new OpenAI({ apiKey: openaiKey });
-
-    // Use trend's designPrompt if provided, else build one via GPT-4o-mini
+    // 1. Generate a descriptive prompt for the image
     let finalDesignPrompt: string;
     if (designPrompt) {
       finalDesignPrompt = designPrompt;
     } else {
-      const systemMsg = `You are a fashion product prompt engineer specializing in flat-lay e-commerce photography prompts.
-Write a vivid garment description for DALL-E 3 flat-lay product image generation.
-Rules:
-- Describe only the clothing item: fabric, texture, color, palette, print/pattern, cut, construction details
-- Include visual characteristics that translate well to overhead flat-lay photography (e.g. "bold graphic print", "ribbed cotton", "washed indigo denim")
-- Incorporate trend context if provided
-- Do NOT mention people, models, mannequins, or bodies
-- Keep under 300 characters
-- Output only the description, nothing else`;
-
-      const userMsg = `Garment: ${prompt.trim()}
-Style: ${style ?? 'modern'}
-Category: ${category}
-${trendContext ? `Trend context: ${trendContext}` : ''}`;
-
-      const completion = await openai.chat.completions.create({
-        model: 'gpt-4o-mini',
-        messages: [
-          { role: 'system', content: systemMsg },
-          { role: 'user', content: userMsg },
-        ],
-        max_tokens: 150,
-        temperature: 0.7,
+      const chatRes = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json', 
+          'Authorization': `Bearer ${openaiKey.trim()}` 
+        },
+        body: JSON.stringify({
+          model: 'gpt-4o-mini',
+          messages: [
+            { role: 'system', content: 'You are a fashion prompt engineer. Write a vivid garment description for a DALL-E 3 flat-lay product image. No people, no models. Output only the description.' },
+            { role: 'user', content: `Garment: ${prompt.trim()}\nStyle: ${style ?? 'modern'}\nCategory: ${category}` },
+          ],
+        }),
       });
-      finalDesignPrompt = completion.choices[0]?.message?.content?.trim() ?? prompt.trim();
+      const chatData = await chatRes.json();
+      finalDesignPrompt = chatData.choices?.[0]?.message?.content?.trim() ?? prompt.trim();
     }
 
-    // Direct fetch to bypass any potential SDK version issues or hidden character bugs
+    // 2. Define the image generation prompt
+    const generationPrompt = `Top-down overhead flat lay photograph of a ${finalDesignPrompt}, clean white background, bird's-eye view, crisp studio lighting, no people.`;
+
+    // 3. Generate Image (DALL-E 3)
     const dalleResponse = await fetch('https://api.openai.com/v1/images/generations', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${openaiKey.trim()}`,
+      headers: { 
+        'Content-Type': 'application/json', 
+        'Authorization': `Bearer ${openaiKey.trim()}` 
       },
-      body: JSON.stringify({
-        model: 'dall-e-3',
-        prompt: dallePrompt,
-        n: 1,
-        size: '1024x1024',
-        quality: 'standard',
-        style: 'natural',
+      body: JSON.stringify({ 
+        model: 'dall-e-3', 
+        prompt: generationPrompt, 
+        n: 1, 
+        size: '1024x1024' 
       }),
     });
 
     let dalleData = await dalleResponse.json();
 
-    // Fallback to DALL-E 2 if DALL-E 3 fails
+    // 4. Fallback to DALL-E 2 if needed
     if (!dalleResponse.ok || !dalleData.data?.[0]?.url) {
       console.warn('DALL-E 3 failed, trying DALL-E 2 fallback...', JSON.stringify(dalleData));
-      const fallbackResponse = await fetch('https://api.openai.com/v1/images/generations', {
+      const fallbackRes = await fetch('https://api.openai.com/v1/images/generations', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${openaiKey.trim()}`,
+        headers: { 
+          'Content-Type': 'application/json', 
+          'Authorization': `Bearer ${openaiKey.trim()}` 
         },
-        body: JSON.stringify({
-          model: 'dall-e-2',
-          prompt: dallePrompt,
-          n: 1,
-          size: '1024x1024',
+        body: JSON.stringify({ 
+          model: 'dall-e-2', 
+          prompt: generationPrompt, 
+          n: 1, 
+          size: '1024x1024' 
         }),
       });
-      dalleData = await fallbackResponse.json();
+      dalleData = await fallbackRes.json();
     }
 
     const imageUrl = dalleData.data?.[0]?.url;
     if (!imageUrl) {
-      throw new Error(dalleData.error?.message || 'AI returned no image URL. Please check your OpenAI Billing/Project permissions.');
+      throw new Error(dalleData.error?.message || 'Design generation failed.');
     }
 
-    return NextResponse.json({
-      designImageUrl: imageUrl,
-      prompt: finalDesignPrompt,
-    } satisfies DesignResponse);
+    // 5. Save to History (Fire-and-forget)
+    const supabase = getServiceSupabase();
+    Promise.resolve().then(async () => {
+      try {
+        await (supabase.from('design_history') as any).insert({
+          user_id: userId,
+          original_prompt: prompt,
+          ai_prompt: finalDesignPrompt,
+          result_url: imageUrl,
+          category: category,
+          style: style || 'modern',
+          created_at: new Date().toISOString()
+        });
+      } catch (e) { console.error('Failed to save design history:', e); }
+    });
+
+    return NextResponse.json({ 
+      designImageUrl: imageUrl, 
+      prompt: finalDesignPrompt 
+    });
+
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
-    console.error('[/api/studio/design]', msg);
+    console.error('[/api/studio/design] Error:', msg);
     return NextResponse.json({ error: msg }, { status: 500 });
   }
 }
