@@ -68,33 +68,48 @@ ${trendContext ? `Trend context: ${trendContext}` : ''}`;
       finalDesignPrompt = completion.choices[0]?.message?.content?.trim() ?? prompt.trim();
     }
 
-    // DALL-E 3: strict flat-lay, overhead shot, no model
-    const dallePrompt = `Top-down overhead flat lay photograph of a ${finalDesignPrompt}, lying perfectly flat on a clean white surface. Camera directly above, 90-degree bird's-eye view. Crisp product photography with even studio lighting. The garment fills most of the frame. Plain white background only. No shadows under edges. No people, no body parts, no hands, no table edges visible.`;
-
-    let imageUrl: string | undefined;
-    try {
-      const response = await openai.images.generate({
+    // Direct fetch to bypass any potential SDK version issues or hidden character bugs
+    const dalleResponse = await fetch('https://api.openai.com/v1/images/generations', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${openaiKey.trim()}`,
+      },
+      body: JSON.stringify({
         model: 'dall-e-3',
         prompt: dallePrompt,
         n: 1,
         size: '1024x1024',
         quality: 'standard',
         style: 'natural',
+      }),
+    });
+
+    let dalleData = await dalleResponse.json();
+
+    // Fallback to DALL-E 2 if DALL-E 3 fails
+    if (!dalleResponse.ok || !dalleData.data?.[0]?.url) {
+      console.warn('DALL-E 3 failed, trying DALL-E 2 fallback...', JSON.stringify(dalleData));
+      const fallbackResponse = await fetch('https://api.openai.com/v1/images/generations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${openaiKey.trim()}`,
+        },
+        body: JSON.stringify({
+          model: 'dall-e-2',
+          prompt: dallePrompt,
+          n: 1,
+          size: '1024x1024',
+        }),
       });
-      imageUrl = (response.data ?? [])[0]?.url;
-    } catch (dalle3Err: any) {
-      console.warn('DALL-E 3 failed, trying DALL-E 2 fallback...', dalle3Err.message);
-      // Fallback for Tier 1 / new accounts that don't have DALL-E 3 access yet
-      const response = await openai.images.generate({
-        model: 'dall-e-2',
-        prompt: dallePrompt,
-        n: 1,
-        size: '1024x1024',
-      });
-      imageUrl = (response.data ?? [])[0]?.url;
+      dalleData = await fallbackResponse.json();
     }
 
-    if (!imageUrl) throw new Error('AI returned no image URL');
+    const imageUrl = dalleData.data?.[0]?.url;
+    if (!imageUrl) {
+      throw new Error(dalleData.error?.message || 'AI returned no image URL. Please check your OpenAI Billing/Project permissions.');
+    }
 
     return NextResponse.json({
       designImageUrl: imageUrl,
