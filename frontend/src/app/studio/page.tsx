@@ -361,7 +361,7 @@ function StudioPageInner() {
                         <div className="relative">
                           <Loader2 className="w-16 h-16 text-[#4A6741] animate-spin" />
                           <div className="absolute inset-0 flex items-center justify-center">
-                            <span className="text-[10px] font-black text-[#4A6741]">{Math.min(99, Math.floor((elapsedSec / 25) * 100))}%</span>
+                            <span className="text-[10px] font-black text-[#4A6741]">{Math.min(99, Math.floor((elapsedSec / 55) * 100))}%</span>
                           </div>
                         </div>
                         <div className="space-y-2 w-full max-w-[240px]">
@@ -370,11 +370,18 @@ function StudioPageInner() {
                             <motion.div 
                               className="h-full bg-[#4A6741]"
                               initial={{ width: "0%" }}
-                              animate={{ width: `${Math.min(99, (elapsedSec / 25) * 100)}%` }}
+                              animate={{ width: `${Math.min(99, (elapsedSec / 55) * 100)}%` }}
                               transition={{ duration: 0.5 }}
                             />
                           </div>
-                          <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">{elapsedSec}s elapsed — Optimizing textures</p>
+                          <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">
+                            {elapsedSec}s elapsed — {
+                              elapsedSec < 8 ? "Initializing..." :
+                              elapsedSec < 20 ? "Optimizing textures..." :
+                              elapsedSec < 40 ? "Rendering diffusion..." :
+                              "Perfecting details..."
+                            }
+                          </p>
                         </div>
                       </motion.div>
                     )}
