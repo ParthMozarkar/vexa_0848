@@ -71,17 +71,30 @@ ${trendContext ? `Trend context: ${trendContext}` : ''}`;
     // DALL-E 3: strict flat-lay, overhead shot, no model
     const dallePrompt = `Top-down overhead flat lay photograph of a ${finalDesignPrompt}, lying perfectly flat on a clean white surface. Camera directly above, 90-degree bird's-eye view. Crisp product photography with even studio lighting. The garment fills most of the frame. Plain white background only. No shadows under edges. No people, no body parts, no hands, no table edges visible.`;
 
-    const response = await openai.images.generate({
-      model: 'dall-e-3',
-      prompt: dallePrompt,
-      n: 1,
-      size: '1024x1024',
-      quality: 'standard',
-      style: 'natural',
-    });
+    let imageUrl: string | undefined;
+    try {
+      const response = await openai.images.generate({
+        model: 'dall-e-3',
+        prompt: dallePrompt,
+        n: 1,
+        size: '1024x1024',
+        quality: 'standard',
+        style: 'natural',
+      });
+      imageUrl = (response.data ?? [])[0]?.url;
+    } catch (dalle3Err: any) {
+      console.warn('DALL-E 3 failed, trying DALL-E 2 fallback...', dalle3Err.message);
+      // Fallback for Tier 1 / new accounts that don't have DALL-E 3 access yet
+      const response = await openai.images.generate({
+        model: 'dall-e-2',
+        prompt: dallePrompt,
+        n: 1,
+        size: '1024x1024',
+      });
+      imageUrl = (response.data ?? [])[0]?.url;
+    }
 
-    const imageUrl = (response.data ?? [])[0]?.url;
-    if (!imageUrl) throw new Error('DALL-E 3 returned no image URL');
+    if (!imageUrl) throw new Error('AI returned no image URL');
 
     return NextResponse.json({
       designImageUrl: imageUrl,
