@@ -9,6 +9,7 @@ import { ModelGenerator } from "@/components/studio/ModelGenerator";
 import { supabase } from "@/lib/supabase";
 import { useStore } from "@/store/useStore";
 import Header from "@/components/Header";
+import { SizeCompass } from "@/components/studio/SizeCompass";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -69,6 +70,11 @@ function StudioPageInner() {
   const [resultUrl, setResultUrl] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [elapsedSec, setElapsedSec] = useState(0);
+
+  // New Features State
+  const [selectedVibe, setSelectedVibe] = useState<string>("Studio White");
+  const [isSavedToCloset, setIsSavedToCloset] = useState(false);
+  const [isSharedToSocial, setIsSharedToSocial] = useState(false);
 
   const abortRef = useRef<AbortController | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -180,6 +186,8 @@ function StudioPageInner() {
     setStatus("loading");
     setErrorMsg(null);
     setResultUrl(null);
+    setIsSavedToCloset(false);
+    setIsSharedToSocial(false);
 
     try {
       // SMART COMPOSITION: If multiple items, merge them into 1 image to make the API 4x faster
@@ -193,6 +201,7 @@ function StudioPageInner() {
         productId: `custom_${Date.now()}`,
         userPhotoUrl: personUrl,
         garments: finalGarments,
+        backgroundVibe: selectedVibe, // Pass the vibe context to the AI
       };
 
       const res = await fetch("/api/tryon", {
@@ -329,6 +338,27 @@ function StudioPageInner() {
                   onUploadingChange={setPersonUploading}
                   height="h-64 lg:h-[400px]"
                 />
+                <SizeCompass personUrl={personUrl} />
+
+                {/* Vibe Generation (Background) */}
+                <div className="mt-6 border-t border-slate-100 pt-6">
+                  <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-3">Background Vibe</p>
+                  <div className="grid grid-cols-2 gap-2">
+                    {['Studio White', 'Streetwear City', 'Sunset Beach', 'Luxury Runway'].map(vibe => (
+                      <button
+                        key={vibe}
+                        onClick={() => setSelectedVibe(vibe)}
+                        className={`text-xs font-bold py-2 px-3 rounded-xl border transition-all ${
+                          selectedVibe === vibe 
+                          ? "bg-[#4A6741] border-[#4A6741] text-white" 
+                          : "bg-slate-50 border-slate-200 text-slate-500 hover:border-[#4A6741]/50"
+                        }`}
+                      >
+                        {vibe}
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
             </div>
 
@@ -357,9 +387,31 @@ function StudioPageInner() {
                     {status === "ready" && resultUrl && (
                       <motion.div key="result" className="absolute inset-0">
                         <img src={resultUrl} alt="Result" className="w-full h-full object-contain" />
-                        <button onClick={handleDownload} className="absolute bottom-6 right-6 flex items-center gap-2 px-5 py-3 rounded-2xl bg-[#0f172a] text-white font-bold text-sm shadow-xl">
-                          <Download className="w-4 h-4" /> Download
-                        </button>
+                        
+                        {/* Action Buttons Overlay */}
+                        <div className="absolute bottom-6 left-0 right-0 flex flex-wrap justify-center gap-3 px-4 z-10">
+                          <button 
+                            onClick={() => setIsSavedToCloset(true)} 
+                            className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl font-bold text-xs shadow-xl transition-all ${
+                              isSavedToCloset ? "bg-[#4A6741] text-white" : "bg-white text-slate-700 hover:scale-105"
+                            }`}
+                          >
+                            {isSavedToCloset ? "✓ Saved to Closet" : "✨ Save to Virtual Closet"}
+                          </button>
+                          
+                          <button 
+                            onClick={() => setIsSharedToSocial(true)} 
+                            className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl font-bold text-xs shadow-xl transition-all ${
+                              isSharedToSocial ? "bg-rose-500 text-white" : "bg-gradient-to-r from-rose-400 to-orange-400 text-white hover:scale-105"
+                            }`}
+                          >
+                            {isSharedToSocial ? "✓ Exported to TikTok" : "🎵 Export to TikTok/Reels"}
+                          </button>
+
+                          <button onClick={handleDownload} className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-[#0f172a] text-white font-bold text-xs shadow-xl hover:scale-105 transition-all">
+                            <Download className="w-4 h-4" /> Download
+                          </button>
+                        </div>
                       </motion.div>
                     )}
                     {status === "error" && (

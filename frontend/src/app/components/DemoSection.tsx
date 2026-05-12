@@ -1,61 +1,48 @@
 'use client';
 import React, { useState } from 'react';
 import AppImage from '@/components/ui/AppImage';
+import { Sparkles, Zap, User, Code } from 'lucide-react';
 
 const OUTFITS = [
 {
-  color: '#5B4BF5',
-  label: 'Violet',
+  color: '#4A6741',
+  label: 'Sage',
   images: [
   {
     src: "https://img.rocket.new/generatedImages/rocket_gen_img_127dffa64-1772150517318.png",
-    alt: 'Fashion model wearing violet oversized hoodie in studio, full body, clean background'
+    alt: 'Fashion model wearing sage green outfit in studio'
   },
   {
     src: "https://img.rocket.new/generatedImages/rocket_gen_img_11dd6aade-1767159208582.png",
-    alt: 'Fashion model wearing violet streetwear outfit, side profile, studio lighting'
+    alt: 'Fashion model side profile'
   }]
 
 },
 {
-  color: '#00D4FF',
-  label: 'Cyan',
+  color: '#8B7D3C',
+  label: 'Olive',
   images: [
   {
     src: "https://img.rocket.new/generatedImages/rocket_gen_img_13d009c79-1774446338483.png",
-    alt: 'Fashion model wearing cyan blue outfit in studio, full body portrait'
+    alt: 'Fashion model wearing olive outfit'
   },
   {
     src: "https://img.rocket.new/generatedImages/rocket_gen_img_1380919e7-1775817756683.png",
-    alt: 'Fashion model in cyan streetwear, neutral studio background, full length'
+    alt: 'Fashion model in olive streetwear'
   }]
 
 },
 {
-  color: '#F59E0B',
-  label: 'Amber',
+  color: '#6B8C5E',
+  label: 'Forest',
   images: [
   {
     src: "https://images.unsplash.com/photo-1624810626198-f214d329f478",
-    alt: 'Fashion model wearing amber yellow outfit, bright studio lighting, full body'
+    alt: 'Fashion model wearing forest green outfit'
   },
   {
     src: "https://img.rocket.new/generatedImages/rocket_gen_img_1924807a7-1773082167529.png",
-    alt: 'Fashion model in amber streetwear look, clean background, full length portrait'
-  }]
-
-},
-{
-  color: '#EF4444',
-  label: 'Red',
-  images: [
-  {
-    src: "https://img.rocket.new/generatedImages/rocket_gen_img_13d009c79-1774446338483.png",
-    alt: 'Fashion model wearing red outfit in studio, full body, even lighting'
-  },
-  {
-    src: "https://img.rocket.new/generatedImages/rocket_gen_img_13d009c79-1774446338483.png",
-    alt: 'Fashion model in red streetwear, neutral studio background, full length'
+    alt: 'Fashion model in forest streetwear'
   }]
 
 }];
@@ -73,47 +60,47 @@ export default function DemoSection() {
   };
 
   return (
-    <section className="relative py-16 pb-24 overflow-hidden">
+    <section className="relative py-16 md:py-24 overflow-hidden bg-white/30">
       <div className="max-w-7xl mx-auto px-6">
         {/* Header */}
         <div
-          className="text-center mb-16 animate-on-scroll"
+          className="text-center mb-16 md:mb-20 animate-on-scroll"
           style={{ animation: 'animationIn 0.8s ease-out 0.2s forwards', opacity: 0 }}>
-          <span className="text-xs font-mono tracking-widest uppercase text-accent mb-4 block">
+          <span className="text-[10px] font-black tracking-[0.3em] uppercase text-[#4A6741] mb-4 block">
             Product Demo
           </span>
-          <h2 className="text-4xl md:text-5xl font-extrabold tracking-tight text-foreground mb-4">
+          <h2 className="text-4xl md:text-6xl font-black tracking-tight text-[#1a1a1a] mb-6">
             Try-on that{' '}
             <span className="text-gradient-primary">feels real.</span>
           </h2>
-          <p className="text-muted-foreground max-w-xl mx-auto text-base leading-relaxed">
+          <p className="text-slate-500 max-w-2xl mx-auto text-base md:text-lg leading-relaxed font-medium">
             AI body mapping generates a photorealistic 3D avatar in seconds. Customers see exactly how each garment fits their body — not a mannequin.
           </p>
         </div>
 
         {/* Demo Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 lg:gap-20 items-center">
           {/* Left: Phone mockup stack */}
           <div
-            className="relative flex justify-center items-center h-[520px] animate-on-scroll"
+            className="relative flex justify-center items-center h-[480px] md:h-[560px] animate-on-scroll"
             style={{ animation: 'animationIn 0.8s ease-out 0.3s forwards', opacity: 0 }}>
 
             {/* Glow */}
             <div
-              className="absolute inset-0 rounded-3xl blur-[60px] pointer-events-none transition-all duration-700"
-              style={{ background: `radial-gradient(ellipse at center, ${currentOutfit.color}30 0%, transparent 70%)` }} />
+              className="absolute inset-0 rounded-full blur-[100px] pointer-events-none transition-all duration-1000"
+              style={{ background: `radial-gradient(circle at center, ${currentOutfit.color}15 0%, transparent 70%)` }} />
             
 
-            {/* Thumbnail strip (secondary images) */}
-            <div className="absolute left-0 top-1/2 -translate-y-1/2 flex flex-col gap-3 z-20">
+            {/* Thumbnail strip - Horizontal on mobile, Vertical on desktop */}
+            <div className="absolute -bottom-8 md:bottom-auto md:-left-4 lg:-left-8 md:top-1/2 md:-translate-y-1/2 flex flex-row md:flex-col gap-3 z-20">
               {currentOutfit.images.map((img, i) =>
               <button
                 key={i}
                 onClick={() => setActiveImage(i)}
-                className="w-14 h-20 rounded-xl overflow-hidden border-2 transition-all duration-300 focus:outline-none"
+                className="w-12 h-16 md:w-16 md:h-24 rounded-xl overflow-hidden border-2 transition-all duration-500 focus:outline-none hover:scale-110 shadow-lg"
                 style={{
-                  borderColor: activeImage === i ? currentOutfit.color : 'rgba(74, 103, 65, 0.2)',
-                  boxShadow: activeImage === i ? `0 0 12px ${currentOutfit.color}60` : 'none'
+                  borderColor: activeImage === i ? currentOutfit.color : 'white',
+                  boxShadow: activeImage === i ? `0 0 20px ${currentOutfit.color}30` : '0 4px 12px rgba(0,0,0,0.05)'
                 }}
                 aria-label={`View outfit image ${i + 1}`}>
                   <AppImage
@@ -121,7 +108,7 @@ export default function DemoSection() {
                   alt={img.alt}
                   fill
                   className="object-cover object-top"
-                  sizes="56px" />
+                  sizes="64px" />
                 
                 </button>
               )}
@@ -129,32 +116,34 @@ export default function DemoSection() {
 
             {/* Main phone frame */}
             <div
-              className="relative w-56 h-[440px] rounded-[2.5rem] border-2 overflow-hidden glass-card transition-all duration-500 z-10"
-              style={{ borderColor: `${currentOutfit.color}60`, boxShadow: `0 0 40px ${currentOutfit.color}25` }}>
+              className="relative w-[240px] h-[480px] md:w-[280px] md:h-[560px] rounded-[3rem] border-8 border-[#1a1a1a] overflow-hidden bg-[#1a1a1a] shadow-[0_0_80px_rgba(0,0,0,0.15)] z-10">
               {/* Screen */}
-              <div className="w-full h-full relative bg-gradient-to-b from-secondary to-background">
+              <div className="w-full h-full relative bg-white overflow-hidden rounded-[2.25rem]">
+                {/* Notch */}
+                <div className="absolute top-0 left-1/2 -translate-x-1/2 w-28 h-6 bg-[#1a1a1a] rounded-b-2xl z-40" />
+
                 {/* Scan line animation */}
                 <div
-                  className="absolute left-0 right-0 h-0.5 z-30 pointer-events-none animate-scan-line"
+                  className="absolute left-0 right-0 h-1 z-30 pointer-events-none animate-scan-line"
                   style={{ background: `linear-gradient(90deg, transparent, ${currentOutfit.color}, transparent)` }} />
                 
 
-                {/* Avatar image — switches on color/image change */}
+                {/* Avatar image */}
                 <AppImage
                   key={`${activeColor}-${activeImage}`}
                   src={currentOutfit.images[activeImage].src}
                   alt={currentOutfit.images[activeImage].alt}
                   fill
-                  className="object-cover object-top opacity-80 transition-opacity duration-500"
-                  sizes="224px" />
+                  className="object-cover object-top transition-opacity duration-700"
+                  sizes="280px" />
                 
 
                 {/* Overlay grid lines */}
                 <div
-                  className="absolute inset-0 z-20 transition-all duration-500"
+                  className="absolute inset-0 z-20 opacity-10 pointer-events-none"
                   style={{
-                    backgroundImage: `linear-gradient(${currentOutfit.color}18 1px, transparent 1px), linear-gradient(90deg, ${currentOutfit.color}18 1px, transparent 1px)`,
-                    backgroundSize: '20px 20px'
+                    backgroundImage: `linear-gradient(${currentOutfit.color} 1px, transparent 1px), linear-gradient(90deg, ${currentOutfit.color} 1px, transparent 1px)`,
+                    backgroundSize: '30px 30px'
                   }} />
                 
 
@@ -170,41 +159,42 @@ export default function DemoSection() {
                 map((pos, i) =>
                 <div
                   key={i}
-                  className="absolute w-2 h-2 rounded-full border z-30 transition-all duration-500"
+                  className="absolute w-2 h-2 rounded-full border-2 z-30 transition-all duration-500 shadow-sm"
                   style={{
                     ...pos,
                     transform: 'translate(-50%, -50%)',
-                    background: `${currentOutfit.color}99`,
-                    borderColor: currentOutfit.color
+                    background: currentOutfit.color,
+                    borderColor: 'white'
                   }} />
 
                 )}
 
                 {/* Top bar */}
-                <div className="absolute top-0 left-0 right-0 p-3 z-30 flex items-center justify-between">
-                  <span className="text-xs font-mono text-accent">VEXA AI</span>
-                  <span className="text-xs font-mono text-green-400 flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse-glow" />
+                <div className="absolute top-8 left-0 right-0 px-6 z-30 flex items-center justify-between">
+                  <span className="text-[10px] font-black text-[#1a1a1a] uppercase tracking-widest">VEXA Studio</span>
+                  <span className="text-[10px] font-black text-[#4A6741] flex items-center gap-1.5 bg-[#4A6741]/10 px-2 py-1 rounded-full">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#4A6741] animate-pulse" />
                     LIVE
                   </span>
                 </div>
 
-                {/* Bottom outfit selector — color switcher */}
-                <div className="absolute bottom-0 left-0 right-0 p-3 z-30 glass-card rounded-none">
-                  <div className="text-xs font-mono text-muted-foreground mb-2 flex items-center justify-between">
-                    <span>Outfit Preview</span>
+                {/* Bottom outfit selector */}
+                <div className="absolute bottom-0 left-0 right-0 p-6 z-30 bg-white/80 backdrop-blur-md border-t border-slate-100">
+                  <div className="text-[10px] font-black text-slate-400 mb-3 flex items-center justify-between uppercase tracking-widest">
+                    <span>Colorway</span>
                     <span style={{ color: currentOutfit.color }}>{currentOutfit.label}</span>
                   </div>
-                  <div className="flex gap-2">
+                  <div className="flex gap-3">
                     {OUTFITS.map((outfit, i) =>
                     <button
                       key={i}
                       onClick={() => handleColorChange(i)}
-                      className="w-8 h-8 rounded-lg border-2 cursor-pointer transition-all duration-300 focus:outline-none hover:scale-110"
+                      className="w-8 h-8 rounded-full border-2 cursor-pointer transition-all duration-500 focus:outline-none hover:scale-125 shadow-sm"
                       style={{
                         background: outfit.color,
                         borderColor: activeColor === i ? 'white' : 'transparent',
-                        boxShadow: activeColor === i ? `0 0 10px ${outfit.color}80` : 'none'
+                        boxShadow: activeColor === i ? `0 0 15px ${outfit.color}40` : 'none',
+                        outline: activeColor === i ? `2px solid ${outfit.color}` : 'none'
                       }}
                       aria-label={`Select ${outfit.label} outfit`} />
 
@@ -214,77 +204,64 @@ export default function DemoSection() {
               </div>
             </div>
 
-            {/* Secondary phone (behind, offset) */}
+            {/* Secondary phone (Hidden on mobile) */}
             <div
-              className="absolute w-48 h-[380px] rounded-[2rem] border border-border overflow-hidden glass-card opacity-40 z-0 transition-all duration-500"
-              style={{ transform: 'translateX(100px) translateY(20px) rotate(8deg)' }}>
+              className="hidden md:block absolute w-[220px] h-[480px] rounded-[3rem] border border-slate-200 overflow-hidden glass-card opacity-30 z-0 transition-all duration-1000"
+              style={{ transform: 'translateX(140px) translateY(40px) rotate(12deg)' }}>
               <AppImage
                 src={currentOutfit.images[(activeImage + 1) % currentOutfit.images.length].src}
                 alt={currentOutfit.images[(activeImage + 1) % currentOutfit.images.length].alt}
                 fill
-                className="object-cover object-top opacity-60"
-                sizes="192px" />
-              
+                className="object-cover object-top grayscale"
+                sizes="220px" />
             </div>
           </div>
 
           {/* Right: Feature callouts */}
           <div
-            className="space-y-4 animate-on-scroll"
+            className="space-y-6 md:space-y-8 animate-on-scroll mt-12 lg:mt-0"
             style={{ animation: 'animationIn 0.8s ease-out 0.4s forwards', opacity: 0 }}>
             {[
             {
-              icon:
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
-                  </svg>,
-
-              color: '#5B4BF5',
+              icon: <Zap className="w-5 h-5" />,
+              color: '#4A6741',
               title: 'Real-time 3D Rendering',
               desc: 'Photorealistic garment simulation at 60fps. Fabric physics, lighting, and shadow — all computed in the cloud.',
               tag: '<200ms'
             },
             {
-              icon:
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" />
-                  </svg>,
-
-              color: '#00D4FF',
+              icon: <User className="w-5 h-5" />,
+              color: '#8B7D3C',
               title: 'AI Body Mapping',
               desc: '68-point skeletal mapping from a single photo. Accurate size predictions across 200+ body types.',
               tag: '99.2% accuracy'
             },
             {
-              icon:
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M14.25 9.75 16.5 12l-2.25 2.25m-4.5 0L7.5 12l2.25-2.25M6 20.25h12A2.25 2.25 0 0 0 20.25 18V6A2.25 2.25 0 0 0 18 3.75H6A2.25 2.25 0 0 0 3.75 6v12A2.25 2.25 0 0 0 6 20.25Z" />
-                  </svg>,
-
-              color: '#A78BFA',
-              title: 'Drop-in Software Development Kit Integration',
+              icon: <Code className="w-5 h-5" />,
+              color: '#6B8C5E',
+              title: 'Universal SDK Integration',
               desc: 'Three lines of code. Works with Shopify, WooCommerce, custom React apps, and native mobile.',
               tag: '3 lines of code'
             }].
             map((item, i) =>
             <div
               key={i}
-              className="relative glass-card rounded-2xl p-5 flex items-start gap-4 group hover:border-primary/30 transition-all duration-300 overflow-hidden">
+              className="relative glass-card rounded-[2rem] p-6 md:p-8 flex items-start gap-6 group hover:border-[#4A6741]/30 transition-all duration-500 bg-white/40 shadow-xl shadow-slate-200/10">
                 <div
-                className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
-                style={{ background: `${item.color}20`, color: item.color }}>
+                className="w-12 h-12 rounded-2xl flex items-center justify-center shrink-0 shadow-inner transition-transform group-hover:scale-110"
+                style={{ background: `${item.color}10`, color: item.color }}>
                   {item.icon}
                 </div>
                 <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-1">
-                    <h3 className="text-sm font-semibold text-foreground">{item.title}</h3>
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-2">
+                    <h3 className="text-base md:text-lg font-black text-[#1a1a1a] tracking-tight">{item.title}</h3>
                     <span
-                    className="text-xs font-mono px-2 py-0.5 rounded-full"
-                    style={{ background: `${item.color}15`, color: item.color }}>
+                    className="w-fit text-[10px] font-black font-mono px-3 py-1 rounded-full uppercase tracking-widest"
+                    style={{ background: `${item.color}10`, color: item.color }}>
                       {item.tag}
                     </span>
                   </div>
-                  <p className="text-sm text-muted-foreground leading-relaxed">{item.desc}</p>
+                  <p className="text-sm md:text-base text-slate-500 leading-relaxed font-medium">{item.desc}</p>
                 </div>
               </div>
             )}

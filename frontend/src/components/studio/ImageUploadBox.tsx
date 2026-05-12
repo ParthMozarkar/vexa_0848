@@ -1,7 +1,7 @@
 "use client";
 
-import React, { useCallback, useRef, useState } from "react";
-import { UploadCloud, X, Loader2 } from "lucide-react";
+import React, { useCallback, useRef, useState, useEffect } from "react";
+import { UploadCloud, X, Loader2, Camera } from "lucide-react";
 import { supabase } from "@/lib/supabase";
 
 export interface ImageUploadBoxProps {
@@ -30,6 +30,68 @@ export function ImageUploadBox({
   const [isDragOver, setIsDragOver] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Camera State
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [stream, setStream] = useState<MediaStream | null>(null);
+
+  // Cleanup camera stream on unmount
+  useEffect(() => {
+    return () => {
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+      }
+    };
+  }, [stream]);
+
+  const startCamera = async () => {
+    try {
+      const mediaStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'user' } });
+      setStream(mediaStream);
+      setIsCameraOpen(true);
+      // We need a small timeout to ensure the video element is rendered before assigning srcObject
+      setTimeout(() => {
+        if (videoRef.current) {
+          videoRef.current.srcObject = mediaStream;
+        }
+      }, 50);
+    } catch (err) {
+      console.error("Error accessing webcam", err);
+      alert("Could not access webcam. Please ensure permissions are granted.");
+    }
+  };
+
+  const stopCamera = () => {
+    if (stream) {
+      stream.getTracks().forEach(track => track.stop());
+      setStream(null);
+    }
+    setIsCameraOpen(false);
+  };
+
+  const takePhoto = () => {
+    if (videoRef.current) {
+      const canvas = document.createElement("canvas");
+      canvas.width = videoRef.current.videoWidth;
+      canvas.height = videoRef.current.videoHeight;
+      const ctx = canvas.getContext("2d");
+      if (ctx) {
+        // Handle mirroring if using front camera (user facing)
+        ctx.translate(canvas.width, 0);
+        ctx.scale(-1, 1);
+        ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+        
+        canvas.toBlob((blob) => {
+          if (blob) {
+            const file = new File([blob], `webcam-${Date.now()}.jpg`, { type: "image/jpeg" });
+            processFile(file);
+            stopCamera();
+          }
+        }, "image/jpeg", 0.95);
+      }
+    }
+  };
 
   // Read a file as a base64 data URL
   const readDataUrl = (file: File): Promise<string> =>
@@ -155,12 +217,14 @@ export function ImageUploadBox({
               ? "border-[#4A6741]/40 bg-[#4A6741]/5"
               : value
               ? "border-slate-200 bg-white cursor-default"
+              : isCameraOpen
+              ? "border-transparent bg-black cursor-default"
               : "border-slate-200 bg-white hover:border-[#4A6741]/40 cursor-pointer"
           }`}
         onDrop={handleDrop}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
-        onClick={() => !value && inputRef.current?.click()}
+        onClick={() => !value && !isCameraOpen && inputRef.current?.click()}
       >
         <input
           ref={inputRef}
@@ -191,6 +255,26 @@ export function ImageUploadBox({
               <X className="w-4 h-4" />
             </button>
           </>
+        ) : isCameraOpen ? (
+          <div className="absolute inset-0 bg-black z-20 flex flex-col items-center justify-center cursor-default" onClick={(e) => e.stopPropagation()}>
+            <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover scale-x-[-1]" />
+            <div className="absolute bottom-4 left-0 right-0 flex justify-center gap-4 px-4 z-30">
+              <button 
+                type="button" 
+                onClick={(e) => { e.stopPropagation(); stopCamera(); }} 
+                className="px-4 py-2 bg-black/40 text-white text-sm rounded-full backdrop-blur-md border border-white/20 hover:bg-black/60 transition-colors"
+              >
+                Cancel
+              </button>
+              <button 
+                type="button" 
+                onClick={(e) => { e.stopPropagation(); takePhoto(); }} 
+                className="px-6 py-2 bg-white text-black text-sm rounded-full font-bold shadow-lg flex items-center gap-2 hover:scale-105 transition-transform"
+              >
+                <Camera className="w-4 h-4" /> Capture
+              </button>
+            </div>
+          </div>
         ) : (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 p-6 text-center">
             <div className="w-12 h-12 rounded-2xl bg-slate-50 border border-slate-100 flex items-center justify-center">
@@ -200,7 +284,17 @@ export function ImageUploadBox({
               <p className="text-foreground/70 text-sm font-medium">{label}</p>
               <p className="text-foreground/30 text-xs mt-1">{sublabel}</p>
             </div>
-            <p className="text-foreground/20 text-xs font-medium">Drag &amp; drop or click to browse</p>
+            <div className="flex flex-col sm:flex-row items-center gap-2 mt-2">
+              <p className="text-foreground/40 text-xs font-medium">Drag &amp; drop or click</p>
+              <span className="text-foreground/20 text-xs hidden sm:block">•</span>
+              <button 
+                type="button" 
+                onClick={(e) => { e.stopPropagation(); startCamera(); }}
+                className="flex items-center gap-1.5 text-xs font-bold text-[#4A6741] bg-[#4A6741]/10 px-3 py-1.5 rounded-full hover:bg-[#4A6741]/20 transition-colors"
+              >
+                <Camera className="w-3.5 h-3.5" /> Take Photo
+              </button>
+            </div>
           </div>
         )}
 

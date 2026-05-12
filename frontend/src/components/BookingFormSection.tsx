@@ -1,6 +1,7 @@
 'use client';
 import React, { useState } from 'react';
 import CalendarPicker from './CalendarPicker';
+import { Sparkles, Calendar, CheckCircle2, ArrowRight, Loader2 } from 'lucide-react';
 
 const COMPANY_SIZES = ['1–10', '11–50', '51–200', '201–500', '500+'];
 const PLATFORMS = ['Shopify', 'WooCommerce', 'Custom React', 'Native Mobile', 'Other'];
@@ -24,14 +25,13 @@ export default function BookingFormSection() {
   const [step, setStep] = useState<Step>('form');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [bookingId, setBookingId] = useState<string | null>(null);
   const [confirmedSlot, setConfirmedSlot] = useState<{ date: string; time: string } | null>(null);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     setStep('calendar');
   };
@@ -59,136 +59,163 @@ export default function BookingFormSection() {
   };
 
   return (
-    <section id="booking-section" className="relative py-20 overflow-hidden">
+    <section id="booking-section" className="relative py-20 md:py-32 overflow-hidden bg-white/30">
       <div className="absolute inset-0 pointer-events-none">
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] rounded-full blur-[120px] opacity-20" style={{ background: 'radial-gradient(ellipse, #4A6741 0%, #8B7D3C 100%)' }} />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[80rem] h-[40rem] rounded-full blur-[120px] opacity-10" style={{ background: 'radial-gradient(circle, #4A6741 0%, transparent 70%)' }} />
       </div>
-      <div className="max-w-5xl mx-auto px-6 relative z-10">
-        <div className="text-center mb-14 animate-on-scroll">
-          <span className="text-xs font-mono tracking-widest uppercase text-accent mb-4 block">Get Started</span>
-          <h2 className="text-4xl md:text-5xl font-extrabold tracking-tight text-foreground mb-4">
+      <div className="max-w-7xl mx-auto px-6 relative z-10">
+        <div className="text-center mb-16 md:mb-24 animate-on-scroll">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#4A6741]/10 text-[#4A6741] text-[10px] font-black uppercase tracking-widest mb-6">
+            <Sparkles className="w-3 h-3" />
+            Get Started
+          </div>
+          <h2 className="text-4xl md:text-6xl font-black tracking-tight text-[#1a1a1a] mb-6">
             Book a <span className="text-gradient-primary">live demo.</span>
           </h2>
-          <p className="text-muted-foreground max-w-lg mx-auto text-base leading-relaxed">
+          <p className="text-slate-500 max-w-2xl mx-auto text-base md:text-lg leading-relaxed font-medium">
             See VEXA running inside your stack in under 30 minutes. No sales pitch — just a working integration.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 animate-on-scroll">
-          {/* Left: Stats */}
-          <div className="lg:col-span-2 flex flex-col gap-6 justify-center">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-20 items-start">
+          {/* Left: Stats Grid */}
+          <div className="lg:col-span-5 grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-6">
             {[
               { value: '30 min', label: 'Average demo length', color: '#4A6741' },
               { value: '3 days', label: 'To full integration', color: '#8B7D3C' },
               { value: '40%+', label: 'Avg. conversion lift', color: '#6B8C5E' },
               { value: '200+', label: 'Brands already live', color: '#A69060' },
             ].map((stat, i) => (
-              <div key={i} className="glass-card rounded-2xl p-5 flex items-center gap-4 group hover:border-primary/30 transition-all duration-300">
-                <div className="w-1 self-stretch rounded-full shrink-0" style={{ background: stat.color }} />
+              <div key={i} className="glass-card rounded-[2rem] p-8 flex flex-col gap-4 group hover:border-[#4A6741]/30 transition-all duration-500 bg-white shadow-2xl shadow-slate-200/10">
+                <div className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-inner" style={{ background: `${stat.color}10`, color: stat.color }}>
+                  <CheckCircle2 className="w-5 h-5" />
+                </div>
                 <div>
-                  <div className="text-2xl font-extrabold tracking-tight" style={{ color: stat.color }}>{stat.value}</div>
-                  <div className="text-xs text-muted-foreground mt-0.5">{stat.label}</div>
+                  <div className="text-3xl font-black tracking-tight mb-1" style={{ color: stat.color }}>{stat.value}</div>
+                  <div className="text-[10px] font-black text-slate-300 uppercase tracking-widest">{stat.label}</div>
                 </div>
               </div>
             ))}
+            
+            <div className="sm:col-span-2 glass-card rounded-[2rem] p-8 bg-[#1a1a1a] text-white shadow-2xl shadow-slate-900/10 mt-4">
+              <p className="text-sm md:text-base font-medium leading-relaxed mb-6 opacity-80">
+                &ldquo;VEXA is the most developer-friendly 3D try-on solution we&apos;ve evaluated. The integration was seamless.&rdquo;
+              </p>
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 rounded-full bg-slate-800" />
+                <div>
+                  <div className="text-xs font-black uppercase tracking-widest">Sarah Chen</div>
+                  <div className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">VP Engineering, StyleCo</div>
+                </div>
+              </div>
+            </div>
           </div>
 
           {/* Right: Form / Calendar / Confirmation */}
-          <div className="lg:col-span-3">
-            {error && (
-              <div className="mb-4 p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm">{error}</div>
-            )}
+          <div className="lg:col-span-7">
+            <div className="relative">
+              {error && (
+                <div className="mb-6 p-4 rounded-2xl bg-red-50 border border-red-100 text-red-600 text-sm font-medium flex items-center gap-3">
+                  <div className="w-2 h-2 rounded-full bg-red-600 animate-pulse" />
+                  {error}
+                </div>
+              )}
 
-            {step === 'confirmed' ? (
-              <div className="glass-card rounded-3xl p-10 flex flex-col items-center justify-center text-center h-full min-h-[400px] gap-6">
-                <div className="w-16 h-16 rounded-2xl flex items-center justify-center" style={{ background: '#4A674120' }}>
-                  <svg className="w-8 h-8" fill="none" stroke="#4A6741" strokeWidth={1.5} viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-                  </svg>
+              {step === 'confirmed' ? (
+                <div className="glass-card rounded-[3rem] p-10 md:p-16 flex flex-col items-center justify-center text-center h-full min-h-[500px] gap-8 bg-white shadow-2xl shadow-slate-200/20 border-2 border-[#4A6741]/20">
+                  <div className="w-20 h-20 rounded-[2rem] flex items-center justify-center bg-[#4A6741]/10 text-[#4A6741] shadow-inner">
+                    <CheckCircle2 className="w-10 h-10" />
+                  </div>
+                  <div>
+                    <h3 className="text-3xl font-black text-[#1a1a1a] mb-4 tracking-tight">You&apos;re booked!</h3>
+                    {confirmedSlot && (
+                      <div className="inline-block px-8 py-6 bg-slate-50 rounded-[2rem] border border-slate-100 mb-6">
+                        <div className="text-[10px] font-black text-[#4A6741] uppercase tracking-[0.2em] mb-2">{formatDate(confirmedSlot.date)}</div>
+                        <div className="text-3xl font-black text-[#1a1a1a] tracking-tight">{confirmedSlot.time}</div>
+                      </div>
+                    )}
+                    <p className="text-slate-500 text-base leading-relaxed max-w-sm mx-auto font-medium">
+                      We&apos;ve sent a confirmation to <strong className="text-[#1a1a1a]">{form.email}</strong>. Our team will reach out with meeting details.
+                    </p>
+                  </div>
+                  <button onClick={() => { setStep('form'); setForm(INITIAL); setConfirmedSlot(null); setError(null); }} className="text-[10px] font-black text-[#4A6741] uppercase tracking-[0.2em] hover:text-[#1a1a1a] transition-colors underline underline-offset-8">
+                    Submit another request
+                  </button>
                 </div>
-                <div>
-                  <h3 className="text-xl font-bold text-foreground mb-2">You&apos;re booked!</h3>
-                  {confirmedSlot && (
-                    <div className="glass-card rounded-xl p-4 mb-3 inline-block">
-                      <div className="text-sm font-semibold text-primary">{formatDate(confirmedSlot.date)}</div>
-                      <div className="text-lg font-bold text-foreground">{confirmedSlot.time}</div>
+              ) : step === 'calendar' ? (
+                <div className="glass-card rounded-[3rem] p-8 md:p-12 bg-white shadow-2xl shadow-slate-200/20">
+                  <div className="mb-10">
+                    <div className="flex items-center gap-3 mb-2">
+                      <Calendar className="w-6 h-6 text-[#4A6741]" />
+                      <h3 className="text-2xl font-black text-[#1a1a1a] tracking-tight">Pick your slot</h3>
                     </div>
-                  )}
-                  <p className="text-muted-foreground text-sm leading-relaxed max-w-xs mx-auto">
-                    We&apos;ve sent a confirmation to <strong className="text-foreground">{form.email}</strong>. Our team will reach out with meeting details.
-                  </p>
-                </div>
-                <button onClick={() => { setStep('form'); setForm(INITIAL); setConfirmedSlot(null); setBookingId(null); setError(null); }} className="text-xs font-mono text-accent underline underline-offset-4 hover:text-foreground transition-colors">
-                  Submit another request
-                </button>
-              </div>
-            ) : step === 'calendar' ? (
-              <div className="glass-card rounded-3xl p-8">
-                <div className="mb-6">
-                  <div className="flex items-center gap-2 mb-1">
-                    <svg className="w-5 h-5 text-primary" fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5" />
-                    </svg>
-                    <h3 className="text-lg font-bold text-foreground">Pick your slot</h3>
+                    <p className="text-slate-500 font-medium">Choose a date and time for your personalized demo.</p>
                   </div>
-                  <p className="text-sm text-muted-foreground">Choose a date and time for your personalized demo.</p>
+                  <CalendarPicker onSelect={handleSlotSelect} loading={loading} />
+                  <button onClick={() => { setStep('form'); setError(null); }} className="mt-8 text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] hover:text-[#1a1a1a] transition-colors flex items-center gap-2">
+                    <ArrowRight className="w-4 h-4 rotate-180" /> Back to form
+                  </button>
                 </div>
-                <CalendarPicker onSelect={handleSlotSelect} loading={loading} />
-                <button onClick={() => { setStep('form'); setError(null); }} className="mt-4 text-xs font-mono text-muted-foreground underline underline-offset-4 hover:text-foreground transition-colors">
-                  ← Back to form
-                </button>
-              </div>
-            ) : (
-              <form onSubmit={handleSubmit} className="glass-card rounded-3xl p-8 space-y-5">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-mono text-muted-foreground uppercase tracking-wider">Full Name <span className="text-accent">*</span></label>
-                    <input type="text" name="name" required value={form.name} onChange={handleChange} placeholder="Alex Johnson" className="bg-secondary/30 border border-border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/30 transition-all" />
+              ) : (
+                <form onSubmit={handleSubmit} className="glass-card rounded-[3rem] p-8 md:p-12 space-y-8 bg-white shadow-2xl shadow-slate-200/20">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 md:gap-8">
+                    <div className="flex flex-col gap-3">
+                      <label className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em]">Full Name</label>
+                      <input type="text" name="name" required value={form.name} onChange={handleChange} placeholder="Alex Johnson" className="bg-slate-50 border border-slate-100 rounded-2xl px-6 py-4 text-sm font-bold text-[#1a1a1a] placeholder:text-slate-300 focus:outline-none focus:border-[#4A6741]/50 focus:ring-4 focus:ring-[#4A6741]/5 transition-all" />
+                    </div>
+                    <div className="flex flex-col gap-3">
+                      <label className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em]">Work Email</label>
+                      <input type="email" name="email" required value={form.email} onChange={handleChange} placeholder="alex@brand.com" className="bg-slate-50 border border-slate-100 rounded-2xl px-6 py-4 text-sm font-bold text-[#1a1a1a] placeholder:text-slate-300 focus:outline-none focus:border-[#4A6741]/50 focus:ring-4 focus:ring-[#4A6741]/5 transition-all" />
+                    </div>
                   </div>
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-mono text-muted-foreground uppercase tracking-wider">Work Email <span className="text-accent">*</span></label>
-                    <input type="email" name="email" required value={form.email} onChange={handleChange} placeholder="alex@brand.com" className="bg-secondary/30 border border-border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/30 transition-all" />
+                  
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 md:gap-8">
+                    <div className="flex flex-col gap-3">
+                      <label className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em]">Company</label>
+                      <input type="text" name="company" required value={form.company} onChange={handleChange} placeholder="Your Brand Inc." className="bg-slate-50 border border-slate-100 rounded-2xl px-6 py-4 text-sm font-bold text-[#1a1a1a] placeholder:text-slate-300 focus:outline-none focus:border-[#4A6741]/50 focus:ring-4 focus:ring-[#4A6741]/5 transition-all" />
+                    </div>
+                    <div className="flex flex-col gap-3">
+                      <label className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em]">Company Size</label>
+                      <div className="relative">
+                        <select name="companySize" value={form.companySize} onChange={handleChange} className="w-full bg-slate-50 border border-slate-100 rounded-2xl px-6 py-4 text-sm font-bold text-[#1a1a1a] focus:outline-none focus:border-[#4A6741]/50 focus:ring-4 focus:ring-[#4A6741]/5 transition-all appearance-none cursor-pointer">
+                          <option value="">Select size</option>
+                          {COMPANY_SIZES.map((s) => (<option key={s} value={s}>{s} employees</option>))}
+                        </select>
+                        <div className="absolute right-6 top-1/2 -translate-y-1/2 pointer-events-none text-slate-300">
+                          <ArrowRight className="w-4 h-4 rotate-90" />
+                        </div>
+                      </div>
+                    </div>
                   </div>
-                </div>
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-mono text-muted-foreground uppercase tracking-wider">Company <span className="text-accent">*</span></label>
-                    <input type="text" name="company" required value={form.company} onChange={handleChange} placeholder="Your Brand Inc." className="bg-secondary/30 border border-border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/30 transition-all" />
+
+                  <div className="flex flex-col gap-4">
+                    <label className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em]">Current Platform</label>
+                    <div className="flex flex-wrap gap-2">
+                      {PLATFORMS.map((p) => (
+                        <button key={p} type="button" onClick={() => setForm((prev) => ({ ...prev, platform: p }))}
+                          className={`px-5 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest border transition-all duration-300 ${form.platform === p ? 'bg-[#4A6741] text-white border-[#4A6741] shadow-lg shadow-[#4A6741]/20' : 'bg-white text-slate-400 border-slate-100 hover:border-slate-200'}`}>
+                          {p}
+                        </button>
+                      ))}
+                    </div>
                   </div>
-                  <div className="flex flex-col gap-1.5">
-                    <label className="text-xs font-mono text-muted-foreground uppercase tracking-wider">Company Size</label>
-                    <select name="companySize" value={form.companySize} onChange={handleChange} className="bg-secondary/30 border border-border rounded-xl px-4 py-3 text-sm text-foreground focus:outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/30 transition-all appearance-none cursor-pointer">
-                      <option value="" className="bg-card">Select size</option>
-                      {COMPANY_SIZES.map((s) => (<option key={s} value={s} className="bg-card">{s} employees</option>))}
-                    </select>
+
+                  <div className="flex flex-col gap-3">
+                    <label className="text-[10px] font-black text-slate-300 uppercase tracking-[0.2em]">Message (Optional)</label>
+                    <textarea name="message" value={form.message} onChange={handleChange} rows={3} placeholder="e.g. We want to see how it handles plus-size body types..." className="bg-slate-50 border border-slate-100 rounded-2xl px-6 py-4 text-sm font-bold text-[#1a1a1a] placeholder:text-slate-300 focus:outline-none focus:border-[#4A6741]/50 focus:ring-4 focus:ring-[#4A6741]/5 transition-all resize-none" />
                   </div>
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-mono text-muted-foreground uppercase tracking-wider">Current Platform</label>
-                  <div className="flex flex-wrap gap-2">
-                    {PLATFORMS.map((p) => (
-                      <button key={p} type="button" onClick={() => setForm((prev) => ({ ...prev, platform: p }))}
-                        className="px-3 py-1.5 rounded-lg text-xs font-mono border transition-all duration-200 focus:outline-none"
-                        style={{ borderColor: form.platform === p ? '#4A6741' : 'rgba(209,203,189,0.5)', background: form.platform === p ? '#4A674112' : 'transparent', color: form.platform === p ? '#4A6741' : 'var(--muted-foreground)' }}>
-                        {p}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div className="flex flex-col gap-1.5">
-                  <label className="text-xs font-mono text-muted-foreground uppercase tracking-wider">Anything specific you want to see?</label>
-                  <textarea name="message" value={form.message} onChange={handleChange} rows={3} placeholder="e.g. We want to see how it handles plus-size body types..." className="bg-secondary/30 border border-border rounded-xl px-4 py-3 text-sm text-foreground placeholder:text-muted-foreground/50 focus:outline-none focus:border-primary/60 focus:ring-1 focus:ring-primary/30 transition-all resize-none" />
-                </div>
-                <button type="submit" disabled={loading} className="w-full py-3.5 rounded-xl font-semibold text-sm tracking-wide transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-70 bg-primary text-white hover:bg-primary/90" style={{ boxShadow: '0 4px 16px rgba(74,103,65,0.2)' }}>
-                  {loading ? (
-                    <><svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" /><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" /></svg>Submitting...</>
-                  ) : (
-                    <>Continue to Pick a Slot<svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M13.5 4.5 21 12m0 0-7.5 7.5M21 12H3" /></svg></>
-                  )}
-                </button>
-                <p className="text-center text-xs text-muted-foreground/60">No commitment. No credit card. Just a 30-min call.</p>
-              </form>
-            )}
+
+                  <button type="submit" disabled={loading} className="w-full py-6 rounded-full font-black text-xs uppercase tracking-widest transition-all duration-500 flex items-center justify-center gap-3 disabled:opacity-70 bg-[#4A6741] text-white hover:scale-[1.02] active:scale-[0.98] shadow-2xl shadow-[#4A6741]/30">
+                    {loading ? (
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : (
+                      <>Continue to Pick a Slot <ArrowRight className="w-4 h-4" /></>
+                    )}
+                  </button>
+                  <p className="text-center text-[10px] font-black text-slate-300 uppercase tracking-[0.2em]">No commitment. No credit card. Just a 30-min call.</p>
+                </form>
+              )}
+            </div>
           </div>
         </div>
       </div>
