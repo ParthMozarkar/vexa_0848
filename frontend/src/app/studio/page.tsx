@@ -5,7 +5,6 @@ import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
 import { Download, Loader2, RotateCcw, Shirt } from "lucide-react";
 import { ImageUploadBox } from "@/components/studio/ImageUploadBox";
-import { ModelGenerator } from "@/components/studio/ModelGenerator";
 import { supabase } from "@/lib/supabase";
 import { useStore } from "@/store/useStore";
 import Header from "@/components/Header";
@@ -299,28 +298,7 @@ function StudioPageInner() {
 
       <div className="flex-1 px-4 md:px-6 pb-20 max-w-7xl mx-auto w-full">
 
-        {/* Tab bar */}
-        <div className="flex gap-2 mb-6 p-1 bg-white rounded-2xl border border-slate-100 shadow-sm w-fit">
-          {([
-            { id: "tryon",     label: "Virtual Try-On" },
-            { id: "model-gen", label: "AI Model Generator", isNew: true },
-          ] as const).map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id)}
-              className={`px-5 py-2 rounded-xl text-sm font-medium transition-all flex items-center gap-2 ${
-                activeTab === tab.id
-                  ? "bg-[#4A6741] text-white shadow"
-                  : "text-slate-400 hover:text-slate-700"
-              }`}
-            >
-              {tab.label}
-              {'isNew' in tab && tab.isNew && (
-                <span className="text-[9px] bg-[#bef264]/20 text-[#4A6741] px-1.5 py-0.5 rounded font-bold">NEW</span>
-              )}
-            </button>
-          ))}
-        </div>
+        {/* Tab switcher removed as only one tab remains */}
 
         {/* Try-On Tab */}
         {activeTab === "tryon" && (
@@ -486,18 +464,7 @@ function StudioPageInner() {
           </div>
         )}
 
-        {/* Model Generator Tab */}
-        {activeTab === "model-gen" && (
-          <div className="bg-white rounded-3xl p-6 border border-slate-100 shadow-xl shadow-slate-200/40">
-            <ModelGenerator
-              initialGarmentUrl={null}
-              onResult={(url) => {
-                setActiveTab("tryon");
-                setGarments([...garments, { id: `item_${Date.now()}`, url, category: "tops" }]);
-              }}
-            />
-          </div>
-        )}
+        {/* Model Generator Tab removed */}
       </div>
 
       {/* Sticky bottom bar — only visible on try-on tab */}
