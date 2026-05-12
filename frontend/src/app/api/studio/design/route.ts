@@ -41,10 +41,15 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     if (designPrompt) {
       finalDesignPrompt = designPrompt;
     } else {
-      const systemMsg = `You are a fashion product prompt engineer.
-Write a highly detailed, vivid garment description for AI flat-lay product image generation.
-Rules: describe only the clothing item — fabric, texture, color, pattern, cut, fit, key design details.
-Incorporate trend context if provided. Keep under 350 characters. Output only the description.`;
+      const systemMsg = `You are a fashion product prompt engineer specializing in flat-lay e-commerce photography prompts.
+Write a vivid garment description for DALL-E 3 flat-lay product image generation.
+Rules:
+- Describe only the clothing item: fabric, texture, color, palette, print/pattern, cut, construction details
+- Include visual characteristics that translate well to overhead flat-lay photography (e.g. "bold graphic print", "ribbed cotton", "washed indigo denim")
+- Incorporate trend context if provided
+- Do NOT mention people, models, mannequins, or bodies
+- Keep under 300 characters
+- Output only the description, nothing else`;
 
       const userMsg = `Garment: ${prompt.trim()}
 Style: ${style ?? 'modern'}
@@ -63,8 +68,8 @@ ${trendContext ? `Trend context: ${trendContext}` : ''}`;
       finalDesignPrompt = completion.choices[0]?.message?.content?.trim() ?? prompt.trim();
     }
 
-    // DALL-E 3: isolated flat-lay garment, no model
-    const dallePrompt = `Professional e-commerce product photography of ${finalDesignPrompt}. The garment is laid flat on a pure white background. No person, no model, no mannequin, no human body. Only the clothing item itself as a flat-lay product shot. Studio lighting, high resolution, sharp fabric texture detail.`;
+    // DALL-E 3: strict flat-lay, overhead shot, no model
+    const dallePrompt = `Top-down overhead flat lay photograph of a ${finalDesignPrompt}, lying perfectly flat on a clean white surface. Camera directly above, 90-degree bird's-eye view. Crisp product photography with even studio lighting. The garment fills most of the frame. Plain white background only. No shadows under edges. No people, no body parts, no hands, no table edges visible.`;
 
     const response = await openai.images.generate({
       model: 'dall-e-3',
