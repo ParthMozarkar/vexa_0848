@@ -384,21 +384,10 @@ function StudioPageInner() {
                 {status === "ready" && resultUrl && (
                   <div className="mt-6 flex flex-wrap justify-center gap-3 z-10">
                     <button 
-                      onClick={() => setIsSavedToCloset(true)} 
-                      className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl font-bold text-xs shadow-xl transition-all ${
-                        isSavedToCloset ? "bg-[#3d5636] text-white" : "bg-[#4A6741] text-white hover:bg-[#3d5636] hover:scale-105"
-                      }`}
+                      onClick={() => window.open("https://www.instagram.com", "_blank")} 
+                      className="flex items-center gap-2 px-4 py-2.5 rounded-2xl font-bold text-xs bg-white text-[#4A6741] border border-slate-200 shadow-xl hover:bg-slate-50 hover:scale-105 transition-all"
                     >
-                      {isSavedToCloset ? "✓ Saved to Closet" : "Save to Virtual Closet"}
-                    </button>
-                    
-                    <button 
-                      onClick={() => setIsSharedToSocial(true)} 
-                      className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl font-bold text-xs shadow-xl transition-all ${
-                        isSharedToSocial ? "bg-[#3d5636] text-white" : "bg-white text-[#4A6741] hover:bg-slate-50 hover:scale-105"
-                      }`}
-                    >
-                      {isSharedToSocial ? "✓ Exported to Instagram" : "Export to Instagram"}
+                      Export to Instagram
                     </button>
 
                     <button 
