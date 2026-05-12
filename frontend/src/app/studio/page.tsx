@@ -128,8 +128,9 @@ function StudioPageInner() {
     return new Promise((resolve, reject) => {
       const canvas = document.createElement('canvas');
       // 1024x1024 grid for the outfit
-      canvas.width = 1024;
-      canvas.height = 1024;
+      // Optimized canvas size for faster processing and lower memory footprint
+      canvas.width = 768;
+      canvas.height = 768;
       const ctx = canvas.getContext('2d');
       if (!ctx) return resolve(items[0].url);
 
@@ -139,10 +140,10 @@ function StudioPageInner() {
 
       let loaded = 0;
       const positions = [
-        { x: 0, y: 0, w: 512, h: 512 },       // Top Left
-        { x: 512, y: 0, w: 512, h: 512 },     // Top Right
-        { x: 0, y: 512, w: 512, h: 512 },     // Bottom Left
-        { x: 512, y: 512, w: 512, h: 512 },   // Bottom Right
+        { x: 0, y: 0, w: 384, h: 384 },       // Top Left
+        { x: 384, y: 0, w: 384, h: 384 },     // Top Right
+        { x: 0, y: 384, w: 384, h: 384 },     // Bottom Left
+        { x: 384, y: 384, w: 384, h: 384 },   // Bottom Right
       ];
 
       items.forEach((item, index) => {
@@ -378,10 +379,25 @@ function StudioPageInner() {
                       </motion.div>
                     )}
                     {status === "loading" && (
-                      <motion.div key="loading" className="flex flex-col items-center gap-6 text-center p-8">
-                        <Loader2 className="w-12 h-12 text-[#4A6741] animate-spin" />
-                        <p className="text-[#0f172a] text-lg font-black">AI is processing...</p>
-                        <p className="text-slate-400 text-sm font-medium">{elapsedSec}s elapsed</p>
+                      <motion.div key="loading" className="flex flex-col items-center gap-6 text-center p-8 w-full">
+                        <div className="relative">
+                          <Loader2 className="w-16 h-16 text-[#4A6741] animate-spin" />
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <span className="text-[10px] font-black text-[#4A6741]">{Math.min(99, Math.floor((elapsedSec / 25) * 100))}%</span>
+                          </div>
+                        </div>
+                        <div className="space-y-2 w-full max-w-[240px]">
+                          <p className="text-[#0f172a] text-lg font-black">AI is processing...</p>
+                          <div className="h-1.5 w-full bg-slate-100 rounded-full overflow-hidden">
+                            <motion.div 
+                              className="h-full bg-[#4A6741]"
+                              initial={{ width: "0%" }}
+                              animate={{ width: `${Math.min(99, (elapsedSec / 25) * 100)}%` }}
+                              transition={{ duration: 0.5 }}
+                            />
+                          </div>
+                          <p className="text-slate-400 text-[10px] font-bold uppercase tracking-widest">{elapsedSec}s elapsed — Optimizing textures</p>
+                        </div>
                       </motion.div>
                     )}
                     {status === "ready" && resultUrl && (

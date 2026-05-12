@@ -43,8 +43,8 @@
   }
 
   @keyframes animationIn {
-    0% { opacity: 0; transform: translateY(30px); filter: blur(8px); }
-    100% { opacity: 1; transform: translateY(0); filter: blur(0px); }
+    0% { opacity: 0; transform: translate3d(0, 30px, 0); filter: blur(8px); }
+    100% { opacity: 1; transform: translate3d(0, 0, 0); filter: blur(0px); }
   }
 
   .animate-on-scroll {
@@ -311,20 +311,20 @@ input[type="number"] { -moz-appearance: textfield; }
 }
 
 @keyframes float-1 {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-10px); }
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50% { transform: translate3d(0, -10px, 0); }
 }
 @keyframes float-2 {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-8px); }
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50% { transform: translate3d(0, -8px, 0); }
 }
 @keyframes float-3 {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-12px); }
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50% { transform: translate3d(0, -12px, 0); }
 }
 @keyframes float-4 {
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-6px); }
+  0%, 100% { transform: translate3d(0, 0, 0); }
+  50% { transform: translate3d(0, -6px, 0); }
 }
 
 @keyframes spin-slow {
@@ -364,10 +364,10 @@ input[type="number"] { -moz-appearance: textfield; }
   100% { stroke-dashoffset: 0; opacity: 0; }
 }
 
-.animate-float-1 { animation: float-1 8s ease-in-out infinite; }
-.animate-float-2 { animation: float-2 9s ease-in-out infinite 1s; }
-.animate-float-3 { animation: float-3 10s ease-in-out infinite 2s; }
-.animate-float-4 { animation: float-4 11s ease-in-out infinite 0.5s; }
+.animate-float-1 { animation: float-1 8s ease-in-out infinite; will-change: transform; }
+.animate-float-2 { animation: float-2 9s ease-in-out infinite 1s; will-change: transform; }
+.animate-float-3 { animation: float-3 10s ease-in-out infinite 2s; will-change: transform; }
+.animate-float-4 { animation: float-4 11s ease-in-out infinite 0.5s; will-change: transform; }
 .animate-spin-slow { animation: spin-slow 3s linear infinite; }
 .animate-pulse-glow { animation: pulse-glow 2s ease-in-out infinite; }
 .animate-draw-line {

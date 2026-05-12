@@ -140,6 +140,7 @@ export function GooeyText({
           className={cn(
             "absolute inline-block select-none text-center text-6xl md:text-[60pt]",
             "text-foreground",
+            "will-change-[filter,opacity]",
             textClassName,
           )}
         />
@@ -148,6 +149,7 @@ export function GooeyText({
           className={cn(
             "absolute inline-block select-none text-center text-6xl md:text-[60pt]",
             "text-foreground",
+            "will-change-[filter,opacity]",
             textClassName,
           )}
         />
