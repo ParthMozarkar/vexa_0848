@@ -67,48 +67,64 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     const sanitizedPrompt = finalDesignPrompt.slice(0, 850);
     const generationPrompt = `Top-down overhead flat lay photograph of a ${sanitizedPrompt}, clean white background, bird's-eye view, crisp studio lighting, no people.`;
 
-    // 3. Generate Image (DALL-E 3)
-    const dalleResponse = await fetch('https://api.openai.com/v1/images/generations', {
-      method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json', 
-        'Authorization': `Bearer ${openaiKey.trim()}` 
-      },
-      body: JSON.stringify({ 
-        model: 'dall-e-3', 
-        prompt: generationPrompt, 
-        n: 1, 
-        size: '1024x1024' 
-      }),
-    });
+    let imageUrl: string | undefined;
+    let finalDalleData: any = {};
 
-    let dalleData = await dalleResponse.json();
-
-    // 4. Fallback to DALL-E 2 if needed
-    if (!dalleResponse.ok || !dalleData.data?.[0]?.url) {
-      console.warn('DALL-E 3 failed, trying DALL-E 2 fallback...', JSON.stringify(dalleData));
-      const fallbackRes = await fetch('https://api.openai.com/v1/images/generations', {
+    // 3. Try OpenAI DALL-E 3
+    try {
+      const dalleResponse = await fetch('https://api.openai.com/v1/images/generations', {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json', 
-          'Authorization': `Bearer ${openaiKey.trim()}` 
-        },
-        body: JSON.stringify({ 
-          model: 'dall-e-2', 
-          prompt: generationPrompt, 
-          n: 1, 
-          size: '1024x1024' 
-        }),
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${openaiKey.trim()}` },
+        body: JSON.stringify({ model: 'dall-e-3', prompt: generationPrompt, n: 1, size: '1024x1024' }),
       });
-      dalleData = await fallbackRes.json();
-    }
+      const data = await dalleResponse.json();
+      if (dalleResponse.ok) imageUrl = data.data?.[0]?.url;
+      else finalDalleData = data;
+    } catch (e) { console.warn('OpenAI DALL-E 3 error', e); }
 
-    const imageUrl = dalleData.data?.[0]?.url;
+    // 4. Try OpenAI DALL-E 2 Fallback
     if (!imageUrl) {
-      throw new Error(dalleData.error?.message || 'Design generation failed.');
+      try {
+        const fallbackRes = await fetch('https://api.openai.com/v1/images/generations', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${openaiKey.trim()}` },
+          body: JSON.stringify({ model: 'dall-e-2', prompt: generationPrompt, n: 1, size: '1024x1024' }),
+        });
+        const data = await fallbackRes.json();
+        if (fallbackRes.ok) imageUrl = data.data?.[0]?.url;
+        else finalDalleData = data;
+      } catch (e) { console.warn('OpenAI DALL-E 2 error', e); }
     }
 
-    // 5. Save to History (Fire-and-forget)
+    // 5. Try ANAKIN Fallback (if configured)
+    const anakinKey = process.env.ANAKIN_API_KEY;
+    if (!imageUrl && anakinKey) {
+      try {
+        console.log('Trying Anakin fallback for design...');
+        const anakinRes = await fetch('https://api.anakin.ai/v1/quick_run', {
+          method: 'POST',
+          headers: { 'X-Anakin-Api-Key': anakinKey, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            appId: 'L9mjwX5v', // Standard DALL-E 3 App ID on Anakin
+            inputs: { 'Prompt': generationPrompt }
+          }),
+        });
+        const data = await anakinRes.json();
+        // Anakin usually returns result in data.result or data.outputs
+        imageUrl = data?.result || data?.outputs?.url || data?.outputs?.image;
+      } catch (e) { console.warn('Anakin fallback failed', e); }
+    }
+
+    if (!imageUrl) {
+      const openAiMsg = finalDalleData.error?.message || '';
+      throw new Error(
+        openAiMsg.includes('does not exist') 
+        ? `OpenAI Project Error: Your API key lacks DALL-E permissions. Please enable DALL-E 3 in your OpenAI Project Settings or provide a different key.`
+        : openAiMsg || 'AI design service is currently unavailable.'
+      );
+    }
+
+    // 6. Save to History (Fire-and-forget)
     const supabase = getServiceSupabase();
     Promise.resolve().then(async () => {
       try {
