@@ -75,15 +75,15 @@ export function SizeCompass({ personUrl }: SizeCompassProps) {
             <div className="grid grid-cols-3 gap-2">
               <div className="bg-slate-50 rounded-xl p-2 text-center">
                 <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Chest</p>
-                <p className="text-sm font-black text-[#1a1a1a]">38"</p>
+                <p className="text-sm font-black text-[#1a1a1a]">44"</p>
               </div>
               <div className="bg-slate-50 rounded-xl p-2 text-center">
                 <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Waist</p>
-                <p className="text-sm font-black text-[#1a1a1a]">32"</p>
+                <p className="text-sm font-black text-[#1a1a1a]">38"</p>
               </div>
               <div className="bg-slate-50 rounded-xl p-2 text-center">
                 <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Inseam</p>
-                <p className="text-sm font-black text-[#1a1a1a]">30"</p>
+                <p className="text-sm font-black text-[#1a1a1a]">32"</p>
               </div>
             </div>
 
@@ -91,7 +91,7 @@ export function SizeCompass({ personUrl }: SizeCompassProps) {
               <CheckCircle2 className="w-5 h-5 text-[#4A6741] shrink-0" />
               <div>
                 <p className="text-xs text-slate-600 font-medium">Recommended Size</p>
-                <p className="text-base font-black text-[#4A6741]">Medium (M)</p>
+                <p className="text-base font-black text-[#4A6741]">Large (L)</p>
               </div>
             </div>
           </motion.div>

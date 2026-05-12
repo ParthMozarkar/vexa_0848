@@ -393,19 +393,19 @@ function StudioPageInner() {
                           <button 
                             onClick={() => setIsSavedToCloset(true)} 
                             className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl font-bold text-xs shadow-xl transition-all ${
-                              isSavedToCloset ? "bg-[#4A6741] text-white" : "bg-white text-slate-700 hover:scale-105"
+                              isSavedToCloset ? "bg-[#3d5636] text-white" : "bg-[#4A6741] text-white hover:bg-[#3d5636] hover:scale-105"
                             }`}
                           >
-                            {isSavedToCloset ? "✓ Saved to Closet" : "✨ Save to Virtual Closet"}
+                            {isSavedToCloset ? "✓ Saved to Closet" : "Save to Virtual Closet"}
                           </button>
                           
                           <button 
                             onClick={() => setIsSharedToSocial(true)} 
                             className={`flex items-center gap-2 px-4 py-2.5 rounded-2xl font-bold text-xs shadow-xl transition-all ${
-                              isSharedToSocial ? "bg-rose-500 text-white" : "bg-gradient-to-r from-rose-400 to-orange-400 text-white hover:scale-105"
+                              isSharedToSocial ? "bg-[#3d5636] text-white" : "bg-white text-[#4A6741] hover:bg-slate-50 hover:scale-105"
                             }`}
                           >
-                            {isSharedToSocial ? "✓ Exported to TikTok" : "🎵 Export to TikTok/Reels"}
+                            {isSharedToSocial ? "✓ Exported to Instagram" : "Export to Instagram"}
                           </button>
 
                           <button onClick={handleDownload} className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-[#0f172a] text-white font-bold text-xs shadow-xl hover:scale-105 transition-all">
