@@ -95,10 +95,16 @@ async function persistResultImage(imageUrl: string, userId: string, productId: s
     const res = await fetch(imageUrl, { signal: AbortSignal.timeout(30_000) });
     if (!res.ok) return imageUrl;
     const arrayBuffer = await res.arrayBuffer();
+    const buffer = Buffer.from(arrayBuffer);
     const contentType = res.headers.get('content-type') || 'image/png';
     const ext = contentType.split('/')[1]?.split(';')[0] || 'png';
     const filename = `tryon_results/${userId}_${productId}_${Date.now()}.${ext}`;
 
+    // 1. Try Cloudflare R2 first
+    const r2Url = await uploadToR2(buffer, filename, contentType);
+    if (r2Url) return r2Url;
+
+    // 2. Fallback to Supabase Storage
     const { error: uploadError } = await supabase.storage.from('avatars').upload(filename, arrayBuffer, { contentType, upsert: true });
     if (!uploadError) {
       const { data: signed } = await supabase.storage.from('avatars').createSignedUrl(filename, 86400 * 365);
