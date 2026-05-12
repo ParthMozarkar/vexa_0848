@@ -150,7 +150,7 @@ async function callTNB(personImageUrl: string, garmentImageUrl: string, category
   const apiKey = process.env.TNB_API_KEY || process.env.NEWBLACK_API_KEY;
   if (!apiKey) throw new Error('TNB_API_KEY not configured');
 
-  const endpoint = category === 'shoes' ? 'vto-shoes' : 'vto_stream';
+  const endpoint = category === 'shoes' ? 'vto-shoes' : 'vto';
 
   const runRequest = async () => {
     const formData = new FormData();
