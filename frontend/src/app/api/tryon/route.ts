@@ -236,28 +236,27 @@ export async function handleTryOn(input: any, supabase: SupabaseClient<Database>
   // 3. Call AI with Hedging
   const resUrl = await callTNB(personUrlFinal, garmentUrlFinal, itemsToProcess[0].category as TryOnCategory);
 
-  // 4. Persistence (Saves ALL inputs and outputs)
+  // 4. Persistence — await so we return the stable stored URL, not the short-lived TNB URL
+  let finalUrl = resUrl;
   try {
     const persistedUrl = await persistResultImage(resUrl, userId, productId, supabase);
-    const { error: upsertError } = await (supabase.from('tryon_results') as any).upsert({
+    if (persistedUrl && persistedUrl !== resUrl) finalUrl = persistedUrl;
+    await (supabase.from('tryon_results') as any).upsert({
       user_id: userId,
       product_id: productId,
       user_photo_url: userPhotoUrl,
       garment_url: productImageUrl || (garments?.[0]?.url),
-      result_url: persistedUrl,
+      result_url: finalUrl,
       fit_label: 'True to size',
       recommended_size: 'M',
       status: 'ready',
       created_at: new Date().toISOString(),
     });
-    
-    if (upsertError) console.error('[/api/tryon] Upsert Error:', upsertError);
-    else console.log('[/api/tryon] Result successfully archived.');
   } catch (e) {
-    console.error('[/api/tryon] Persistence failed:', e);
+    console.error('[/api/tryon] Persistence failed, returning raw URL:', e);
   }
 
-  return { resultUrl: resUrl, status: 'ready', fitLabel: 'True to size', recommendedSize: 'M', fitScore: 85 };
+  return { resultUrl: finalUrl, status: 'ready', fitLabel: 'True to size', recommendedSize: 'M', fitScore: 85 };
 }
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
