@@ -3,45 +3,51 @@ gsd_state_version: 1.0
 milestone: v2.0
 milestone_name: AI Infrastructure Scale
 status: planning
-last_updated: "2026-05-13T22:14:49.048Z"
-last_activity: 2026-05-13
+last_updated: "2026-05-14T00:00:00.000Z"
+last_activity: 2026-05-14
 progress:
-  total_phases: 0
+  total_phases: 6
   completed_phases: 0
   total_plans: 0
   completed_plans: 0
   percent: 0
 ---
 
-# VEXA Production Security Hardening — Project State
+# VEXA AI Infrastructure Scale — Project State
 
 **Last updated:** 2026-05-14
-**Milestone:** v1.0 Security Hardening
+**Milestone:** v2.0 AI Infrastructure Scale
 
 ---
 
 ## Project Reference
 
-**Core Value:** Zero-regression security hardening — every critical vulnerability closed without breaking the working try-on, avatar, upload, and marketplace flows.
+**Core Value:** Scalable AI pipelines that preserve existing user-facing behavior while eliminating duplicate costs, single-provider lock-in, and synchronous blocking on heavy AI workloads.
 
-**Current Focus:** Phase 1 — SSRF Prevention
+**Current Focus:** Phase 9 — Provider Abstraction Layer (or Phase 10 — Job Queue System; these two can run in parallel)
 
 ---
 
 ## Current Position
 
-Phase: Not started (defining requirements)
+```
+Phase: Not started
 Plan: —
-Status: Defining requirements
-Last activity: 2026-05-13 — Milestone v2.0 started
+Status: Roadmap defined, ready for planning
+Last activity: 2026-05-14 — v2.0 roadmap created
+
+Progress: [░░░░░░░░░░░░░░░░░░░░] 0% (0/6 phases)
+```
+
+---
 
 ## Performance Metrics
 
 | Metric | Value |
 |--------|-------|
-| Requirements total | 39 |
+| Requirements total | 37 |
 | Requirements complete | 0 |
-| Phases complete | 0/8 |
+| Phases complete | 0/6 |
 | Plans complete | 0 |
 | Blockers | None |
 
@@ -53,34 +59,37 @@ Last activity: 2026-05-13 — Milestone v2.0 started
 
 | Decision | Rationale |
 |----------|-----------|
-| Use image-hosts.config.mjs as SSRF allowlist source | Single source of truth, already maintained |
-| Move TNB key to X-API-Key header | URLs logged everywhere; headers are not |
-| Hard fail on missing INTERNAL_SERVICE_TOKEN in prod | Silent bypass = full auth defeat |
-| Magic bytes via file-type library | file.type is user-controlled, untrustworthy |
-| Sentry for both frontend and backend | Unified error tracking across the stack |
+| Provider abstraction in frontend/src/lib/providers/ | Collocated with existing lib utilities; no new packages needed |
+| Redis + BullMQ for job queues | BullMQ is the de-facto BullMQ successor with TypeScript-first API |
+| Main /api/tryon stays synchronous | Zero regression rule — changing response shape breaks B2B clients |
+| Only video, avatar heavy path, and Meshy get queued | These are the only routes that block >10s; image try-on is fast enough |
+| Cache keyed by hash(personUrl + garmentUrl + category) | Deterministic deduplication without storing raw URLs in cache keys |
+| Cost tracking in costTracker.ts, not middleware | Middleware runs on every request; AI costs only apply to provider calls |
+| Redis-backed cache with in-memory LRU fallback | Resilience when Redis is unavailable; no hard dependency on external state |
+| Retry utility separate from provider adapters | Reusable across providers without coupling retry policy to adapter code |
 
 ### Critical Files to Know
 
 | File | Why It Matters |
 |------|----------------|
-| frontend/src/app/api/proxy/route.ts | Primary SSRF vector — Phase 1 target |
-| frontend/src/app/api/keys/validate/route.ts | Demo bypass — Phase 2 target |
-| frontend/src/app/api/tryon/route.ts | Key leakage + guest auth — Phase 2/3 target |
-| backend/main.py | Silent token bypass — Phase 2 target |
-| frontend/src/app/api/upload/route.ts | Weak MIME validation — Phase 4 target |
-| frontend/image-hosts.config.mjs | SSRF allowlist source of truth |
+| frontend/src/app/api/tryon/route.ts | Stays synchronous — zero change to response shape |
+| frontend/src/app/api/tryon/video/route.ts | Convert to enqueue-and-return-jobId (JOB-03) |
+| frontend/src/app/api/studio/model-gen/route.ts | Convert to enqueue-and-return-jobId (JOB-04) |
+| frontend/src/app/api/avatar/generate/route.ts | Heavy SMPL-X path converts to async (JOB-05) |
+| frontend/src/lib/ | New modules land here: providers/, redis.ts, retry.ts, cache.ts, costTracker.ts |
 
-### Compatibility Constraints
+### Zero Regression Constraints
 
-- Must not break /api/tryon, /api/upload, /api/avatar/generate, /api/proxy image flows
-- No secrets in code — all credentials via environment variables only
-- No auto-deploy — CI/CD verifies only, no production push automation
-- Python service must remain compatible with Next.js proxy calls using INTERNAL_SERVICE_TOKEN Bearer auth
+- /api/tryon response shape must not change — B2B clients depend on it
+- All provider output formats preserved — adapters wrap, never transform
+- Existing synchronous flows remain synchronous unless explicitly listed for async conversion
+- No new required environment variables without a sensible default or graceful degradation path
 
 ### Todos
 
-- [ ] Begin Phase 1: audit proxy/route.ts and implement allowlist + scheme + IP validation
-- [ ] Identify all fetch(url) patterns with user-controlled input in the codebase
+- [ ] Begin Phase 9: Create frontend/src/lib/providers/ with AIProvider interface and four adapters
+- [ ] Begin Phase 10 (parallel): Create frontend/src/lib/redis.ts and BullMQ queue definitions
+- [ ] Audit existing TNB, OpenAI, Meshy, BlackBox call sites before writing adapters — ensure output shapes are captured
 
 ### Blockers
 
@@ -93,13 +102,13 @@ None currently.
 **To resume this project:**
 
 1. Read this STATE.md for current position
-2. Read ROADMAP.md for phase goals and success criteria
-3. Read REQUIREMENTS.md for detailed requirement specifications
-4. Read codebase/CONCERNS.md for vulnerability details and file references
-5. Start with Phase 1: SSRF Prevention — target file is frontend/src/app/api/proxy/route.ts
+2. Read ROADMAP.md (v2.0 section) for phase goals and success criteria
+3. Read REQUIREMENTS.md for full requirement specifications
+4. Phases 9 and 10 can start in parallel — both have no dependencies
+5. Start with Phase 9 (provider abstraction) OR Phase 10 (job queues)
 
-**Next action:** `/gsd-plan-phase 1`
+**Next action:** `/gsd-plan-phase 9`
 
 ---
 
-*State initialized: 2026-05-14*
+*State initialized for v2.0: 2026-05-14*
