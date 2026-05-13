@@ -65,30 +65,43 @@ async function authenticateRequest(req: NextRequest, bodyUserId: string): Promis
 
 async function resolveToPublicUrl(url: string, label: string, userId: string, supabase: SupabaseClient<Database>): Promise<string> {
   if (!url) return '';
-  if (url.startsWith('http')) return url;
+  
+  try {
+    const isDataUrl = url.startsWith('data:');
+    let buffer: Buffer;
+    let mime: string;
+    let ext: string;
 
-  if (!url.startsWith('data:') && !url.includes(',')) {
-    try {
-      const { data: signed } = await supabase.storage.from('avatars').createSignedUrl(url, 3600);
-      if (signed?.signedUrl) return signed.signedUrl;
-    } catch (e) { console.warn(`Failed to sign path ${url}:`, e); }
+    if (isDataUrl) {
+      const [meta, b64] = url.split(',');
+      mime = meta?.slice(5).split(';')[0] || 'image/png';
+      ext = mime.split('/')[1] || 'png';
+      buffer = Buffer.from(b64, 'base64');
+    } else {
+      // Download external URL to archive it
+      const res = await fetch(url);
+      if (!res.ok) return url;
+      const arrayBuffer = await res.arrayBuffer();
+      buffer = Buffer.from(arrayBuffer);
+      mime = res.headers.get('content-type') || 'image/png';
+      ext = mime.split('/')[1]?.split(';')[0] || 'png';
+    }
+
+    const folder = label === 'person' ? 'person' : 'garments';
+    const filename = `uploads/${folder}/${userId}_${Date.now()}.${ext}`;
+
+    // 1. Try R2
+    const r2Url = await uploadToR2(buffer, filename, mime);
+    if (r2Url) return r2Url;
+
+    // 2. Fallback to Supabase
+    await supabase.storage.from('avatars').upload(filename, buffer, { contentType: mime, upsert: true });
+    const { data: signed } = await supabase.storage.from('avatars').createSignedUrl(filename, 86400 * 365);
+    return signed?.signedUrl || url;
+  } catch (e) {
+    console.warn(`[Resolve] Failed to archive ${label}:`, e);
     return url;
   }
-
-  const [meta, b64] = url.split(',');
-  if (!b64) return url;
-
-  const mime = meta?.slice(5).split(';')[0] || 'image/png';
-  const ext = mime.split('/')[1] || 'png';
-  const buffer = Buffer.from(b64, 'base64');
-  const filename = `uploads/${userId}_${label}_${Date.now()}.${ext}`;
-
-  const r2Url = await uploadToR2(buffer, filename, mime);
-  if (r2Url) return r2Url;
-
-  await supabase.storage.from('avatars').upload(filename, buffer, { contentType: mime, upsert: true });
-  const { data: signed } = await supabase.storage.from('avatars').createSignedUrl(filename, 3600);
-  return signed?.signedUrl || url;
 }
 
 async function persistResultImage(imageUrl: string, userId: string, productId: string, supabase: SupabaseClient<Database>): Promise<string> {
@@ -101,11 +114,9 @@ async function persistResultImage(imageUrl: string, userId: string, productId: s
     const ext = contentType.split('/')[1]?.split(';')[0] || 'png';
     const filename = `tryon_results/${userId}_${productId}_${Date.now()}.${ext}`;
 
-    // 1. Try Cloudflare R2 first
     const r2Url = await uploadToR2(buffer, filename, contentType);
     if (r2Url) return r2Url;
 
-    // 2. Fallback to Supabase Storage
     const { error: uploadError } = await supabase.storage.from('avatars').upload(filename, arrayBuffer, { contentType, upsert: true });
     if (!uploadError) {
       const { data: signed } = await supabase.storage.from('avatars').createSignedUrl(filename, 86400 * 365);
