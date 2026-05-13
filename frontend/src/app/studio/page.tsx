@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Download, Loader2, RotateCcw, Shirt } from "lucide-react";
+import { Download, Loader2, RotateCcw, Shirt, Lock } from "lucide-react";
 import { ImageUploadBox } from "@/components/studio/ImageUploadBox";
 import { supabase } from "@/lib/supabase";
 import { useStore } from "@/store/useStore";
@@ -43,6 +43,9 @@ interface TryOnApiResponse {
   error?: string;
   status?: string;
   cached?: boolean;
+  limitReached?: boolean;
+  generationsRemaining?: number | null;
+  message?: string;
 }
 
 const FETCH_TIMEOUT_MS = 300_000;
@@ -69,6 +72,8 @@ function StudioPageInner() {
   const [resultUrl, setResultUrl] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [elapsedSec, setElapsedSec] = useState(0);
+  const [limitReached, setLimitReached] = useState(false);
+  const [generationsRemaining, setGenerationsRemaining] = useState<number | null>(null);
 
   // New Features State
   const [selectedVibe, setSelectedVibe] = useState<string>("Studio White");
@@ -188,6 +193,7 @@ function StudioPageInner() {
     setResultUrl(null);
     setIsSavedToCloset(false);
     setIsSharedToSocial(false);
+    setLimitReached(false);
 
     try {
       // SMART COMPOSITION: If multiple items, merge them into 1 image to make the API 4x faster
@@ -226,10 +232,22 @@ function StudioPageInner() {
         }
         throw new Error(`Server error (${res.status}). Please try again.`);
       }
+
+      if (res.status === 429 && data.limitReached) {
+        setLimitReached(true);
+        setStatus("idle");
+        clearTimeout(timeoutId);
+        return;
+      }
+
       if (!res.ok) throw new Error(data.error ?? `Error ${res.status}`);
 
       const url = data.result_url ?? data.resultUrl;
       if (!url) throw new Error("No result URL returned from the AI engine.");
+
+      if (typeof data.generationsRemaining === 'number') {
+        setGenerationsRemaining(data.generationsRemaining);
+      }
 
       setResultUrl(url);
       setStatus("ready");
@@ -248,6 +266,7 @@ function StudioPageInner() {
     setStatus("idle");
     setResultUrl(null);
     setErrorMsg(null);
+    setLimitReached(false);
   };
 
   const handleDownload = async () => {
@@ -330,13 +349,40 @@ function StudioPageInner() {
 
                 <div className="flex-1 relative rounded-3xl overflow-hidden flex items-center justify-center bg-slate-50/50 border border-slate-100">
                   <AnimatePresence mode="wait">
-                    {status === "idle" && (
+                    {limitReached && (
+                      <motion.div
+                        key="limit"
+                        initial={{ opacity: 0, y: 8 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0 }}
+                        className="flex flex-col items-center gap-4 text-center p-8 w-full"
+                      >
+                        <div className="w-14 h-14 rounded-2xl bg-[#4A6741]/10 flex items-center justify-center">
+                          <Lock className="w-7 h-7 text-[#4A6741]" />
+                        </div>
+                        <div>
+                          <p className="text-[#1a1a1a] font-black text-base">You&apos;ve used your 2 free try-ons</p>
+                          <p className="text-slate-500 text-sm mt-2 leading-relaxed max-w-xs mx-auto">
+                            VEXA is built for fashion marketplaces like Myntra and Snitch. Your free trial has ended.
+                          </p>
+                        </div>
+                        <a
+                          href="https://vexatryon.in"
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="mt-2 inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-[#4A6741] text-white font-bold text-sm hover:bg-[#3d5636] transition-all shadow-lg"
+                        >
+                          Learn about VEXA for Marketplaces →
+                        </a>
+                      </motion.div>
+                    )}
+                    {!limitReached && status === "idle" && (
                       <motion.div key="idle" className="flex flex-col items-center gap-4 text-center p-8">
                         <Shirt className="w-8 h-8 text-slate-200" />
                         <p className="text-slate-400 font-medium text-sm">Waiting for uploads...</p>
                       </motion.div>
                     )}
-                    {status === "loading" && (
+                    {!limitReached && status === "loading" && (
                       <motion.div key="loading" className="flex flex-col items-center gap-6 text-center p-8 w-full">
                         <div className="relative">
                           <Loader2 className="w-16 h-16 text-[#4A6741] animate-spin" />
@@ -365,12 +411,12 @@ function StudioPageInner() {
                         </div>
                       </motion.div>
                     )}
-                    {status === "ready" && resultUrl && (
+                    {!limitReached && status === "ready" && resultUrl && (
                       <motion.div key="result" className="absolute inset-0">
                         <img src={resultUrl} alt="Result" className="w-full h-full object-contain" />
                       </motion.div>
                     )}
-                    {status === "error" && (
+                    {!limitReached && status === "error" && (
                       <motion.div key="error" className="flex flex-col items-center gap-4 text-center p-8">
                         <RotateCcw className="w-6 h-6 text-rose-400" />
                         <p className="text-rose-500 font-bold text-sm">{errorMsg}</p>
@@ -458,11 +504,21 @@ function StudioPageInner() {
       {activeTab === "tryon" && (
         <div className="sticky bottom-0 bg-white/80 backdrop-blur-xl border-t border-slate-100 z-20">
           <div className="max-w-7xl mx-auto px-4 md:px-6 h-20 flex items-center justify-between">
-            <p className="text-sm font-bold uppercase tracking-widest text-slate-400">{statusText()}</p>
+            <div className="flex flex-col gap-0.5">
+              <p className="text-sm font-bold uppercase tracking-widest text-slate-400">{statusText()}</p>
+              {!limitReached && generationsRemaining !== null && (
+                <p className="text-xs font-medium text-slate-400">
+                  {generationsRemaining === 1 ? '1 free try-on remaining' : `${generationsRemaining} free try-ons remaining`}
+                </p>
+              )}
+              {!limitReached && generationsRemaining === null && status === "idle" && (
+                <p className="text-xs font-medium text-slate-400">2 free try-ons available</p>
+              )}
+            </div>
             <button
-              disabled={btn.disabled}
+              disabled={btn.disabled || limitReached}
               onClick={btn.onClick}
-              className={`px-12 py-4 rounded-2xl text-base font-black uppercase tracking-widest transition-all shadow-2xl text-white ${btn.className}`}
+              className={`px-12 py-4 rounded-2xl text-base font-black uppercase tracking-widest transition-all shadow-2xl text-white ${limitReached ? "bg-slate-200 text-slate-400 cursor-not-allowed" : btn.className}`}
             >
               {btn.label}
             </button>

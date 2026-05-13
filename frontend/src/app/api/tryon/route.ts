@@ -10,6 +10,7 @@ import { getFitRecommendation, getFitScore } from '@/lib/fitEngine';
 import type { MarketplaceContext } from '@/types';
 import type { Database } from '@/types/database';
 import { uploadToR2 } from '@/lib/r2';
+import { getClientIp, checkIpLimit, incrementIpCount } from '@/lib/ipRateLimit';
 
 export const runtime = 'nodejs';
 export const maxDuration = 300;
@@ -243,17 +244,54 @@ export async function handleTryOn(input: any, supabase: SupabaseClient<Database>
 }
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
-  const startTime = Date.now();
+  if (req.headers.get('x-debug-ping') === 'true') {
+    return NextResponse.json({ status: 'alive', time: new Date().toISOString() });
+  }
+
+  const clientIp = getClientIp(req);
   const supabase = getServiceSupabase();
 
   try {
     const { userId, userPhotoUrl, productImageUrl, productId, category, garments } = await req.json();
+
+    // x-vexa-key = marketplace B2B request — not subject to IP limit
+    const isMarketplaceRequest = !!req.headers.get('x-vexa-key');
+
+    if (!isMarketplaceRequest) {
+      const ipCheck = await checkIpLimit(clientIp);
+
+      if (!ipCheck.allowed) {
+        return NextResponse.json(
+          {
+            error: 'Free trial limit reached',
+            message: `You have used both of your free try-ons. VEXA is a B2B platform — contact us at vexatryon.in to integrate try-on into your marketplace.`,
+            generationsUsed: ipCheck.generationsUsed,
+            generationsRemaining: 0,
+            limitReached: true,
+          },
+          { status: 429 }
+        );
+      }
+    }
+
     const auth = await authenticateRequest(req, userId);
     if (auth instanceof NextResponse) return auth;
 
     const result = await handleTryOn({ userId: auth.userId, productId, userPhotoUrl, productImageUrl, category, garments }, supabase);
 
-    return NextResponse.json(result);
+    if (!isMarketplaceRequest) {
+      await incrementIpCount(clientIp).catch((e: Error) =>
+        console.warn('[tryon] IP increment failed:', e.message)
+      );
+    }
+
+    let generationsRemaining: number | null = null;
+    if (!isMarketplaceRequest) {
+      const postCheck = await checkIpLimit(clientIp);
+      generationsRemaining = postCheck.generationsRemaining;
+    }
+
+    return NextResponse.json({ ...result, generationsRemaining });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
     console.error('[/api/tryon] ERROR:', message);

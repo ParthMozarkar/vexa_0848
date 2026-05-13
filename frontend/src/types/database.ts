@@ -75,9 +75,16 @@ export interface SizeChartRow {
   created_at: string;
 }
 
+export interface IpTryOnLimitRow {
+  id: string;
+  ip_address: string;
+  generation_count: number;
+  first_used_at: string;
+  last_used_at: string;
+}
+
 export interface Database {
   public: {
-    /** Required by @supabase/supabase-js v2 typed client */
     PostgrestVersion: '12';
     Tables: {
       users: {
@@ -115,6 +122,14 @@ export interface Database {
         Insert: Omit<SizeChartRow, 'id' | 'created_at'> & { id?: string; created_at?: string };
         Update: Partial<Omit<SizeChartRow, 'id'>>;
       };
+      ip_tryon_limits: {
+        Row: IpTryOnLimitRow;
+        Insert: Omit<IpTryOnLimitRow, 'id' | 'first_used_at' | 'last_used_at'>;
+        Update: Partial<IpTryOnLimitRow>;
+        Relationships: [];
+      };
     };
+    Views: Record<string, { Row: Record<string, unknown>; Relationships: never[] }>;
+    Functions: Record<string, { Args: Record<string, unknown>; Returns: unknown }>;
   };
 }
