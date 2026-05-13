@@ -11,6 +11,8 @@ import { uploadToR2 } from '@/lib/r2';
 import { getClientIp, checkIpLimit, incrementIpCount } from '@/lib/ipRateLimit';
 import { createServerSupabaseClient } from '@/lib/supabaseServer';
 import type { HandleTryOnInput, HandleTryOnResult } from '@/lib/tryonContracts';
+import { validateProxyUrl } from '@/lib/ssrfGuard';
+import { logger } from '@/lib/logger';
 
 export type { TryOnCategory } from '@/types';
 
@@ -55,7 +57,7 @@ async function authenticateRequest(req: NextRequest, bodyUserId: string): Promis
 
 async function resolveToPublicUrl(url: string, label: string, userId: string, supabase: SupabaseClient): Promise<string> {
   if (!url) return '';
-  
+
   try {
     const isDataUrl = url.startsWith('data:');
     let buffer: Buffer;
@@ -68,7 +70,13 @@ async function resolveToPublicUrl(url: string, label: string, userId: string, su
       ext = mime.split('/')[1] || 'png';
       buffer = Buffer.from(b64, 'base64');
     } else {
-      const res = await fetch(url);
+      // SSRF guard: validate user-controlled URLs before fetching
+      const urlValidation = validateProxyUrl(url);
+      if (!urlValidation.valid) {
+        logger.warn('resolveToPublicUrl: SSRF guard rejected URL:', urlValidation.reason);
+        return url;
+      }
+      const res = await fetch(urlValidation.parsed.toString());
       if (!res.ok) return url;
       const arrayBuffer = await res.arrayBuffer();
       buffer = Buffer.from(arrayBuffer);
@@ -91,7 +99,19 @@ async function resolveToPublicUrl(url: string, label: string, userId: string, su
 
 async function persistResultImage(imageUrl: string, userId: string, productId: string, supabase: SupabaseClient): Promise<string> {
   try {
-    const res = await fetch(imageUrl, { signal: AbortSignal.timeout(30_000) });
+    // TNB result URLs are trusted, but enforce https scheme before fetching
+    let parsedResultUrl: URL;
+    try {
+      parsedResultUrl = new URL(imageUrl);
+    } catch {
+      logger.warn('persistResultImage: invalid URL format, skipping persist');
+      return imageUrl;
+    }
+    if (parsedResultUrl.protocol !== 'https:') {
+      logger.warn('persistResultImage: non-https URL rejected:', parsedResultUrl.protocol);
+      return imageUrl;
+    }
+    const res = await fetch(parsedResultUrl.toString(), { signal: AbortSignal.timeout(30_000) });
     if (!res.ok) return imageUrl;
     const arrayBuffer = await res.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
@@ -109,7 +129,7 @@ async function persistResultImage(imageUrl: string, userId: string, productId: s
 }
 
 /**
- * Robust parser for TNB responses. 
+ * Robust parser for TNB responses.
  * Handles JSON errors, plain text URLs, and protocol-relative URLs (//).
  */
 function parseTNBResponse(responseText: string): string {
@@ -134,7 +154,7 @@ function parseTNBResponse(responseText: string): string {
     }
   }
 
-  console.error('[TNB] Unexpected response:', trimmed.slice(0, 120));
+  logger.error('[TNB] Unexpected response:', trimmed.slice(0, 120));
   throw new Error('AI service is temporarily unavailable. Please try again.');
 }
 
@@ -153,8 +173,6 @@ async function callTNB(personImageUrl: string, garmentImageUrl: string, category
     const pUrl = fixUrl(personImageUrl);
     const gUrl = fixUrl(garmentImageUrl);
 
-    console.log(`[TNB Request] endpoint=${endpoint} pUrl: ${pUrl.slice(0, 60)}...`);
-
     const formData = new FormData();
     formData.append('model_photo', pUrl);
     if (category === 'shoes') {
@@ -170,15 +188,18 @@ async function callTNB(personImageUrl: string, garmentImageUrl: string, category
       formData.append('ratio', 'auto');
     }
 
-    const res = await fetch(`https://thenewblack.ai/api/1.1/wf/${endpoint}?api_key=${apiKey}`, {
+    const res = await fetch(`https://thenewblack.ai/api/1.1/wf/${endpoint}`, {
       method: 'POST',
+      headers: {
+        'X-API-Key': apiKey,
+      },
       body: formData,
       signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
     });
-    
+
     if (!res.ok) {
       const errText = await res.text();
-      console.error(`[TNB Error] Status: ${res.status}, Body: ${errText.slice(0, 200)}`);
+      logger.error(`[TNB Error] Status: ${res.status}, Body: ${errText.slice(0, 200)}`);
       throw new Error(`AI service error (${res.status})`);
     }
     return parseTNBResponse(await res.text());
@@ -190,7 +211,7 @@ async function callTNB(personImageUrl: string, garmentImageUrl: string, category
     let resolved = false;
     const errors: Error[] = [];
 
-    const attempt = async (id: number) => {
+    const attempt = async (_id: number) => {
       try {
         const result = await runRequest();
         if (!resolved) {
@@ -205,7 +226,7 @@ async function callTNB(personImageUrl: string, garmentImageUrl: string, category
 
     attempt(1);
     setTimeout(() => { if (!resolved) attempt(2); }, 3000);
-    
+
     // Safety timeout
     setTimeout(() => { if (!resolved) reject(new Error('Generation timed out')); }, FETCH_TIMEOUT_MS);
   });
@@ -262,7 +283,7 @@ export async function handleTryOn(
       created_at: new Date().toISOString(),
     });
   } catch (e) {
-    console.error('[/api/tryon] Persistence failed, returning raw URL:', e);
+    logger.error('[/api/tryon] Persistence failed, returning raw URL:', e);
   }
 
   return {
@@ -313,7 +334,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
     if (!isMarketplaceRequest) {
       await incrementIpCount(clientIp, 'tryon').catch((e: Error) =>
-        console.warn('[tryon] IP increment failed:', e.message)
+        logger.warn('[tryon] IP increment failed:', e.message)
       );
     }
 
@@ -326,7 +347,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ ...result, generationsRemaining });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
-    console.error('[/api/tryon] ERROR:', message);
+    logger.error('[/api/tryon] ERROR:', message);
     return NextResponse.json({ error: message }, { status: 503 });
   }
 }

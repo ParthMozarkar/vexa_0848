@@ -27,7 +27,6 @@ interface ProductTryOnBody {
   avatarGlbUrl?: string;
   clothingGlbUrl?: string;
 }
-}
 
 export async function POST(req: NextRequest, { params }: RouteContext): Promise<NextResponse> {
   const { productId } = await params;
