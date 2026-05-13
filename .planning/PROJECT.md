@@ -1,12 +1,24 @@
-# VEXA — Production Security Hardening
+# VEXA — AI Infrastructure Scale
+
+## Current Milestone: v2.0 AI Infrastructure Scale
+
+**Goal:** Make VEXA AI pipelines scalable, resilient, and cost-efficient without changing user-facing product behavior.
+
+**Target features:**
+- Provider abstraction layer (TNB, OpenAI, Meshy, BlackBox, future providers)
+- Async job queue system (Redis + BullMQ — enqueue+polling for video/avatar/Meshy)
+- Retries + failover (exponential backoff, provider failover, graceful degradation)
+- Generation + upload + response caching (eliminate duplicate AI calls)
+- Cost protection (usage tracking, abuse prevention, hedging controls)
+- AI infra documentation (architecture, queue topology, provider map, retry strategy)
 
 ## What This Is
 
-VEXA is an AI-powered virtual try-on and avatar platform built on Next.js 15 (frontend + API routes) and a Python FastAPI backend. It serves B2B marketplace clients via an API key system and end-users via a web app. This project hardness the existing codebase for production: eliminating SSRF, auth bypasses, key leakage, insecure uploads, and missing infrastructure (Docker, CI/CD, observability).
+VEXA is an AI-powered virtual try-on and avatar platform built on Next.js 15 (frontend + API routes) and a Python FastAPI backend. It serves B2B marketplace clients via an API key system and end-users via a web app. v1.0 hardened the codebase for production security. v2.0 makes AI pipelines scalable: provider abstraction, async job queues, retry/failover, caching, and cost protection.
 
 ## Core Value
 
-Zero-regression security hardening — every critical vulnerability closed without breaking the working try-on, avatar, upload, and marketplace flows.
+Scalable AI pipelines that preserve existing user-facing behavior while eliminating duplicate costs, single-provider lock-in, and synchronous blocking on heavy AI workloads.
 
 ## Requirements
 
