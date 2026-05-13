@@ -5,21 +5,11 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createServerSupabaseClient } from '@/lib/supabaseServer';
 
 // Service-role client — bypasses RLS. Never expose this key to the browser.
 function getServerSupabase() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key =
-    process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-  if (!url || !key) {
-    throw new Error('Supabase env vars are not configured');
-  }
-
-  // No Database generic here — the generic requires Supabase's generated types
-  // which we manage separately via src/types/database.ts for browser clients.
-  return createClient(url, key, { auth: { persistSession: false } });
+  return createServerSupabaseClient();
 }
 
 interface SignupBody {

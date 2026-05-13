@@ -1,7 +1,6 @@
 /**
- * Supabase database row types.
- * These must match the column names in your Supabase tables exactly.
- * Used to type the Supabase client without resorting to `any`.
+ * Supabase database row types (hand-maintained).
+ * Keep aligned with `supabase/migrations_safe/*.sql` and route inserts/selects.
  */
 
 export interface UserRow {
@@ -29,7 +28,7 @@ export interface ApiKeyRow {
   created_at: string;
   last_used_at: string | null;
   call_count: number;
-  monthly_limit: number;
+  monthly_limit: number | null;
 }
 
 export interface ClothingAssetRow {
@@ -45,21 +44,30 @@ export interface ClothingAssetRow {
 
 export interface UsageLogRow {
   id: string;
-  api_key_id: string;
+  api_key_id: string | null;
+  user_id?: string | null;
   endpoint: string;
-  status: number;
-  response_time_ms: number;
+  /** HTTP-style status (e.g. 200) — used by middleware + analytics */
+  status: number | null;
+  response_time_ms: number | null;
   timestamp: string;
+  /** Legacy column name from early DDL */
+  status_code?: number | null;
+  product_id?: string | null;
+  created_at?: string | null;
 }
 
 export interface TryOnResultRow {
   id: string;
   user_id: string;
   product_id: string;
-  product_image_url: string;
+  product_image_url: string | null;
+  user_photo_url?: string | null;
+  garment_url?: string | null;
   result_url: string;
-  fit_label: string;
-  recommended_size: string;
+  fit_label: string | null;
+  recommended_size: string | null;
+  status: string;
   created_at: string;
 }
 
@@ -76,12 +84,39 @@ export interface SizeChartRow {
   created_at: string;
 }
 
-export interface IpTryOnLimitRow {
+/** IP-based free-tier limits for try-on / design (see `ip_usage_limits` table). */
+export interface IpUsageLimitRow {
   id: string;
   ip_address: string;
-  generation_count: number;
-  first_used_at: string;
-  last_used_at: string;
+  usage_type: 'tryon' | 'design';
+  count: number;
+  last_reset: string;
+}
+
+export interface VideoJobRow {
+  id: string;
+  user_id: string;
+  product_id: string;
+  input_video_url: string;
+  product_image_url: string;
+  status: 'processing' | 'completed' | 'failed';
+  progress_percent: number | null;
+  result_video_url: string | null;
+  error_message: string | null;
+  created_at: string;
+}
+
+export interface BookingRow {
+  id: string;
+  name: string;
+  email: string;
+  company: string;
+  platform: string | null;
+  message: string | null;
+  slot_date: string | null;
+  slot_time: string | null;
+  company_size: string | null;
+  created_at?: string;
 }
 
 export interface Database {
@@ -92,6 +127,7 @@ export interface Database {
         Row: UserRow;
         Insert: Omit<UserRow, 'id' | 'created_at'> & { id?: string; created_at?: string };
         Update: Partial<Omit<UserRow, 'id'>>;
+        Relationships: [];
       };
       api_keys: {
         Row: ApiKeyRow;
@@ -100,37 +136,57 @@ export interface Database {
           created_at?: string;
           last_used_at?: string | null;
           call_count?: number;
+          monthly_limit?: number | null;
         };
         Update: Partial<Omit<ApiKeyRow, 'id'>>;
+        Relationships: [];
       };
       clothing_assets: {
         Row: ClothingAssetRow;
         Insert: Omit<ClothingAssetRow, 'id' | 'created_at'> & { id?: string; created_at?: string };
         Update: Partial<Omit<ClothingAssetRow, 'id'>>;
+        Relationships: [];
       };
       usage_logs: {
         Row: UsageLogRow;
         Insert: Omit<UsageLogRow, 'id'> & { id?: string };
         Update: Partial<Omit<UsageLogRow, 'id'>>;
+        Relationships: [];
       };
       tryon_results: {
         Row: TryOnResultRow;
         Insert: Omit<TryOnResultRow, 'id' | 'created_at'> & { id?: string; created_at?: string };
         Update: Partial<Omit<TryOnResultRow, 'id'>>;
+        Relationships: [];
       };
       size_charts: {
         Row: SizeChartRow;
         Insert: Omit<SizeChartRow, 'id' | 'created_at'> & { id?: string; created_at?: string };
         Update: Partial<Omit<SizeChartRow, 'id'>>;
+        Relationships: [];
       };
-      ip_tryon_limits: {
-        Row: IpTryOnLimitRow;
-        Insert: Omit<IpTryOnLimitRow, 'id' | 'first_used_at' | 'last_used_at'>;
-        Update: Partial<IpTryOnLimitRow>;
+      ip_usage_limits: {
+        Row: IpUsageLimitRow;
+        Insert: Omit<IpUsageLimitRow, 'id'>;
+        Update: Partial<Omit<IpUsageLimitRow, 'id'>>;
+        Relationships: [];
+      };
+      video_jobs: {
+        Row: VideoJobRow;
+        Insert: Omit<VideoJobRow, 'id' | 'created_at'> & { id?: string; created_at?: string };
+        Update: Partial<Omit<VideoJobRow, 'id'>>;
+        Relationships: [];
+      };
+      bookings: {
+        Row: BookingRow;
+        Insert: Omit<BookingRow, 'id' | 'created_at'> & { id?: string; created_at?: string };
+        Update: Partial<Omit<BookingRow, 'id'>>;
         Relationships: [];
       };
     };
     Views: Record<string, { Row: Record<string, unknown>; Relationships: never[] }>;
-    Functions: Record<string, { Args: Record<string, unknown>; Returns: unknown }>;
+    Functions: {
+      increment_ip_usage: { Args: { p_ip: string; p_type: string }; Returns: undefined };
+    };
   };
 }

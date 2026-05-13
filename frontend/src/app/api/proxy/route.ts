@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { isSafePublicImageUrl } from '@/lib/safeProxyUrl';
 
 export const runtime = 'nodejs';
 
@@ -10,9 +11,13 @@ export async function GET(req: NextRequest) {
     return new NextResponse('Missing URL', { status: 400 });
   }
 
+  if (!isSafePublicImageUrl(imageUrl)) {
+    return new NextResponse('URL not allowed', { status: 400 });
+  }
+
   try {
     const response = await fetch(imageUrl, {
-      next: { revalidate: 3600 }
+      next: { revalidate: 3600 },
     });
 
     if (!response.ok) {

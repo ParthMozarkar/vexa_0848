@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import { getClientIp, checkIpLimit } from '@/lib/ipRateLimit';
 import { handleTryOn } from '../route';
+import { createServerSupabaseClient } from '@/lib/supabaseServer';
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
   const isMarketplaceRequest = !!req.headers.get('x-vexa-key');
@@ -21,14 +22,11 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    const supabase = createClient(supabaseUrl!, supabaseKey!, { auth: { persistSession: false } });
+    const supabase: SupabaseClient = createServerSupabaseClient();
 
-    const results = [];
+    const results: { productId: string; resultUrl: string; cached: boolean }[] = [];
     let targetPhotoUrl = userPhotoUrl;
 
-    // Handle base64 data URL at the start of the batch
     if (userPhotoUrl.startsWith('data:')) {
       try {
         const base64Data = userPhotoUrl.split(',')[1];
@@ -44,7 +42,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
           const { data: signedData } = await supabase.storage
             .from('avatars')
             .createSignedUrl(storagePath, 3600);
-          
+
           if (signedData?.signedUrl) targetPhotoUrl = signedData.signedUrl;
         }
       } catch (e) {
@@ -55,25 +53,27 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     for (const product of products) {
       const { productId, productImageUrl } = product;
 
-      // 1. Check cache
       const { data: cached } = await supabase
         .from('tryon_results')
         .select('result_url')
         .eq('user_id', userId)
         .eq('product_id', productId)
-        .single();
+        .maybeSingle();
 
       if (cached?.result_url) {
-        if (cached.result_url.startsWith('https://') || cached.result_url.startsWith('http://') || cached.result_url.startsWith('data:')) {
+        if (
+          cached.result_url.startsWith('https://') ||
+          cached.result_url.startsWith('http://') ||
+          cached.result_url.startsWith('data:')
+        ) {
           results.push({ productId, resultUrl: cached.result_url, cached: true });
           continue;
         }
 
-        // Sign the cached path
         const { data: signedData } = await supabase.storage
           .from('avatars')
           .createSignedUrl(cached.result_url, 3600);
-        
+
         if (signedData?.signedUrl) {
           results.push({ productId, resultUrl: signedData.signedUrl, cached: true });
           continue;
@@ -88,10 +88,14 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
             userPhotoUrl: targetPhotoUrl,
             productImageUrl,
           },
-          supabase
+          supabase,
         );
 
-        results.push({ productId, resultUrl: tryOnResult.resultUrl, cached: false });
+        results.push({
+          productId,
+          resultUrl: tryOnResult.resultUrl,
+          cached: tryOnResult.cached || false,
+        });
       } catch (e: unknown) {
         const err = e as Error;
         console.error(`Batch tryon failed for ${productId}:`, err);
@@ -99,10 +103,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     }
 
     return NextResponse.json(results, { status: 200 });
-
   } catch (error: unknown) {
     const err = error as Error;
-    console.error("[/api/tryon/batch] Error:", err.message);
+    console.error('[/api/tryon/batch] Error:', err.message);
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }

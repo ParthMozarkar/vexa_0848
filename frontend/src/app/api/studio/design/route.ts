@@ -1,17 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/database';
 import { uploadToR2 } from '@/lib/r2';
 import { getClientIp, checkIpLimit, incrementIpCount } from '@/lib/ipRateLimit';
+import { createServerSupabaseClient } from '@/lib/supabaseServer';
+import type { SupabaseClient } from '@supabase/supabase-js';
 
 export const runtime = 'nodejs';
 export const maxDuration = 120;
 
-function getServiceSupabase() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!url || !key) throw new Error('Supabase environment variables missing');
-  return createClient<Database>(url, key, { auth: { persistSession: false } });
+function getServiceSupabase(): SupabaseClient<Database> {
+  return createServerSupabaseClient();
 }
 
 interface DesignRequest {

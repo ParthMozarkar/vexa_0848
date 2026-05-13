@@ -1,35 +1,49 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createServerSupabaseClient } from '@/lib/supabaseServer';
+import { getAvatarServiceUrl } from '@/lib/env';
 
 export async function GET() {
   const timestamp = new Date().toISOString();
   let supabaseStatus = false;
-  let avatarServiceStatus = false;
+  let avatarServiceStatus: boolean | null = null;
+  let avatarServiceMode: 'ok' | 'degraded' | 'skipped' | 'unavailable' = 'skipped';
 
   try {
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const supabase = createServerSupabaseClient();
     const { error } = await supabase.from('api_keys').select('id').limit(1);
     supabaseStatus = !error;
   } catch (e) {
     console.error('Health check: Supabase ping failed', e);
   }
 
-  try {
-    const avatarServiceUrl = process.env.AVATAR_SERVICE_URL;
-    if (avatarServiceUrl) {
-      const res = await fetch(`${avatarServiceUrl}/`, { method: 'GET' });
+  const avatarServiceUrl = getAvatarServiceUrl();
+  if (avatarServiceUrl) {
+    try {
+      const res = await fetch(`${avatarServiceUrl.replace(/\/$/, '')}/health`, {
+        method: 'GET',
+        signal: AbortSignal.timeout(5000),
+      });
       avatarServiceStatus = res.ok;
+      avatarServiceMode = res.ok ? 'ok' : 'unavailable';
+    } catch (e) {
+      console.error('Health check: Avatar service ping failed', e);
+      avatarServiceStatus = false;
+      avatarServiceMode = 'unavailable';
     }
-  } catch (e) {
-    console.error('Health check: Avatar service ping failed', e);
+  } else {
+    avatarServiceMode = 'skipped';
   }
 
+  const coreOk = supabaseStatus;
+  const optionalOk = avatarServiceUrl ? avatarServiceStatus === true : true;
+  const overall =
+    coreOk && optionalOk ? 'ok' : coreOk && !optionalOk ? 'degraded' : 'unavailable';
+
   return NextResponse.json({
-    status: (supabaseStatus && avatarServiceStatus) ? "ok" : "partial_failure",
+    status: overall,
     supabase: supabaseStatus,
     avatarService: avatarServiceStatus,
-    timestamp
+    avatarServiceMode,
+    timestamp,
   });
 }

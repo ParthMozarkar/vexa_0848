@@ -1,18 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import type { ProductCategory } from '@/types';
+import { createServerSupabaseClient } from '@/lib/supabaseServer';
 
 const MESHY_API_BASE = 'https://api.meshy.ai/openapi/v1';
 
 function getSupabase(): SupabaseClient {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key =
-    process.env.SUPABASE_SERVICE_ROLE_KEY ||
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!url || !key) {
-    throw new Error('Supabase URL or key not configured');
-  }
-  return createClient(url, key, { auth: { persistSession: false } });
+  return createServerSupabaseClient();
 }
 
 interface ClothingRequestBody {

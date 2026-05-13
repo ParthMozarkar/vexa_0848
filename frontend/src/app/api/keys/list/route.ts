@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createServerSupabaseClient } from '@/lib/supabaseServer';
 
 export async function GET(req: Request) {
   try {
@@ -10,19 +10,7 @@ export async function GET(req: Request) {
       return NextResponse.json({ error: 'Unauthorized — Admin token required' }, { status: 401 });
     }
 
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-    if (!supabaseUrl || !supabaseKey) {
-      return NextResponse.json({ error: 'Supabase configuration missing' }, { status: 500 });
-    }
-
-    const supabase = createClient(supabaseUrl, supabaseKey, {
-      auth: { persistSession: false },
-      global: {
-          fetch: fetch // sometimes required in edge/server environment if fetch issues arise, but usually ok
-      }
-    });
+    const supabase = createServerSupabaseClient();
 
     const { data, error } = await supabase
       .from('api_keys')

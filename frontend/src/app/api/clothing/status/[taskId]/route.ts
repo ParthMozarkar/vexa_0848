@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
 import type { ClothingAssetRow } from '@/types/database';
+import { createServerSupabaseClient } from '@/lib/supabaseServer';
 
 const MESHY_API_BASE = 'https://api.meshy.ai/openapi/v1';
 
@@ -29,12 +29,7 @@ export async function GET(
     const glbUrl = pollData.model_urls.glb;
 
     // Update Supabase record
-    const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-    if (!url || !key) {
-      return NextResponse.json({ error: 'Supabase configuration missing' }, { status: 500 });
-    }
-    const supabase = createClient(url, key, { auth: { persistSession: false } });
+    const supabase = createServerSupabaseClient();
 
     await supabase
       .from('clothing_assets')

@@ -1,77 +1,86 @@
 /**
  * POST /api/tryon/[productId]
- * Drapes a clothing GLB over a user's avatar in the VEXA pipeline.
- * Returns a signed render URL + fit metadata.
+ * Authenticated 2D try-on for a product — uses the same TNB pipeline as POST /api/tryon.
  *
- * RULE: Import handleTryOn directly — no internal HTTP calls
- * RULE: Auth via Bearer token from request header
- * RULE: No Math.random() for fitScore — use getFitScore
- * RULE: No `any` types
+ * Auth: Bearer Supabase access token.
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { createClient } from '@supabase/supabase-js';
 import { handleTryOn } from '@/app/api/tryon/route';
 import { getFitScore } from '@/lib/fitEngine';
-import type { TryOnResult } from '@/types';
-import type { Database } from '@/types/database';
+import type { TryOnResult, TryOnCategory } from '@/types';
+import { getPublicSupabaseUrl, getPublicSupabaseAnonKey } from '@/lib/env';
+import type { HandleTryOnResult } from '@/lib/tryonContracts';
+import { createServerSupabaseClient } from '@/lib/supabaseServer';
 
 interface RouteContext {
   params: Promise<{ productId: string }>;
 }
 
-/** Shape returned by handleTryOn — explicit type, no `any` */
-interface TryOnData {
-  resultUrl: string;
-  status: string;
-  fitLabel: string;
-  recommendedSize: string;
-  fitScore: number;
+interface ProductTryOnBody {
+  userId?: string;
+  userPhotoUrl?: string;
+  productImageUrl?: string;
+  category?: TryOnCategory;
+  garments?: { url: string; category: TryOnCategory }[];
+  avatarGlbUrl?: string;
+  clothingGlbUrl?: string;
+}
 }
 
 export async function POST(req: NextRequest, { params }: RouteContext): Promise<NextResponse> {
   const { productId } = await params;
 
-  // 1. Auth: validate Bearer token from request header
   const authHeader = req.headers.get('Authorization');
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
     return NextResponse.json({ error: 'Unauthorized: Bearer token required' }, { status: 401 });
   }
 
   const token = authHeader.split(' ')[1];
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const supabaseUrl = getPublicSupabaseUrl();
+  const supabaseAnonKey = getPublicSupabaseAnonKey();
 
-  if (!supabaseUrl || !supabaseAnonKey) {
-    return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
-  }
-
-  // Verify the JWT token
   const authClient = createClient(supabaseUrl, supabaseAnonKey, {
     global: { headers: { Authorization: `Bearer ${token}` } },
   });
 
-  const { data: { user }, error: authError } = await authClient.auth.getUser();
+  const {
+    data: { user },
+    error: authError,
+  } = await authClient.auth.getUser();
   if (authError || !user) {
     return NextResponse.json({ error: 'Unauthorized: Invalid Bearer token' }, { status: 401 });
   }
 
   const authenticatedUserId = user.id;
 
-  // Service client for DB/storage operations
-  const supabase: SupabaseClient<Database> = createClient<Database>(supabaseUrl, supabaseServiceKey ?? supabaseAnonKey, {
-    auth: { persistSession: false },
-  });
+  const supabase = createServerSupabaseClient();
+
+  let bodyJson: unknown;
+  try {
+    bodyJson = await req.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+  }
+
+  const body = bodyJson as ProductTryOnBody;
 
   try {
-    // 2. Import handleTryOn directly — no internal HTTP fetch
-    const tryOnData: TryOnData = await handleTryOn({ userId: authenticatedUserId, productId }, supabase);
+    const tryOnData: HandleTryOnResult = await handleTryOn(
+      {
+        userId: authenticatedUserId,
+        productId,
+        userPhotoUrl: body.userPhotoUrl ?? body.avatarGlbUrl,
+        productImageUrl: body.productImageUrl ?? body.clothingGlbUrl,
+        category: body.category,
+        garments: body.garments,
+      },
+      supabase,
+    );
 
-    // 3. Use getFitScore — no Math.random()
     const fitScore = getFitScore(tryOnData.fitLabel);
 
-    // TODO: heatmapUrl — implement real heatmap generation from Python inference service
     const heatmapUrl: string | null = null;
 
     const result: TryOnResult = {

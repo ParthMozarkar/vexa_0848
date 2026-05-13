@@ -8,7 +8,7 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient } from '@supabase/supabase-js';
+import { createServerSupabaseClient } from '@/lib/supabaseServer';
 import type { MarketplaceContext } from '@/types';
 import type { ApiKeyRow, Database } from '@/types/database';
 import { hashApiKey } from './crypto';
@@ -16,16 +16,8 @@ import { hashApiKey } from './crypto';
 export const VEXA_KEY_HEADER = 'x-vexa-key';
 export const MARKETPLACE_CTX_HEADER = 'x-vexa-marketplace-id';
 
-/**
- * SHA-256 hash of the raw API key.
- * Only the hash is stored in the DB — the raw key is never persisted.
- */
-
 function getServiceSupabase() {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!url || !key) throw new Error('Supabase env vars missing');
-  return createClient<Database>(url, key, { auth: { persistSession: false } });
+  return createServerSupabaseClient();
 }
 
 /**

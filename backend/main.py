@@ -47,11 +47,25 @@ app.add_middleware(
 security = HTTPBearer(auto_error=False)
 
 
+def _is_production_environment() -> bool:
+    return (
+        os.environ.get("VERCEL_ENV", "").lower() == "production"
+        or os.environ.get("ENVIRONMENT", "").lower() == "production"
+        or os.environ.get("NODE_ENV", "").lower() == "production"
+    )
+
+
 def verify_internal_token(credentials: HTTPAuthorizationCredentials | None = Security(security)):
     expected = os.environ.get("INTERNAL_SERVICE_TOKEN", "")
     if not expected:
-        # Not configured — allow in dev but log loudly so it doesn't hide in prod.
-        logger.warning("INTERNAL_SERVICE_TOKEN not set — accepting unauthenticated requests")
+        if _is_production_environment():
+            raise HTTPException(
+                status_code=503,
+                detail="INTERNAL_SERVICE_TOKEN must be configured in production",
+            )
+        logger.warning(
+            "INTERNAL_SERVICE_TOKEN not set — accepting unauthenticated requests (non-production only)",
+        )
         return True
     if not credentials or not hmac.compare_digest(credentials.credentials, expected):
         raise HTTPException(status_code=401, detail="Unauthorized")

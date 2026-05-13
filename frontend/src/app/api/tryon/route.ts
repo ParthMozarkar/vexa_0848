@@ -4,13 +4,15 @@
  */
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import { type SupabaseClient } from '@supabase/supabase-js';
 import { validateApiKey } from '@/lib/apiKeyMiddleware';
-import { getFitRecommendation, getFitScore } from '@/lib/fitEngine';
-import type { MarketplaceContext } from '@/types';
-import type { Database } from '@/types/database';
+import type { MarketplaceContext, TryOnCategory } from '@/types';
 import { uploadToR2 } from '@/lib/r2';
 import { getClientIp, checkIpLimit, incrementIpCount } from '@/lib/ipRateLimit';
+import { createServerSupabaseClient } from '@/lib/supabaseServer';
+import type { HandleTryOnInput, HandleTryOnResult } from '@/lib/tryonContracts';
+
+export type { TryOnCategory } from '@/types';
 
 export const runtime = 'nodejs';
 export const maxDuration = 300;
@@ -19,20 +21,8 @@ export const fetchCache = 'force-no-store';
 
 const FETCH_TIMEOUT_MS = 120_000;
 
-export type TryOnCategory =
-  | 'tops'
-  | 'bottoms'
-  | 'one-pieces'
-  | 'shoes'
-  | 'bags'
-  | 'accessories'
-  | 'jewelry';
-
-function getServiceSupabase(): SupabaseClient<Database> {
-  const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const key = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!url || !key) throw new Error('Supabase environment variables missing');
-  return createClient<Database>(url, key, { auth: { persistSession: false } });
+function getServiceSupabase(): SupabaseClient {
+  return createServerSupabaseClient();
 }
 
 async function authenticateRequest(req: NextRequest, bodyUserId: string): Promise<{ userId: string; marketplace: MarketplaceContext | null } | NextResponse> {
@@ -63,7 +53,7 @@ async function authenticateRequest(req: NextRequest, bodyUserId: string): Promis
   return { userId: guestId, marketplace: null };
 }
 
-async function resolveToPublicUrl(url: string, label: string, userId: string, supabase: SupabaseClient<Database>): Promise<string> {
+async function resolveToPublicUrl(url: string, label: string, userId: string, supabase: SupabaseClient): Promise<string> {
   if (!url) return '';
   
   try {
@@ -99,7 +89,7 @@ async function resolveToPublicUrl(url: string, label: string, userId: string, su
   }
 }
 
-async function persistResultImage(imageUrl: string, userId: string, productId: string, supabase: SupabaseClient<Database>): Promise<string> {
+async function persistResultImage(imageUrl: string, userId: string, productId: string, supabase: SupabaseClient): Promise<string> {
   try {
     const res = await fetch(imageUrl, { signal: AbortSignal.timeout(30_000) });
     if (!res.ok) return imageUrl;
@@ -221,32 +211,39 @@ async function callTNB(personImageUrl: string, garmentImageUrl: string, category
   });
 }
 
-export interface HandleTryOnInput {
-  userId: string;
-  productId?: string;
-  userPhotoUrl?: string;
-  productImageUrl?: string;
-  category?: TryOnCategory;
-  garments?: Array<{ url: string; category: string }>;
-}
-
-export async function handleTryOn(input: HandleTryOnInput, supabase: SupabaseClient<Database>) {
+export async function handleTryOn(
+  input: HandleTryOnInput,
+  supabase: SupabaseClient,
+): Promise<HandleTryOnResult> {
   const { userId, category, garments } = input;
-  const userPhotoUrl = input.userPhotoUrl ?? '';
-  const productImageUrl = input.productImageUrl ?? '';
+  const userPhotoUrl = input.userPhotoUrl ?? (input as any).avatarGlbUrl ?? '';
+  const productImageUrl = input.productImageUrl ?? (input as any).clothingGlbUrl ?? '';
   const productId = input.productId ?? `custom_${Date.now()}`;
 
   // 1. Parallel Asset Resolution (Saves 2-4s)
-  const itemsToProcess = garments || (productImageUrl ? [{ url: productImageUrl, category: category ?? 'tops' }] : []);
-  
+  const itemsToProcess =
+    garments || (productImageUrl ? [{ url: productImageUrl, category: category ?? 'tops' }] : []);
+
+  const garmentEntry = itemsToProcess[0];
+  if (!userPhotoUrl?.trim()) {
+    throw new Error('userPhotoUrl is required (or legacy avatarGlbUrl)');
+  }
+  if (!garmentEntry?.url?.trim()) {
+    throw new Error('Garment image URL is required: pass productImageUrl, clothingGlbUrl, or garments[0].url');
+  }
+
   // 2. Initial Resolution
   const [personUrlFinal, garmentUrlFinal] = await Promise.all([
     resolveToPublicUrl(userPhotoUrl, 'person', userId, supabase),
-    resolveToPublicUrl(itemsToProcess[0].url, 'garment', userId, supabase)
+    resolveToPublicUrl(garmentEntry.url, 'garment', userId, supabase),
   ]);
 
   // 3. Call AI with Hedging
-  const resUrl = await callTNB(personUrlFinal, garmentUrlFinal, itemsToProcess[0].category as TryOnCategory);
+  const resUrl = await callTNB(
+    personUrlFinal,
+    garmentUrlFinal,
+    (garmentEntry.category ?? category ?? 'tops') as TryOnCategory,
+  );
 
   // 4. Persistence — await so we return the stable stored URL, not the short-lived TNB URL
   let finalUrl = resUrl;
@@ -268,7 +265,15 @@ export async function handleTryOn(input: HandleTryOnInput, supabase: SupabaseCli
     console.error('[/api/tryon] Persistence failed, returning raw URL:', e);
   }
 
-  return { resultUrl: finalUrl, status: 'ready', fitLabel: 'True to size', recommendedSize: 'M', fitScore: 85 };
+  return {
+    resultUrl: finalUrl,
+    status: 'ready',
+    fitLabel: 'True to size',
+    recommendedSize: 'M',
+    fitScore: 85,
+    cached: false,
+    storagePath: '',
+  };
 }
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
@@ -314,7 +319,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
     let generationsRemaining: number | null = null;
     if (!isMarketplaceRequest) {
-      const postCheck = await checkIpLimit(clientIp);
+      const postCheck = await checkIpLimit(clientIp, 'tryon');
       generationsRemaining = postCheck.generationsRemaining;
     }
 
