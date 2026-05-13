@@ -4,9 +4,9 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import Header from '@/components/Header';
 import { motion } from 'framer-motion';
-import { 
-  Shirt, Sparkles, Clock, User, Trash2, ExternalLink, 
-  BarChart3, Activity, PieChart, Users, ArrowUpRight, RotateCcw, AlertCircle
+import {
+  Shirt, Sparkles, Clock, User, Trash2, ExternalLink,
+  BarChart3, Activity, PieChart, Users, ArrowUpRight, RotateCcw, AlertCircle, ShieldCheck
 } from 'lucide-react';
 
 interface DesignRecord {
@@ -22,13 +22,18 @@ interface DesignRecord {
 interface TryOnRecord {
   id: string;
   user_id: string;
-  user_photo_url: string;
-  garment_url: string;
+  product_image_url: string;
   result_url: string;
+  fit_label: string;
+  recommended_size: string;
   created_at: string;
 }
 
 export default function AdminDashboard() {
+  const [authed, setAuthed] = useState(false);
+  const [pw, setPw] = useState('');
+  const [pwError, setPwError] = useState(false);
+
   const [designs, setDesigns] = useState<DesignRecord[]>([]);
   const [tryons, setTryons] = useState<TryOnRecord[]>([]);
   const [stats, setStats] = useState({
@@ -39,6 +44,12 @@ export default function AdminDashboard() {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && localStorage.getItem('vexa_admin_auth') === 'true') {
+      setAuthed(true);
+    }
+  }, []);
 
   async function fetchData() {
     setLoading(true);
@@ -85,7 +96,7 @@ export default function AdminDashboard() {
     }
   }
 
-  useEffect(() => { fetchData(); }, []);
+  useEffect(() => { if (authed) fetchData(); }, [authed]);
 
   const deleteDesign = async (id: string) => {
     if (confirm('Delete this design permanently?')) {
@@ -100,6 +111,42 @@ export default function AdminDashboard() {
       fetchData();
     }
   };
+
+  if (!authed) {
+    return (
+      <div className="min-h-screen bg-[#f8f7f2] flex items-center justify-center px-6">
+        <div className="bg-white rounded-[3rem] p-10 w-full max-w-sm shadow-2xl border border-slate-100">
+          <div className="w-14 h-14 rounded-2xl bg-[#4A6741] flex items-center justify-center text-white mx-auto mb-6">
+            <ShieldCheck className="w-7 h-7" />
+          </div>
+          <h1 className="text-2xl font-black text-center mb-6">Admin Access</h1>
+          <input
+            type="password"
+            value={pw}
+            onChange={e => setPw(e.target.value)}
+            onKeyDown={e => {
+              if (e.key === 'Enter') {
+                if (pw === 'vexa@123') { localStorage.setItem('vexa_admin_auth', 'true'); setAuthed(true); }
+                else setPwError(true);
+              }
+            }}
+            placeholder="Password"
+            className="w-full px-5 py-4 rounded-2xl bg-slate-50 border border-slate-200 focus:outline-none focus:border-[#4A6741] text-sm font-bold mb-3"
+          />
+          {pwError && <p className="text-rose-500 text-xs font-bold text-center mb-3">Wrong password</p>}
+          <button
+            onClick={() => {
+              if (pw === 'vexa@123') { localStorage.setItem('vexa_admin_auth', 'true'); setAuthed(true); }
+              else setPwError(true);
+            }}
+            className="w-full py-4 rounded-2xl bg-[#4A6741] text-white font-black uppercase tracking-widest text-sm"
+          >
+            Enter
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#f8f7f2] text-[#1a1a1a]">
@@ -185,18 +232,14 @@ export default function AdminDashboard() {
               tryons.length === 0 ? <EmptyState text="No try-on results stored yet" /> :
               tryons.map(item => (
                 <motion.div initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} key={item.id} className="bg-white rounded-[2.5rem] p-6 shadow-sm border border-slate-100 hover:shadow-2xl transition-all">
-                  <div className="grid grid-cols-3 gap-3 mb-4">
+                  <div className="grid grid-cols-2 gap-3 mb-4">
                     <div className="space-y-1">
-                      <p className="text-[8px] font-black uppercase text-slate-300">User Input</p>
-                      <img src={item.user_photo_url} className="w-full h-24 rounded-xl object-cover bg-slate-50 border border-slate-50" />
-                    </div>
-                    <div className="space-y-1">
-                      <p className="text-[8px] font-black uppercase text-slate-300">Item</p>
-                      <img src={item.garment_url} className="w-full h-24 rounded-xl object-cover bg-slate-50 border border-slate-50" />
+                      <p className="text-[8px] font-black uppercase text-slate-300">Garment</p>
+                      <img src={item.product_image_url} className="w-full h-28 rounded-xl object-cover bg-slate-50 border border-slate-100" />
                     </div>
                     <div className="space-y-1 relative group">
-                      <p className="text-[8px] font-black uppercase text-[#4A6741]">AI Final</p>
-                      <img src={item.result_url} className="w-full h-24 rounded-xl object-cover bg-slate-100 border border-[#4A6741]/20 shadow-sm" />
+                      <p className="text-[8px] font-black uppercase text-[#4A6741]">AI Result</p>
+                      <img src={item.result_url} className="w-full h-28 rounded-xl object-cover bg-slate-100 border border-[#4A6741]/20 shadow-sm" />
                       <button onClick={() => window.open(item.result_url)} className="absolute inset-x-0 bottom-0 top-4 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-center justify-center">
                         <ExternalLink className="text-white w-4 h-4" />
                       </button>
