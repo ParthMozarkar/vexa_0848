@@ -232,24 +232,26 @@ export async function handleTryOn(input: any, supabase: SupabaseClient<Database>
   // 3. Call AI with Hedging
   const resUrl = await callTNB(personUrlFinal, garmentUrlFinal, itemsToProcess[0].category as TryOnCategory);
 
-  // 4. Fire-and-forget Background Persistence (Saves ALL inputs and outputs)
-  Promise.resolve().then(async () => {
-    try {
-      const persistedUrl = await persistResultImage(resUrl, userId, productId, supabase);
-      await (supabase.from('tryon_results') as any).upsert({
-        user_id: userId,
-        product_id: productId,
-        user_photo_url: userPhotoUrl,
-        garment_url: productImageUrl || (garments?.[0]?.url),
-        result_url: persistedUrl,
-        fit_label: 'True to size',
-        recommended_size: 'M',
-        status: 'ready',
-        created_at: new Date().toISOString(),
-      });
-      console.log('[/api/tryon] Full generation history saved.');
-    } catch (e) { console.warn('Background persist failed', e); }
-  });
+  // 4. Persistence (Saves ALL inputs and outputs)
+  try {
+    const persistedUrl = await persistResultImage(resUrl, userId, productId, supabase);
+    const { error: upsertError } = await (supabase.from('tryon_results') as any).upsert({
+      user_id: userId,
+      product_id: productId,
+      user_photo_url: userPhotoUrl,
+      garment_url: productImageUrl || (garments?.[0]?.url),
+      result_url: persistedUrl,
+      fit_label: 'True to size',
+      recommended_size: 'M',
+      status: 'ready',
+      created_at: new Date().toISOString(),
+    });
+    
+    if (upsertError) console.error('[/api/tryon] Upsert Error:', upsertError);
+    else console.log('[/api/tryon] Result successfully archived.');
+  } catch (e) {
+    console.error('[/api/tryon] Persistence failed:', e);
+  }
 
   return { resultUrl: resUrl, status: 'ready', fitLabel: 'True to size', recommendedSize: 'M', fitScore: 85 };
 }
