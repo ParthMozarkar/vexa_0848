@@ -7,8 +7,7 @@ export async function GET(req: NextRequest) {
     const key = req.headers.get('x-vexa-key');
 
     if (!key) {
-      // Demo Mode Bypass: If no key is provided, allow access for the demo
-      return NextResponse.json({ valid: true, marketplace_name: 'VEXA Demo User' });
+      return NextResponse.json({ valid: false, error: 'Unauthorized' }, { status: 401 });
     }
 
     const supabase = createServerSupabaseClient();
@@ -22,8 +21,7 @@ export async function GET(req: NextRequest) {
       .single();
 
     if (error || !apiKeyRecord) {
-      // Demo Mode Bypass: If key is not in DB, allow access for the demo
-      return NextResponse.json({ valid: true, marketplace_name: 'VEXA Demo User' });
+      return NextResponse.json({ valid: false, error: 'Unauthorized' }, { status: 401 });
     }
 
     if (apiKeyRecord.status !== 'active') {

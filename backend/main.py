@@ -9,12 +9,24 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from pydantic import BaseModel
 import os
+import sys
 import hmac
 import logging
 import asyncio
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("vexa")
+
+# ─── Startup token validation ─────────────────────────────────────────────────
+ENVIRONMENT = os.environ.get("ENVIRONMENT", "production")
+_token = os.environ.get("INTERNAL_SERVICE_TOKEN", "")
+if not _token and ENVIRONMENT != "development":
+    print(
+        "FATAL: INTERNAL_SERVICE_TOKEN must be set in production. "
+        "Set ENVIRONMENT=development to bypass.",
+        file=sys.stderr,
+    )
+    sys.exit(1)
 
 app = FastAPI(title="VEXA Avatar Service", version="1.0.0")
 
@@ -57,6 +69,7 @@ def _is_production_environment() -> bool:
 
 def verify_internal_token(credentials: HTTPAuthorizationCredentials | None = Security(security)):
     expected = os.environ.get("INTERNAL_SERVICE_TOKEN", "")
+    env = os.environ.get("ENVIRONMENT", "production")
     if not expected:
         if _is_production_environment():
             raise HTTPException(
