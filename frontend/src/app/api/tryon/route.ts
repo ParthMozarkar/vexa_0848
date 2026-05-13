@@ -258,14 +258,13 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     const isMarketplaceRequest = !!req.headers.get('x-vexa-key');
 
     if (!isMarketplaceRequest) {
-      const ipCheck = await checkIpLimit(clientIp);
+      const ipCheck = await checkIpLimit(clientIp, 'tryon');
 
       if (!ipCheck.allowed) {
         return NextResponse.json(
           {
             error: 'Free trial limit reached',
-            message: `You have used both of your free try-ons. VEXA is a B2B platform — contact us at vexatryon.in to integrate try-on into your marketplace.`,
-            generationsUsed: ipCheck.generationsUsed,
+            message: `You have used both of your free try-ons for today. Your limit will reset automatically in 24 hours.`,
             generationsRemaining: 0,
             limitReached: true,
           },
@@ -280,7 +279,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     const result = await handleTryOn({ userId: auth.userId, productId, userPhotoUrl, productImageUrl, category, garments }, supabase);
 
     if (!isMarketplaceRequest) {
-      await incrementIpCount(clientIp).catch((e: Error) =>
+      await incrementIpCount(clientIp, 'tryon').catch((e: Error) =>
         console.warn('[tryon] IP increment failed:', e.message)
       );
     }

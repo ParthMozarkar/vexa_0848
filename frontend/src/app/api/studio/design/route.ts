@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/database';
 import { uploadToR2 } from '@/lib/r2';
+import { getClientIp, checkIpLimit, incrementIpCount } from '@/lib/ipRateLimit';
 
 export const runtime = 'nodejs';
 export const maxDuration = 120;
@@ -22,11 +23,6 @@ interface DesignRequest {
   designPrompt?: string;
 }
 
-interface DesignResponse {
-  designImageUrl: string;
-  prompt: string;
-}
-
 async function persistResultImage(imageUrl: string, userId: string, supabase: any): Promise<string> {
   try {
     const res = await fetch(imageUrl, { signal: AbortSignal.timeout(30_000) });
@@ -37,11 +33,9 @@ async function persistResultImage(imageUrl: string, userId: string, supabase: an
     const ext = contentType.split('/')[1]?.split(';')[0] || 'png';
     const filename = `design_results/${userId}_${Date.now()}.${ext}`;
 
-    // 1. Try Cloudflare R2 first
     const r2Url = await uploadToR2(buffer, filename, contentType);
     if (r2Url) return r2Url;
 
-    // 2. Fallback to Supabase Storage
     const { error: uploadError } = await supabase.storage.from('avatars').upload(filename, arrayBuffer, { contentType, upsert: true });
     if (!uploadError) {
       const { data: signed } = await supabase.storage.from('avatars').createSignedUrl(filename, 86400 * 365);
@@ -52,20 +46,34 @@ async function persistResultImage(imageUrl: string, userId: string, supabase: an
 }
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
+  const clientIp = getClientIp(req);
+  const isMarketplaceRequest = !!req.headers.get('x-vexa-key');
+
   try {
     const body = (await req.json()) as DesignRequest;
-    const { userId = 'anonymous', prompt, style, category = 'tops', trendContext, designPrompt } = body;
+    const { userId = 'anonymous', prompt, style, category = 'tops', designPrompt } = body;
+
+    // 1. IP Rate Limit Check (3 per 24h for Design)
+    if (!isMarketplaceRequest) {
+      const ipCheck = await checkIpLimit(clientIp, 'design');
+      if (!ipCheck.allowed) {
+        return NextResponse.json({ 
+          error: 'Free trial limit reached',
+          message: 'You have used all 3 of your free designs for today. Your limit will reset automatically in 24 hours.',
+          limitReached: true,
+          remaining: 0
+        }, { status: 429 });
+      }
+    }
 
     if (!prompt?.trim() || prompt.trim().length < 3) {
       return NextResponse.json({ error: 'Prompt must be at least 3 characters' }, { status: 400 });
     }
 
     const openaiKey = process.env.OPENAI_API_KEY;
-    if (!openaiKey) {
-      return NextResponse.json({ error: 'OPENAI_API_KEY not configured' }, { status: 500 });
-    }
+    if (!openaiKey) return NextResponse.json({ error: 'OPENAI_API_KEY missing' }, { status: 500 });
 
-    // 1. Generate a descriptive prompt for the image
+    // 2. Generate descriptive prompt
     let finalDesignPrompt: string;
     if (designPrompt) {
       finalDesignPrompt = designPrompt;
@@ -76,7 +84,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         body: JSON.stringify({
           model: 'gpt-4o-mini',
           messages: [
-            { role: 'system', content: 'You are a fashion prompt engineer. Write a vivid garment description for a DALL-E 3 flat-lay product image. No people, no models. Output only the description.' },
+            { role: 'system', content: 'Fashion prompt engineer: Write a vivid garment description for a DALL-E 3 flat-lay product image. No people, no models. Under 800 chars.' },
             { role: 'user', content: `Garment: ${prompt.trim()}\nStyle: ${style ?? 'modern'}\nCategory: ${category}` },
           ],
         }),
@@ -85,7 +93,6 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       finalDesignPrompt = chatData.choices?.[0]?.message?.content?.trim() ?? prompt.trim();
     }
 
-    // 2. Define the image generation prompt (Slicing to ensure we never hit the 1000 char OpenAI limit)
     const sanitizedPrompt = finalDesignPrompt.slice(0, 850);
     const generationPrompt = `Top-down overhead flat lay photograph of a ${sanitizedPrompt}, clean white background, bird's-eye view, crisp studio lighting, no people.`;
 
@@ -98,13 +105,9 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
     if (seedreamKey) {
       try {
-        console.log('[Seedream] Generating 2K design...');
         const seedreamRes = await fetch(seedreamEndpoint, {
           method: 'POST',
-          headers: { 
-            'Content-Type': 'application/json', 
-            'Authorization': `Bearer ${seedreamKey.trim()}` 
-          },
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${seedreamKey.trim()}` },
           body: JSON.stringify({
             model: seedreamModel,
             prompt: generationPrompt,
@@ -115,22 +118,13 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
             watermark: false
           }),
         });
-
         const data = await seedreamRes.json();
-        // Seedream/Ark usually returns { data: [{ url: "..." }] } or { url: "..." }
         imageUrl = data.data?.[0]?.url || data.url || data.image_url;
-        
-        if (!imageUrl && !seedreamRes.ok) {
-          console.error('[Seedream] Error:', JSON.stringify(data));
-        }
-      } catch (e) { 
-        console.warn('[Seedream] Request failed, checking fallbacks...', e); 
-      }
+      } catch (e) { console.warn('[Design] Seedream failed', e); }
     }
 
-    // 4. Fallback to OpenAI if Seedream fails (Ensures the app doesn't break)
+    // 4. Fallback to OpenAI
     if (!imageUrl) {
-      console.warn('[Design] Seedream failed, trying OpenAI DALL-E fallback...');
       try {
         const dalleResponse = await fetch('https://api.openai.com/v1/images/generations', {
           method: 'POST',
@@ -139,28 +133,17 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         });
         const data = await dalleResponse.json();
         imageUrl = data.data?.[0]?.url;
-      } catch (e) { console.warn('[Design] DALL-E fallback error', e); }
+      } catch (e) { console.warn('[Design] DALL-E failed', e); }
     }
 
-    // 5. Try ANAKIN Fallback (Final Backup)
-    const anakinKey = process.env.ANAKIN_API_KEY;
-    if (!imageUrl && anakinKey) {
-      try {
-        const anakinRes = await fetch('https://api.anakin.ai/v1/quick_run', {
-          method: 'POST',
-          headers: { 'X-Anakin-Api-Key': anakinKey, 'Content-Type': 'application/json' },
-          body: JSON.stringify({ appId: 'L9mjwX5v', inputs: { 'Prompt': generationPrompt } }),
-        });
-        const data = await anakinRes.json();
-        imageUrl = data?.result || data?.outputs?.url || data?.outputs?.image;
-      } catch (e) { console.warn('[Design] Anakin fallback failed', e); }
+    if (!imageUrl) throw new Error('Generation failed');
+
+    // 5. Increment Usage (Only if successful)
+    if (!isMarketplaceRequest) {
+      await incrementIpCount(clientIp, 'design').catch(e => console.warn('Limit increment failed', e));
     }
 
-    if (!imageUrl) {
-      throw new Error('All image generation services failed. Please check your Seedream/OpenAI credits.');
-    }
-
-    // 6. PERSISTENCE: Save to permanent storage & history
+    // 6. Persistence (History)
     const supabase = getServiceSupabase();
     Promise.resolve().then(async () => {
       try {
@@ -174,14 +157,11 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
           style: style || 'modern',
           created_at: new Date().toISOString()
         });
-        console.log('[/api/studio/design] Design history saved.');
-      } catch (e) { console.warn('Failed to save design history', e); }
+      } catch (e) { console.warn('History save failed', e); }
     });
 
     return NextResponse.json({ designImageUrl: imageUrl, prompt: finalDesignPrompt });
-  } catch (err: unknown) {
-    const msg = err instanceof Error ? err.message : String(err);
-    console.error('[/api/studio/design] Error:', msg);
-    return NextResponse.json({ error: msg }, { status: 500 });
+  } catch (err: any) {
+    return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }
