@@ -4,16 +4,17 @@ import React, { useEffect, useState } from 'react';
 import Header from '@/components/Header';
 import Footer from '@/components/Footer';
 import { supabase } from '@/lib/supabase';
-import { 
-  BarChart3, 
-  Activity, 
-  CheckCircle2, 
-  XCircle, 
-  Clock, 
-  User, 
+import {
+  BarChart3,
+  Activity,
+  CheckCircle2,
+  XCircle,
+  Clock,
+  User,
   ShieldCheck,
   RefreshCcw,
-  Key
+  Zap,
+  Calendar
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -25,7 +26,6 @@ interface UsageLog {
   status: string;
   error_message: string;
   latency_ms: number;
-  api_key_index: number;
   ip_address: string;
   device_info: string;
   user_email: string;
@@ -46,9 +46,7 @@ export default function AdminDashboard() {
     avgLatency: 0
   });
 
-  const [keyUsage, setKeyUsage] = useState<Record<number, number>>({
-    1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0
-  });
+  const [tnbTotal, setTnbTotal] = useState(0);
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -93,23 +91,14 @@ export default function AdminDashboard() {
       setStats({ total, success, failed, avgLatency });
     }
 
-    // Fetch total usage per key index
-    const { data: usageData } = await supabase
+    // TNB total successful generations
+    const { count } = await supabase
       .from('usage_logs')
-      .select('api_key_index')
-      .eq('provider', 'lightx')
+      .select('*', { count: 'exact', head: true })
+      .eq('provider', 'blackbox')
       .eq('status', 'success');
-    
-    if (usageData) {
-      const counts: Record<number, number> = { 1: 0, 2: 0, 3: 0, 4: 0, 5: 0, 6: 0 };
-      usageData.forEach(item => {
-        const idx = (item.api_key_index as number) || 1;
-        if (idx >= 1 && idx <= 6) {
-          counts[idx] = (counts[idx] || 0) + 1;
-        }
-      });
-      setKeyUsage(counts);
-    }
+
+    setTnbTotal(count ?? 0);
 
     setLoading(false);
   };
@@ -219,56 +208,52 @@ export default function AdminDashboard() {
           ))}
         </div>
 
-        {/* API Key Health Monitor */}
+        {/* TNB Engine Stats */}
         <div className="mb-12">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-lg font-black text-[#1a1a1a] flex items-center gap-2">
-              <Key className="w-5 h-5 text-[#4A6741]" />
-              LightX API Key Health
+              <Zap className="w-5 h-5 text-[#4A6741]" />
+              TheNewBlack AI Engine
             </h2>
             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-3 py-1 rounded-full border border-slate-100">
-              6 Keys Active · Rotation Enabled
+              Provider: blackbox · TNB API
             </span>
           </div>
-          
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            {[1, 2, 3, 4, 5, 6].map((keyIdx, i) => {
-              const used = keyUsage[keyIdx] || 0;
-              const limit = 5000;
-              const percent = Math.min((used / limit) * 100, 100);
-              
-              return (
-                <motion.div
-                  key={keyIdx}
-                  initial={{ opacity: 0, scale: 0.95 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: i * 0.05 }}
-                  className="bg-white p-5 rounded-[2rem] border border-slate-100 shadow-lg shadow-slate-200/20"
-                >
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Key #{keyIdx}</span>
-                    <div className={`w-2 h-2 rounded-full ${used > 4500 ? 'bg-rose-500' : 'bg-emerald-500'} animate-pulse`} />
-                  </div>
-                  
-                  <div className="flex flex-col gap-1 mb-4">
-                    <span className="text-xl font-black text-[#1a1a1a]">{used}</span>
-                    <span className="text-[9px] font-bold text-slate-400 uppercase tracking-wider">Credits Used</span>
-                  </div>
 
-                  <div className="w-full h-2 bg-slate-50 rounded-full overflow-hidden border border-slate-100">
-                    <motion.div 
-                      initial={{ width: 0 }}
-                      animate={{ width: `${percent}%` }}
-                      className={`h-full ${percent > 90 ? 'bg-rose-500' : 'bg-[#4A6741]'}`}
-                    />
-                  </div>
-                  <div className="flex justify-between mt-2">
-                    <span className="text-[8px] font-black text-slate-300 uppercase">0</span>
-                    <span className="text-[8px] font-black text-slate-300 uppercase">5K</span>
-                  </div>
-                </motion.div>
-              );
-            })}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-lg shadow-slate-200/20 flex flex-col gap-3"
+            >
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Total Successful Try-Ons</span>
+              <span className="text-4xl font-black text-[#4A6741]">{tnbTotal}</span>
+              <span className="text-xs text-slate-400 font-medium">All-time via TNB API</span>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.05 }}
+              className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-lg shadow-slate-200/20 flex flex-col gap-3"
+            >
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Success Rate</span>
+              <span className="text-4xl font-black text-[#1a1a1a]">
+                {stats.total > 0 ? ((stats.success / stats.total) * 100).toFixed(1) : '0.0'}%
+              </span>
+              <span className="text-xs text-slate-400 font-medium">{stats.success} of {stats.total} requests</span>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: 0.1 }}
+              className="bg-white p-6 rounded-[2rem] border border-slate-100 shadow-lg shadow-slate-200/20 flex flex-col gap-3"
+            >
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Avg Generation Time</span>
+              <span className="text-4xl font-black text-[#1a1a1a]">{(stats.avgLatency / 1000).toFixed(1)}s</span>
+              <span className="text-xs text-slate-400 font-medium">Target: &lt;15s with hedging</span>
+            </motion.div>
           </div>
         </div>
 
@@ -288,7 +273,7 @@ export default function AdminDashboard() {
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="bg-slate-50/50">
-                  <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Time</th>
+                  <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Date &amp; Time</th>
                   <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">User / Email</th>
                   <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Location (IP)</th>
                   <th className="px-8 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400">Device</th>
@@ -299,8 +284,18 @@ export default function AdminDashboard() {
               <tbody className="divide-y divide-slate-50">
                 {logs.map((log) => (
                   <tr key={log.id} className="hover:bg-slate-50/30 transition-colors">
-                    <td className="px-8 py-4 text-[10px] font-bold text-slate-400 whitespace-nowrap">
-                      {new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    <td className="px-8 py-4 whitespace-nowrap">
+                      <div className="flex items-center gap-1.5">
+                        <Calendar className="w-3 h-3 text-slate-300 shrink-0" />
+                        <div className="flex flex-col gap-0.5">
+                          <span className="text-[10px] font-black text-slate-600">
+                            {new Date(log.timestamp).toLocaleDateString([], { day: '2-digit', month: 'short', year: 'numeric' })}
+                          </span>
+                          <span className="text-[9px] font-bold text-slate-400">
+                            {new Date(log.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                          </span>
+                        </div>
+                      </div>
                     </td>
                     <td className="px-8 py-4">
                       <div className="flex flex-col gap-1">
