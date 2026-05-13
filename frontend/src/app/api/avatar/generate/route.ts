@@ -8,6 +8,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseClient } from '@/lib/supabaseServer';
+import { logger } from '@/lib/logger';
 
 function getServerSupabase() {
   return createServerSupabaseClient();
@@ -63,7 +64,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         .from('users')
         .update({ avatar_url: fallbackAvatarUrl })
         .eq('id', userId);
-      if (dbError) console.warn('[/api/avatar/generate] avatar_url update failed:', dbError.message);
+      if (dbError) logger.warn('[/api/avatar/generate] avatar_url update failed:', dbError.message);
       return NextResponse.json({ avatarUrl: fallbackAvatarUrl, status: 'ready' });
     }
 
@@ -88,12 +89,12 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       .from('users')
       .update({ avatar_url: data.avatar_url })
       .eq('id', userId);
-    if (dbError) console.warn('[/api/avatar/generate] avatar_url update failed:', dbError.message);
+    if (dbError) logger.warn('[/api/avatar/generate] avatar_url update failed:', dbError.message);
 
     return NextResponse.json({ avatarUrl: data.avatar_url, status: 'ready' });
   } catch (err: unknown) {
     const error = err instanceof Error ? err : new Error(String(err));
-    console.error('[/api/avatar/generate]', error.message);
+    logger.error('[/api/avatar/generate]', { message: error.message });
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

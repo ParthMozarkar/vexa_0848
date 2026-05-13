@@ -70,7 +70,7 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
 
     return new NextResponse(combined, { status: 200, headers });
   } catch (error) {
-    logger.error('Proxy error:', { error: String(error) });
+    logger.error('Proxy error', { error: String(error) });
     return NextResponse.json({ error: 'Error fetching image' }, { status: 500 });
   }
 }

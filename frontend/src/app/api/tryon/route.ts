@@ -154,7 +154,7 @@ function parseTNBResponse(responseText: string): string {
     }
   }
 
-  logger.error('[TNB] Unexpected response:', trimmed.slice(0, 120));
+  logger.error('[TNB] Unexpected response', { preview: trimmed.slice(0, 120) });
   throw new Error('AI service is temporarily unavailable. Please try again.');
 }
 
@@ -188,6 +188,9 @@ async function callTNB(personImageUrl: string, garmentImageUrl: string, category
       formData.append('ratio', 'auto');
     }
 
+    // OBS-05: Track start time for AI provider failure reporting
+    const start = Date.now();
+
     const res = await fetch(`https://thenewblack.ai/api/1.1/wf/${endpoint}`, {
       method: 'POST',
       headers: {
@@ -199,7 +202,9 @@ async function callTNB(personImageUrl: string, garmentImageUrl: string, category
 
     if (!res.ok) {
       const errText = await res.text();
-      logger.error(`[TNB Error] Status: ${res.status}, Body: ${errText.slice(0, 200)}`);
+      logger.error('[TNB Error]', { status: res.status, body: errText.slice(0, 200) });
+      // OBS-05: Capture AI provider failure to Sentry with full context
+      logger.aiError('TNB', endpoint, { duration: Date.now() - start, status: res.status });
       throw new Error(`AI service error (${res.status})`);
     }
     return parseTNBResponse(await res.text());
@@ -219,8 +224,13 @@ async function callTNB(personImageUrl: string, garmentImageUrl: string, category
           resolve(result);
         }
       } catch (e: unknown) {
-        errors.push(e instanceof Error ? e : new Error(String(e)));
-        if (errors.length >= 2) reject(new Error('AI service busy. Please try again in a moment.'));
+        const err = e instanceof Error ? e : new Error(String(e));
+        errors.push(err);
+        if (errors.length >= 2) {
+          // OBS-05: Both hedged attempts failed — capture final failure to Sentry
+          logger.aiError('TNB', endpoint, { duration: undefined, status: undefined });
+          reject(new Error('AI service busy. Please try again in a moment.'));
+        }
       }
     };
 
@@ -283,7 +293,7 @@ export async function handleTryOn(
       created_at: new Date().toISOString(),
     });
   } catch (e) {
-    logger.error('[/api/tryon] Persistence failed, returning raw URL:', e);
+    logger.error('[/api/tryon] Persistence failed, returning raw URL', {}, e);
   }
 
   return {
@@ -347,7 +357,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     return NextResponse.json({ ...result, generationsRemaining });
   } catch (err: unknown) {
     const message = err instanceof Error ? err.message : String(err);
-    logger.error('[/api/tryon] ERROR:', message);
+    logger.error('[/api/tryon] ERROR', { message });
     return NextResponse.json({ error: message }, { status: 503 });
   }
 }
