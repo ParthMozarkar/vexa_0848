@@ -4,14 +4,21 @@ import { hashApiKey } from '@/lib/crypto';
 import { createServerSupabaseClient } from '@/lib/supabaseServer';
 
 export async function middleware(req: NextRequest) {
+  // OBS-04: Propagate or generate a request ID for tracing across all API routes.
+  const requestId = req.headers.get('x-request-id') || `req_${Date.now().toString(36)}`;
+
   if (req.nextUrl.pathname.startsWith('/api/keys')) {
-    return NextResponse.next();
+    const keysResponse = NextResponse.next();
+    keysResponse.headers.set('x-request-id', requestId);
+    return keysResponse;
   }
 
   const apiKeyHeader = req.headers.get('x-vexa-key');
 
   if (!apiKeyHeader) {
-    return NextResponse.next();
+    const demoResponse = NextResponse.next();
+    demoResponse.headers.set('x-request-id', requestId);
+    return demoResponse;
   }
 
   try {
@@ -25,7 +32,9 @@ export async function middleware(req: NextRequest) {
       .single();
 
     if (keyError || !keyRecord || keyRecord.status !== 'active') {
-      return NextResponse.json({ error: 'Invalid API key' }, { status: 401 });
+      const invalidRes = NextResponse.json({ error: 'Invalid API key' }, { status: 401 });
+      invalidRes.headers.set('x-request-id', requestId);
+      return invalidRes;
     }
 
     const limit =
@@ -34,7 +43,9 @@ export async function middleware(req: NextRequest) {
         : 1000;
 
     if (keyRecord.call_count >= limit) {
-      return NextResponse.json({ error: 'Monthly limit exceeded' }, { status: 429 });
+      const limitRes = NextResponse.json({ error: 'Monthly limit exceeded' }, { status: 429 });
+      limitRes.headers.set('x-request-id', requestId);
+      return limitRes;
     }
 
     const newCount = keyRecord.call_count + 1;
@@ -48,11 +59,15 @@ export async function middleware(req: NextRequest) {
       timestamp: new Date().toISOString(),
     });
 
-    return NextResponse.next();
+    const authedResponse = NextResponse.next();
+    authedResponse.headers.set('x-request-id', requestId);
+    return authedResponse;
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e);
     console.error('[middleware] API key gate failed:', msg);
-    return NextResponse.json({ error: 'Server Configuration Error' }, { status: 500 });
+    const errRes = NextResponse.json({ error: 'Server Configuration Error' }, { status: 500 });
+    errRes.headers.set('x-request-id', requestId);
+    return errRes;
   }
 }
 

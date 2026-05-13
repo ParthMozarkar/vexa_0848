@@ -13,9 +13,14 @@ import sys
 import hmac
 import logging
 import asyncio
+from sentry_config import init_sentry
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("vexa")
+
+# OBS-02: Initialise Sentry early, before any other setup.
+# No-ops if SENTRY_DSN env var is not set.
+init_sentry()
 
 # ─── Startup token validation ─────────────────────────────────────────────────
 ENVIRONMENT = os.environ.get("ENVIRONMENT", "production")

@@ -49,4 +49,4 @@ __pycache__/
 venv/
 ENV/
 .pytest_cache/
-.python-version
+.python-version.planning/

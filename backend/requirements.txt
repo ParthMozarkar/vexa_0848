@@ -103,6 +103,7 @@ rich==14.3.3
 s3transfer==0.16.0
 safetensors==0.7.0
 sarvamai==0.1.25
+sentry-sdk[fastapi]>=2.0.0
 scikit-learn==1.2.2
 scipy==1.17.1
 shellingham==1.5.4
