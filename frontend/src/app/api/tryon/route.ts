@@ -78,7 +78,6 @@ async function resolveToPublicUrl(url: string, label: string, userId: string, su
       ext = mime.split('/')[1] || 'png';
       buffer = Buffer.from(b64, 'base64');
     } else {
-      // Download external URL to archive it
       const res = await fetch(url);
       if (!res.ok) return url;
       const arrayBuffer = await res.arrayBuffer();
@@ -87,19 +86,15 @@ async function resolveToPublicUrl(url: string, label: string, userId: string, su
       ext = mime.split('/')[1]?.split(';')[0] || 'png';
     }
 
-    const folder = label === 'person' ? 'person' : 'garments';
-    const filename = `uploads/${folder}/${userId}_${Date.now()}.${ext}`;
+    const filename = `studio/uploads/${label}/${userId}_${Date.now()}.${ext}`;
 
-    // 1. Try R2
     const r2Url = await uploadToR2(buffer, filename, mime);
     if (r2Url) return r2Url;
 
-    // 2. Fallback to Supabase
     await supabase.storage.from('avatars').upload(filename, buffer, { contentType: mime, upsert: true });
-    const { data: signed } = await supabase.storage.from('avatars').createSignedUrl(filename, 86400 * 365);
-    return signed?.signedUrl || url;
+    const { data: publicData } = supabase.storage.from('avatars').getPublicUrl(filename);
+    return publicData?.publicUrl || url;
   } catch (e) {
-    console.warn(`[Resolve] Failed to archive ${label}:`, e);
     return url;
   }
 }
@@ -112,17 +107,14 @@ async function persistResultImage(imageUrl: string, userId: string, productId: s
     const buffer = Buffer.from(arrayBuffer);
     const contentType = res.headers.get('content-type') || 'image/png';
     const ext = contentType.split('/')[1]?.split(';')[0] || 'png';
-    const filename = `tryon_results/${userId}_${productId}_${Date.now()}.${ext}`;
+    const filename = `studio/tryons/${userId}_${productId}_${Date.now()}.${ext}`;
 
     const r2Url = await uploadToR2(buffer, filename, contentType);
     if (r2Url) return r2Url;
 
-    const { error: uploadError } = await supabase.storage.from('avatars').upload(filename, arrayBuffer, { contentType, upsert: true });
-    if (!uploadError) {
-      const { data: signed } = await supabase.storage.from('avatars').createSignedUrl(filename, 86400 * 365);
-      if (signed?.signedUrl) return signed.signedUrl;
-    }
-    return imageUrl;
+    await supabase.storage.from('avatars').upload(filename, arrayBuffer, { contentType, upsert: true });
+    const { data: publicData } = supabase.storage.from('avatars').getPublicUrl(filename);
+    return publicData?.publicUrl || imageUrl;
   } catch { return imageUrl; }
 }
 
