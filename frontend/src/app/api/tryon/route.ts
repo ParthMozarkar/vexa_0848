@@ -303,8 +303,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
     let generationsRemaining: number | null = null;
     if (!isMarketplaceRequest) {
-      const postCheck = await checkIpLimit(clientIp, 'tryon');
-      generationsRemaining = postCheck.remaining;
+      const postCheck = await checkIpLimit(clientIp);
+      generationsRemaining = postCheck.generationsRemaining;
     }
 
     return NextResponse.json({ ...result, generationsRemaining });
