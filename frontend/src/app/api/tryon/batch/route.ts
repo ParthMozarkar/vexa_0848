@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { isRateLimited } from '@/lib/rateLimit';
+import { getClientIp, checkIpLimit } from '@/lib/ipRateLimit';
 import { handleTryOn } from '../route';
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
-  const ip = req.headers.get('x-forwarded-for') || '127.0.0.1';
-  if (await isRateLimited(ip, 10)) {
-    return NextResponse.json({ error: 'Too many requests. Please wait 60 seconds.' }, { status: 429 });
+  const isMarketplaceRequest = !!req.headers.get('x-vexa-key');
+  if (!isMarketplaceRequest) {
+    const ip = getClientIp(req);
+    const check = await checkIpLimit(ip, 'tryon');
+    if (!check.allowed) {
+      return NextResponse.json({ error: 'Too many requests. Please wait before trying again.' }, { status: 429 });
+    }
   }
 
   try {

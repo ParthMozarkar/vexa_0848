@@ -124,32 +124,28 @@ async function persistResultImage(imageUrl: string, userId: string, productId: s
  */
 function parseTNBResponse(responseText: string): string {
   const trimmed = responseText.trim();
-  
-  const isValidUrl = (u: any): string | null => {
-    if (typeof u !== 'string') return null;
-    let url = u.trim();
-    if (url.startsWith('//')) url = 'https:' + url;
-    if (url.startsWith('http') && url.length > 15) {
-      try { new URL(url); return url; } catch { return null; }
-    }
-    return null;
-  };
 
+  // Plain URL response (most common from vto_stream)
+  if (trimmed.startsWith('http')) return trimmed;
+
+  // Protocol-relative URL
+  if (trimmed.startsWith('//')) return 'https:' + trimmed;
+
+  // JSON response
   if (trimmed.startsWith('{')) {
     try {
-      const json = JSON.parse(trimmed);
-      if (json.status && json.status === 'error') throw new Error(json.message || 'TNB Internal Error');
-      const url = isValidUrl(json.response) || isValidUrl(json.url) || isValidUrl(json.output_url) || isValidUrl(json.image);
-      if (url) return url;
-    } catch (e: any) { 
-        if (e.message.includes('TNB Internal Error')) throw e;
+      const json = JSON.parse(trimmed) as Record<string, unknown>;
+      if (json.status === 'error') throw new Error((json.message as string) || 'AI generation failed');
+      const url = (json.response as string) || (json.url as string) || (json.output_url as string) || (json.image as string);
+      if (url?.startsWith('http')) return url.trim();
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : '';
+      if (msg === 'AI generation failed' || msg.startsWith('AI ')) throw e;
     }
   }
 
-  const plainUrl = isValidUrl(trimmed);
-  if (plainUrl) return plainUrl;
-
-  throw new Error(`Invalid AI response format: ${trimmed.slice(0, 50)}`);
+  console.error('[TNB] Unexpected response:', trimmed.slice(0, 120));
+  throw new Error('AI service is temporarily unavailable. Please try again.');
 }
 
 /**
@@ -158,7 +154,7 @@ function parseTNBResponse(responseText: string): string {
  */
 async function callTNB(personImageUrl: string, garmentImageUrl: string, category: TryOnCategory): Promise<string> {
   const apiKey = process.env.TNB_API_KEY || process.env.NEWBLACK_API_KEY;
-  if (!apiKey) throw new Error('TNB_API_KEY not configured');
+  if (!apiKey) throw new Error('AI service not configured');
 
   const endpoint = category === 'shoes' ? 'vto-shoes' : 'vto_stream';
 
@@ -193,7 +189,7 @@ async function callTNB(personImageUrl: string, garmentImageUrl: string, category
     if (!res.ok) {
       const errText = await res.text();
       console.error(`[TNB Error] Status: ${res.status}, Body: ${errText.slice(0, 200)}`);
-      throw new Error(`TNB failed (${res.status})`);
+      throw new Error(`AI service error (${res.status})`);
     }
     return parseTNBResponse(await res.text());
   };
@@ -213,7 +209,7 @@ async function callTNB(personImageUrl: string, garmentImageUrl: string, category
         }
       } catch (e: any) {
         errors.push(e);
-        if (errors.length >= 2) reject(new Error(`AI service busy: ${errors[0].message}`));
+        if (errors.length >= 2) reject(new Error('AI service busy. Please try again in a moment.'));
       }
     };
 
@@ -307,8 +303,8 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
     let generationsRemaining: number | null = null;
     if (!isMarketplaceRequest) {
-      const postCheck = await checkIpLimit(clientIp);
-      generationsRemaining = postCheck.generationsRemaining;
+      const postCheck = await checkIpLimit(clientIp, 'tryon');
+      generationsRemaining = postCheck.remaining;
     }
 
     return NextResponse.json({ ...result, generationsRemaining });
