@@ -160,23 +160,27 @@ async function callTNB(personImageUrl: string, garmentImageUrl: string, category
   const apiKey = process.env.TNB_API_KEY || process.env.NEWBLACK_API_KEY;
   if (!apiKey) throw new Error('TNB_API_KEY not configured');
 
-  const endpoint = category === 'shoes' ? 'vto-shoes' : 'vto';
+  const endpoint = category === 'shoes' ? 'vto-shoes' : 'vto_stream';
 
   const runRequest = async () => {
-    // Ensure absolute URLs
     const fixUrl = (u: string) => u.startsWith('//') ? `https:${u}` : u;
     const pUrl = fixUrl(personImageUrl);
     const gUrl = fixUrl(garmentImageUrl);
 
-    console.log(`[TNB Request] pUrl: ${pUrl.slice(0, 40)}..., gUrl: ${gUrl.slice(0, 40)}...`);
+    console.log(`[TNB Request] endpoint=${endpoint} pUrl: ${pUrl.slice(0, 60)}...`);
 
     const formData = new FormData();
     formData.append('model_photo', pUrl);
     if (category === 'shoes') {
       formData.append('shoes_photo', gUrl);
     } else {
+      const promptText = category === 'bottoms'
+        ? 'Put this bottom/pants on the model'
+        : category === 'one-pieces'
+          ? 'Put this dress/outfit on the model'
+          : 'Put this top/shirt on the model';
       formData.append('clothing_photo', gUrl);
-      formData.append('prompt', `Put this ${category} on the model`);
+      formData.append('prompt', promptText);
       formData.append('ratio', 'auto');
     }
 

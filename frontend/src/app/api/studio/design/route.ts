@@ -133,26 +133,43 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
             stream: false,
             watermark: false
           }),
+          signal: AbortSignal.timeout(90_000),
         });
-        const data = await seedreamRes.json();
-        imageUrl = data.data?.[0]?.url || data.url || data.image_url;
-      } catch (e) { console.warn('[Design] Seedream failed', e); }
+        if (!seedreamRes.ok) {
+          const errText = await seedreamRes.text().catch(() => '');
+          console.error(`[Design] Seedream HTTP ${seedreamRes.status}:`, errText.slice(0, 200));
+        } else {
+          const data = await seedreamRes.json();
+          imageUrl = data.data?.[0]?.url || data.url || data.image_url;
+          if (!imageUrl) console.warn('[Design] Seedream OK but no URL in response:', JSON.stringify(data).slice(0, 200));
+        }
+      } catch (e) { console.warn('[Design] Seedream exception:', e); }
+    } else {
+      console.warn('[Design] SEEDREAM_API_KEY not set — skipping Seedream');
     }
 
-    // 4. Fallback to OpenAI
+    // 4. Fallback to OpenAI DALL-E 3
     if (!imageUrl) {
       try {
+        console.log('[Design] Trying DALL-E fallback...');
         const dalleResponse = await fetch('https://api.openai.com/v1/images/generations', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${openaiKey.trim()}` },
           body: JSON.stringify({ model: 'dall-e-3', prompt: generationPrompt, n: 1, size: '1024x1024' }),
+          signal: AbortSignal.timeout(60_000),
         });
-        const data = await dalleResponse.json();
-        imageUrl = data.data?.[0]?.url;
-      } catch (e) { console.warn('[Design] DALL-E failed', e); }
+        if (!dalleResponse.ok) {
+          const errText = await dalleResponse.text().catch(() => '');
+          console.error(`[Design] DALL-E HTTP ${dalleResponse.status}:`, errText.slice(0, 200));
+        } else {
+          const data = await dalleResponse.json();
+          imageUrl = data.data?.[0]?.url;
+          if (!imageUrl) console.warn('[Design] DALL-E OK but no URL:', JSON.stringify(data).slice(0, 200));
+        }
+      } catch (e) { console.warn('[Design] DALL-E exception:', e); }
     }
 
-    if (!imageUrl) throw new Error('Generation failed');
+    if (!imageUrl) throw new Error('Both Seedream and DALL-E failed — check API keys and logs');
 
     // 5. Increment Usage (Only if successful)
     if (!isMarketplaceRequest) {
