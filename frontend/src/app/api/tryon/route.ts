@@ -253,14 +253,17 @@ export async function handleTryOn(input: HandleTryOnInput, supabase: SupabaseCli
   try {
     const persistedUrl = await persistResultImage(resUrl, userId, productId, supabase);
     if (persistedUrl && persistedUrl !== resUrl) finalUrl = persistedUrl;
-    await supabase.from('tryon_results').upsert({
+    await (supabase.from('tryon_results') as any).upsert({
       user_id: userId,
-      product_id: productId ?? `custom_${Date.now()}`,
-      product_image_url: userPhotoUrl ?? '',
+      product_id: productId,
+      user_photo_url: personUrlFinal,
+      garment_url: garmentUrlFinal,
+      product_image_url: garmentUrlFinal,
       result_url: finalUrl,
       fit_label: 'True to size',
       recommended_size: 'M',
-    } as never);
+      created_at: new Date().toISOString(),
+    });
   } catch (e) {
     console.error('[/api/tryon] Persistence failed, returning raw URL:', e);
   }

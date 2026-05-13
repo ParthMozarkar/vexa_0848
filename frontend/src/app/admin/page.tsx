@@ -22,6 +22,8 @@ interface DesignRecord {
 interface TryOnRecord {
   id: string;
   user_id: string;
+  user_photo_url: string;
+  garment_url: string;
   product_image_url: string;
   result_url: string;
   fit_label: string;
@@ -232,13 +234,23 @@ export default function AdminDashboard() {
               tryons.length === 0 ? <EmptyState text="No try-on results stored yet" /> :
               tryons.map(item => (
                 <motion.div initial={{opacity:0, y:10}} animate={{opacity:1, y:0}} key={item.id} className="bg-white rounded-[2.5rem] p-6 shadow-sm border border-slate-100 hover:shadow-2xl transition-all">
-                  <div className="grid grid-cols-2 gap-3 mb-4">
+                  <div className="grid grid-cols-3 gap-3 mb-4">
+                    <div className="space-y-1">
+                      <p className="text-[8px] font-black uppercase text-slate-300">Person Photo</p>
+                      {item.user_photo_url
+                        ? <img src={item.user_photo_url} className="w-full h-28 rounded-xl object-cover bg-slate-50 border border-slate-100" />
+                        : <div className="w-full h-28 rounded-xl bg-slate-100 flex items-center justify-center text-[8px] text-slate-300 font-bold">No photo</div>
+                      }
+                    </div>
                     <div className="space-y-1">
                       <p className="text-[8px] font-black uppercase text-slate-300">Garment</p>
-                      <img src={item.product_image_url} className="w-full h-28 rounded-xl object-cover bg-slate-50 border border-slate-100" />
+                      {(item.garment_url || item.product_image_url)
+                        ? <img src={item.garment_url || item.product_image_url} className="w-full h-28 rounded-xl object-cover bg-slate-50 border border-slate-100" />
+                        : <div className="w-full h-28 rounded-xl bg-slate-100 flex items-center justify-center text-[8px] text-slate-300 font-bold">No garment</div>
+                      }
                     </div>
                     <div className="space-y-1 relative group">
-                      <p className="text-[8px] font-black uppercase text-[#4A6741]">AI Result</p>
+                      <p className="text-[8px] font-black uppercase text-[#4A6741]">Try-On Result</p>
                       <img src={item.result_url} className="w-full h-28 rounded-xl object-cover bg-slate-100 border border-[#4A6741]/20 shadow-sm" />
                       <button onClick={() => window.open(item.result_url)} className="absolute inset-x-0 bottom-0 top-4 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity rounded-xl flex items-center justify-center">
                         <ExternalLink className="text-white w-4 h-4" />
