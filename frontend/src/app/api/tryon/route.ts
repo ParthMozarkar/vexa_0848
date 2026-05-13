@@ -163,12 +163,19 @@ async function callTNB(personImageUrl: string, garmentImageUrl: string, category
   const endpoint = category === 'shoes' ? 'vto-shoes' : 'vto';
 
   const runRequest = async () => {
+    // Ensure absolute URLs
+    const fixUrl = (u: string) => u.startsWith('//') ? `https:${u}` : u;
+    const pUrl = fixUrl(personImageUrl);
+    const gUrl = fixUrl(garmentImageUrl);
+
+    console.log(`[TNB Request] pUrl: ${pUrl.slice(0, 40)}..., gUrl: ${gUrl.slice(0, 40)}...`);
+
     const formData = new FormData();
-    formData.append('model_photo', personImageUrl);
+    formData.append('model_photo', pUrl);
     if (category === 'shoes') {
-      formData.append('shoes_photo', garmentImageUrl);
+      formData.append('shoes_photo', gUrl);
     } else {
-      formData.append('clothing_photo', garmentImageUrl);
+      formData.append('clothing_photo', gUrl);
       formData.append('prompt', `Put this ${category} on the model`);
       formData.append('ratio', 'auto');
     }
@@ -178,7 +185,12 @@ async function callTNB(personImageUrl: string, garmentImageUrl: string, category
       body: formData,
       signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
     });
-    if (!res.ok) throw new Error(`TNB failed (${res.status})`);
+    
+    if (!res.ok) {
+      const errText = await res.text();
+      console.error(`[TNB Error] Status: ${res.status}, Body: ${errText.slice(0, 200)}`);
+      throw new Error(`TNB failed (${res.status})`);
+    }
     return parseTNBResponse(await res.text());
   };
 
