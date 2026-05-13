@@ -89,36 +89,60 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     const sanitizedPrompt = finalDesignPrompt.slice(0, 850);
     const generationPrompt = `Top-down overhead flat lay photograph of a ${sanitizedPrompt}, clean white background, bird's-eye view, crisp studio lighting, no people.`;
 
+    // 3. Generate Image using SEEDREAM (BytePlus Ark)
+    const seedreamKey = process.env.SEEDREAM_API_KEY;
+    const seedreamEndpoint = process.env.SEEDREAM_ENDPOINT || 'https://ark.ap-southeast.bytepluses.com/api/v3/images/generations';
+    const seedreamModel = process.env.SEEDREAM_MODEL || 'seedream-4-0-250828';
+
     let imageUrl: string | undefined;
-    let finalDalleData: any = {};
 
-    // 3. Try OpenAI DALL-E 3
-    try {
-      const dalleResponse = await fetch('https://api.openai.com/v1/images/generations', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${openaiKey.trim()}` },
-        body: JSON.stringify({ model: 'dall-e-3', prompt: generationPrompt, n: 1, size: '1024x1024' }),
-      });
-      const data = await dalleResponse.json();
-      if (dalleResponse.ok) imageUrl = data.data?.[0]?.url;
-      else finalDalleData = data;
-    } catch (e) { console.warn('OpenAI DALL-E 3 error', e); }
-
-    // 4. Try OpenAI DALL-E 2 Fallback
-    if (!imageUrl) {
+    if (seedreamKey) {
       try {
-        const fallbackRes = await fetch('https://api.openai.com/v1/images/generations', {
+        console.log('[Seedream] Generating 2K design...');
+        const seedreamRes = await fetch(seedreamEndpoint, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${openaiKey.trim()}` },
-          body: JSON.stringify({ model: 'dall-e-2', prompt: generationPrompt, n: 1, size: '1024x1024' }),
+          headers: { 
+            'Content-Type': 'application/json', 
+            'Authorization': `Bearer ${seedreamKey.trim()}` 
+          },
+          body: JSON.stringify({
+            model: seedreamModel,
+            prompt: generationPrompt,
+            sequential_image_generation: 'disabled',
+            response_format: 'url',
+            size: '2K',
+            stream: false,
+            watermark: false
+          }),
         });
-        const data = await fallbackRes.json();
-        if (fallbackRes.ok) imageUrl = data.data?.[0]?.url;
-        else finalDalleData = data;
-      } catch (e) { console.warn('OpenAI DALL-E 2 error', e); }
+
+        const data = await seedreamRes.json();
+        // Seedream/Ark usually returns { data: [{ url: "..." }] } or { url: "..." }
+        imageUrl = data.data?.[0]?.url || data.url || data.image_url;
+        
+        if (!imageUrl && !seedreamRes.ok) {
+          console.error('[Seedream] Error:', JSON.stringify(data));
+        }
+      } catch (e) { 
+        console.warn('[Seedream] Request failed, checking fallbacks...', e); 
+      }
     }
 
-    // 5. Try ANAKIN Fallback (if configured)
+    // 4. Fallback to OpenAI if Seedream fails (Ensures the app doesn't break)
+    if (!imageUrl) {
+      console.warn('[Design] Seedream failed, trying OpenAI DALL-E fallback...');
+      try {
+        const dalleResponse = await fetch('https://api.openai.com/v1/images/generations', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${openaiKey.trim()}` },
+          body: JSON.stringify({ model: 'dall-e-3', prompt: generationPrompt, n: 1, size: '1024x1024' }),
+        });
+        const data = await dalleResponse.json();
+        imageUrl = data.data?.[0]?.url;
+      } catch (e) { console.warn('[Design] DALL-E fallback error', e); }
+    }
+
+    // 5. Try ANAKIN Fallback (Final Backup)
     const anakinKey = process.env.ANAKIN_API_KEY;
     if (!imageUrl && anakinKey) {
       try {
@@ -129,12 +153,11 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
         });
         const data = await anakinRes.json();
         imageUrl = data?.result || data?.outputs?.url || data?.outputs?.image;
-      } catch (e) { console.warn('Anakin fallback failed', e); }
+      } catch (e) { console.warn('[Design] Anakin fallback failed', e); }
     }
 
     if (!imageUrl) {
-      const openAiMsg = finalDalleData.error?.message || '';
-      throw new Error(openAiMsg.includes('does not exist') ? 'OpenAI Project Error' : openAiMsg || 'Design failed');
+      throw new Error('All image generation services failed. Please check your Seedream/OpenAI credits.');
     }
 
     // 6. PERSISTENCE: Save to permanent storage & history
