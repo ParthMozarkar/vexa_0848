@@ -1,0 +1,30 @@
+version: '3.9'
+services:
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      target: builder
+    ports:
+      - "4028:4028"
+    environment:
+      - NODE_ENV=development
+    env_file:
+      - ./frontend/.env.local
+    command: ["npm", "run", "dev", "--", "-p", "4028"]
+    volumes:
+      - ./frontend/src:/app/src
+    depends_on:
+      - backend
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - ENVIRONMENT=development
+    env_file:
+      - ./backend/.env
+    command: ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
