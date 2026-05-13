@@ -68,7 +68,7 @@ export default function FavoritesPage() {
               >
                 <div className="aspect-[4/5] relative overflow-hidden">
                   <img 
-                    src={fav.resultImage!} 
+                    src={fav.resultImage ?? fav.result_url ?? ''} 
                     alt="AI Gen"
                     className="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105" 
                   />
@@ -95,13 +95,13 @@ export default function FavoritesPage() {
                 <div className="p-5 flex items-center justify-between bg-black/40 backdrop-blur-xl border-t border-white/5">
                   <div className="flex items-center gap-3">
                     <img 
-                      src={fav.outfit?.imageUrl!} 
+                      src={fav.outfit?.imageUrl ?? ''} 
                       className="w-10 h-10 rounded-md object-cover border border-white/10" 
                       alt="" 
                     />
                     <div>
-                      <p className="text-sm font-medium text-white truncate max-w-[150px]">{fav.outfit?.name!}</p>
-                      <p className="text-xs text-[#d9f99d] font-medium tracking-wide uppercase">{fav.outfit?.category!}</p>
+                      <p className="text-sm font-medium text-white truncate max-w-[150px]">{fav.outfit?.name ?? 'Unnamed'}</p>
+                      <p className="text-xs text-[#d9f99d] font-medium tracking-wide uppercase">{fav.outfit?.category ?? 'Unknown'}</p>
                     </div>
                   </div>
                 </div>

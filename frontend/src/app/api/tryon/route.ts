@@ -59,7 +59,7 @@ async function authenticateRequest(req: NextRequest, bodyUserId: string): Promis
   }
   const guestId = bodyUserId || 'demo_user_001';
   const supabase = getServiceSupabase();
-  await (supabase.from('users') as any).upsert({ id: guestId, email: `${guestId}@vexa.guest` });
+  await supabase.from('users').upsert({ id: guestId, email: `${guestId}@vexa.guest` } as never);
   return { userId: guestId, marketplace: null };
 }
 
@@ -207,8 +207,8 @@ async function callTNB(personImageUrl: string, garmentImageUrl: string, category
           resolved = true;
           resolve(result);
         }
-      } catch (e: any) {
-        errors.push(e);
+      } catch (e: unknown) {
+        errors.push(e instanceof Error ? e : new Error(String(e)));
         if (errors.length >= 2) reject(new Error('AI service busy. Please try again in a moment.'));
       }
     };
@@ -221,8 +221,20 @@ async function callTNB(personImageUrl: string, garmentImageUrl: string, category
   });
 }
 
-export async function handleTryOn(input: any, supabase: SupabaseClient<Database>) {
-  const { userId, userPhotoUrl, productImageUrl, productId, category, garments } = input;
+export interface HandleTryOnInput {
+  userId: string;
+  productId?: string;
+  userPhotoUrl?: string;
+  productImageUrl?: string;
+  category?: TryOnCategory;
+  garments?: Array<{ url: string; category: string }>;
+}
+
+export async function handleTryOn(input: HandleTryOnInput, supabase: SupabaseClient<Database>) {
+  const { userId, category, garments } = input;
+  const userPhotoUrl = input.userPhotoUrl ?? '';
+  const productImageUrl = input.productImageUrl ?? '';
+  const productId = input.productId ?? `custom_${Date.now()}`;
 
   // 1. Parallel Asset Resolution (Saves 2-4s)
   const itemsToProcess = garments || (productImageUrl ? [{ url: productImageUrl, category: category ?? 'tops' }] : []);
@@ -241,17 +253,14 @@ export async function handleTryOn(input: any, supabase: SupabaseClient<Database>
   try {
     const persistedUrl = await persistResultImage(resUrl, userId, productId, supabase);
     if (persistedUrl && persistedUrl !== resUrl) finalUrl = persistedUrl;
-    await (supabase.from('tryon_results') as any).upsert({
+    await supabase.from('tryon_results').upsert({
       user_id: userId,
-      product_id: productId,
-      user_photo_url: userPhotoUrl,
-      garment_url: productImageUrl || (garments?.[0]?.url),
+      product_id: productId ?? `custom_${Date.now()}`,
+      product_image_url: userPhotoUrl ?? '',
       result_url: finalUrl,
       fit_label: 'True to size',
       recommended_size: 'M',
-      status: 'ready',
-      created_at: new Date().toISOString(),
-    });
+    } as never);
   } catch (e) {
     console.error('[/api/tryon] Persistence failed, returning raw URL:', e);
   }

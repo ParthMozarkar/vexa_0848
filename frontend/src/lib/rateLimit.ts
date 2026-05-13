@@ -100,25 +100,27 @@ export async function incrementRateLimit(req: NextRequest, type: 'tryon' | 'desi
 
   const supabase = getServiceSupabase();
   
-  // Use RPC or atomic update to prevent race conditions
-  await supabase.rpc('increment_ip_usage', { 
+  // Try atomic RPC first
+  const { error: rpcError } = await supabase.rpc('increment_ip_usage', { 
     p_ip: ip, 
     p_type: type 
   });
   
-  // Fallback if RPC isn't set up
-  const { data } = await supabase
-    .from('ip_usage_limits')
-    .select('count')
-    .eq('ip_address', ip)
-    .eq('usage_type', type)
-    .single();
-    
-  if (data) {
-    await supabase
+  // Only fall back to manual increment if RPC is not set up
+  if (rpcError) {
+    const { data } = await supabase
       .from('ip_usage_limits')
-      .update({ count: data.count + 1 })
+      .select('count')
       .eq('ip_address', ip)
-      .eq('usage_type', type);
+      .eq('usage_type', type)
+      .single();
+      
+    if (data) {
+      await supabase
+        .from('ip_usage_limits')
+        .update({ count: data.count + 1 })
+        .eq('ip_address', ip)
+        .eq('usage_type', type);
+    }
   }
 }

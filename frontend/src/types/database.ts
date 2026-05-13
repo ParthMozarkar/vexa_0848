@@ -29,6 +29,7 @@ export interface ApiKeyRow {
   created_at: string;
   last_used_at: string | null;
   call_count: number;
+  monthly_limit: number;
 }
 
 export interface ClothingAssetRow {

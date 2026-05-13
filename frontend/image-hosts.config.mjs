@@ -19,4 +19,20 @@ export const imageHosts = [
         protocol: 'https',
         hostname: 'img.rocket.new',
     },
+    {
+        protocol: 'https',
+        hostname: '**.supabase.co',
+    },
+    {
+        protocol: 'https',
+        hostname: '**.r2.cloudflarestorage.com',
+    },
+    {
+        protocol: 'https',
+        hostname: 'thenewblack.ai',
+    },
+    {
+        protocol: 'https',
+        hostname: '**.thenewblack.ai',
+    },
 ];

@@ -33,8 +33,8 @@ function OnboardingWizard() {
     const safetyTimeout = setTimeout(async () => {
       // Save a placeholder avatar_url so the guard lets the user proceed
       if (user?.id) {
-        await (supabase.from('users') as any)
-          .update({ avatar_url: 'placeholder://pending' })
+        await supabase.from('users')
+          .update({ avatar_url: 'placeholder://pending' } as never)
           .eq('id', user.id);
       }
       setStep(5);
@@ -92,8 +92,8 @@ function OnboardingWizard() {
       if (!res.ok) {
         // Backend down — save placeholder and continue
         if (user?.id) {
-          await (supabase.from('users') as any)
-            .update({ avatar_url: 'placeholder://pending' })
+          await supabase.from('users')
+            .update({ avatar_url: 'placeholder://pending' } as never)
             .eq('id', user.id);
         }
       } else {

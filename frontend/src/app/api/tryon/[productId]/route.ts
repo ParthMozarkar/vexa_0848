@@ -23,8 +23,7 @@ interface RouteContext {
 /** Shape returned by handleTryOn — explicit type, no `any` */
 interface TryOnData {
   resultUrl: string;
-  storagePath: string;
-  cached: boolean;
+  status: string;
   fitLabel: string;
   recommendedSize: string;
   fitScore: number;

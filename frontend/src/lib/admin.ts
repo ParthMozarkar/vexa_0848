@@ -4,7 +4,7 @@ export async function logAdminAction(
   action: string,
   endpoint: string,
   targetId?: string,
-  metadata?: Record<string, any>
+  metadata?: Record<string, unknown>
 ) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;

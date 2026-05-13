@@ -88,10 +88,10 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
             userPhotoUrl: targetPhotoUrl,
             productImageUrl,
           },
-          supabase as any
+          supabase
         );
 
-        results.push({ productId, resultUrl: tryOnResult.resultUrl, cached: tryOnResult.cached });
+        results.push({ productId, resultUrl: tryOnResult.resultUrl, cached: false });
       } catch (e: unknown) {
         const err = e as Error;
         console.error(`Batch tryon failed for ${productId}:`, err);

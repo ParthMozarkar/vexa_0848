@@ -33,7 +33,7 @@ export function SizeCompass({ personUrl }: SizeCompassProps) {
           </div>
           <div>
             <h4 className="text-sm font-black text-[#1a1a1a]">AI Size Compass</h4>
-            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">68-Point Scan</p>
+            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">Demo Preview</p>
           </div>
         </div>
         {status === 'complete' && (

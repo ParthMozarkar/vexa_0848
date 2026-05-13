@@ -9,9 +9,28 @@ import {
   BarChart3, Activity, PieChart, Users, ArrowUpRight, RotateCcw, AlertCircle
 } from 'lucide-react';
 
+interface DesignRecord {
+  id: string;
+  user_id: string;
+  result_url: string;
+  category: string;
+  original_prompt: string;
+  ai_prompt: string;
+  created_at: string;
+}
+
+interface TryOnRecord {
+  id: string;
+  user_id: string;
+  user_photo_url: string;
+  garment_url: string;
+  result_url: string;
+  created_at: string;
+}
+
 export default function AdminDashboard() {
-  const [designs, setDesigns] = useState<any[]>([]);
-  const [tryons, setTryons] = useState<any[]>([]);
+  const [designs, setDesigns] = useState<DesignRecord[]>([]);
+  const [tryons, setTryons] = useState<TryOnRecord[]>([]);
   const [stats, setStats] = useState({
     totalDesigns: 0,
     totalTryons: 0,
@@ -47,17 +66,20 @@ export default function AdminDashboard() {
         .select('*', { count: 'exact', head: true })
         .eq('provider', 'blackbox');
 
-      setDesigns(dData || []);
-      setTryons(tData || []);
+      const designs = (dData || []) as DesignRecord[];
+      const tryons = (tData || []) as TryOnRecord[];
+
+      setDesigns(designs);
+      setTryons(tryons);
       
       setStats({
-        totalDesigns: dData?.length || 0,
-        totalTryons: tData?.length || 0,
+        totalDesigns: designs.length,
+        totalTryons: tryons.length,
         totalTNB: tnbCount || 0,
-        activeUsers: new Set([...(dData?.map(d => d.user_id) || []), ...(tData?.map(t => t.user_id) || [])]).size
+        activeUsers: new Set([...designs.map(d => d.user_id), ...tryons.map(t => t.user_id)]).size
       });
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : String(err));
     } finally {
       setLoading(false);
     }
@@ -197,7 +219,7 @@ export default function AdminDashboard() {
   );
 }
 
-function StatCard({ label, value, icon }: { label: string, value: number, icon: any }) {
+function StatCard({ label, value, icon }: { label: string, value: number, icon: React.ReactNode }) {
   return (
     <div className="bg-white p-5 rounded-[2rem] border border-slate-100 shadow-xl flex flex-col items-start gap-1">
       <div className="w-8 h-8 rounded-full bg-[#4A6741]/10 flex items-center justify-center text-[#4A6741] mb-1">

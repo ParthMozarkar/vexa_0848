@@ -27,6 +27,7 @@ export function getClientIp(req: NextRequest): string {
 export interface RateLimitResult {
   allowed: boolean
   remaining: number
+  generationsRemaining: number
 }
 
 /**
@@ -37,7 +38,7 @@ export async function checkIpLimit(ip: string, type: 'tryon' | 'design' = 'tryon
   
   // 1. Bypass for whitelist or localhost
   if (whitelist.includes(ip) || ip === '127.0.0.1' || ip === '::1' || ip === 'unknown') {
-    return { allowed: true, remaining: 99 }
+    return { allowed: true, remaining: 99, generationsRemaining: 99 }
   }
 
   const supabase = getServiceSupabase()
@@ -64,13 +65,15 @@ export async function checkIpLimit(ip: string, type: 'tryon' | 'design' = 'tryon
         last_reset: now.toISOString() 
       }).eq('ip_address', ip).eq('usage_type', type)
       
-      return { allowed: true, remaining: limit }
+      return { allowed: true, remaining: limit, generationsRemaining: limit }
     }
 
     // 4. Check Count
+    const rem = Math.max(0, limit - data.count)
     return {
       allowed: data.count < limit,
-      remaining: Math.max(0, limit - data.count)
+      remaining: rem,
+      generationsRemaining: rem
     }
   }
 
@@ -82,7 +85,7 @@ export async function checkIpLimit(ip: string, type: 'tryon' | 'design' = 'tryon
     last_reset: now.toISOString()
   })
 
-  return { allowed: true, remaining: limit }
+  return { allowed: true, remaining: limit, generationsRemaining: limit }
 }
 
 /**

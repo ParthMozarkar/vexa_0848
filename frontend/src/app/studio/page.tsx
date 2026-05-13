@@ -140,7 +140,7 @@ function StudioPageInner() {
 
       // White background
       ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, 1024, 1024);
+      ctx.fillRect(0, 0, 768, 768);
 
       let loaded = 0;
       const positions = [

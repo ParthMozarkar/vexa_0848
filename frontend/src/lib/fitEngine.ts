@@ -1,5 +1,4 @@
 import type { UserRow, SizeChartRow } from '@/types/database';
-import type { ProductCategory } from '@/types';
 
 /** Product categories for sizing + try-on logic */
 
