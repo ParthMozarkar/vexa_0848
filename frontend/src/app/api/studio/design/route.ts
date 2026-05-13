@@ -25,24 +25,40 @@ interface DesignRequest {
 
 async function persistResultImage(imageUrl: string, userId: string, supabase: any): Promise<string> {
   try {
+    console.log(`[Design Persist] Fetching image from: ${imageUrl.slice(0, 50)}...`);
     const res = await fetch(imageUrl, { signal: AbortSignal.timeout(30_000) });
-    if (!res.ok) return imageUrl;
+    if (!res.ok) {
+      console.error(`[Design Persist] Failed to fetch source image: ${res.status}`);
+      return imageUrl;
+    }
     const arrayBuffer = await res.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
     const contentType = res.headers.get('content-type') || 'image/png';
     const ext = contentType.split('/')[1]?.split(';')[0] || 'png';
     const filename = `design_results/${userId}_${Date.now()}.${ext}`;
 
+    // 1. Try Cloudflare R2
     const r2Url = await uploadToR2(buffer, filename, contentType);
-    if (r2Url) return r2Url;
-
-    const { error: uploadError } = await supabase.storage.from('avatars').upload(filename, arrayBuffer, { contentType, upsert: true });
-    if (!uploadError) {
-      const { data: signed } = await supabase.storage.from('avatars').createSignedUrl(filename, 86400 * 365);
-      if (signed?.signedUrl) return signed.signedUrl;
+    if (r2Url) {
+      console.log(`[Design Persist] Successfully saved to R2: ${filename}`);
+      return r2Url;
     }
-    return imageUrl;
-  } catch { return imageUrl; }
+
+    // 2. Try Supabase Storage (Bucket: avatars)
+    const { error: uploadError } = await supabase.storage.from('avatars').upload(filename, arrayBuffer, { contentType, upsert: true });
+    
+    if (uploadError) {
+      console.error(`[Design Persist] Supabase Upload Error:`, uploadError);
+      return imageUrl;
+    }
+
+    const { data: publicData } = supabase.storage.from('avatars').getPublicUrl(filename);
+    console.log(`[Design Persist] Successfully saved to Supabase: ${filename}`);
+    return publicData?.publicUrl || imageUrl;
+  } catch (err: any) { 
+    console.error(`[Design Persist] Critical Error:`, err.message);
+    return imageUrl; 
+  }
 }
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
