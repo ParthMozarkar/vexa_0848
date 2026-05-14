@@ -6,7 +6,6 @@ import { ImageUploadBox } from '@/components/studio/ImageUploadBox';
 import { VideoTryOn } from '@/components/VideoTryOn';
 import { supabase } from '@/lib/supabase';
 import Header from '@/components/Header';
-import ComingSoonOverlay from "@/components/ui/ComingSoonOverlay";
 import type { Outfit } from '@/types';
 
 type VideoGenStatus = 'idle' | 'generating' | 'ready' | 'error';
@@ -113,10 +112,6 @@ export default function VideoTryOnPage() {
   return (
     <div className="w-full min-h-screen flex flex-col bg-[#f8f7f2]">
       <Header />
-      <ComingSoonOverlay 
-        title="Video Studio" 
-        description="Animate your fashion looks with AI. High-fidelity motion for every garment. Launching Q4." 
-      />
 
       <div className="px-6 pt-32 pb-12 max-w-7xl mx-auto w-full">
         <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-[#4A6741]/10 text-[#4A6741] text-[10px] font-black uppercase tracking-widest mb-4">

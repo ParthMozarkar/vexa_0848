@@ -23,7 +23,7 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     const result = await OrchestrationEngine.execute(
       'video-gen',
       { imageUrl, prompt, duration },
-      { timeoutMs: 120000 }
+      { timeoutMs: 280000 }
     );
 
     if (!result.success) {
