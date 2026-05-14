@@ -128,18 +128,24 @@ export class TNBProvider implements AIProvider {
 
   private parseResponse(text: string): string {
     const trimmed = text.trim();
-    if (trimmed.startsWith('http')) return trimmed;
-    if (trimmed.startsWith('//')) return 'https:' + trimmed;
+    // Must look like a real URL — reject short prefixes like "https:" or "https://"
+    const looksLikeUrl = (s: string) => /^https?:\/\/[^/\s]{3,}/.test(s);
+    if (looksLikeUrl(trimmed)) return trimmed;
+    if (trimmed.startsWith('//') && trimmed.length > 5) {
+      const fixed = 'https:' + trimmed;
+      if (looksLikeUrl(fixed)) return fixed;
+    }
     if (trimmed.startsWith('{')) {
       try {
         const json = JSON.parse(trimmed);
         if (json.status === 'error') throw new Error(json.message || 'AI failed');
         const url = json.response || json.url || json.output_url || json.image;
-        if (url?.startsWith('http')) return url.trim();
+        if (typeof url === 'string' && looksLikeUrl(url.trim())) return url.trim();
       } catch (e: any) {
-        if (e.message.startsWith('AI ')) throw e;
+        if (e.message?.startsWith('AI ')) throw e;
       }
     }
-    throw new Error('AI service unavailable');
+    console.error('[TNB parseResponse] unparseable upstream:', trimmed.slice(0, 300));
+    throw new Error(`AI service returned unparseable response: ${trimmed.slice(0, 100)}`);
   }
 }

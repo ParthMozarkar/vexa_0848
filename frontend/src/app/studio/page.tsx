@@ -210,7 +210,17 @@ function StudioPageInner() {
       if (!res.ok) throw new Error(data.error ?? `Error ${res.status}`);
 
       const url = data.result_url ?? data.resultUrl;
+      console.info("[tryon] api response result_url:", url, "raw:", data);
       if (!url) throw new Error("No result URL returned from the AI engine.");
+      // Validate URL has a real hostname — guards against truncated values like "https:" or "https://"
+      try {
+        const parsed = new URL(url);
+        if (!parsed.hostname || parsed.hostname.length < 3) {
+          throw new Error(`Malformed result URL from AI engine: "${url}"`);
+        }
+      } catch (e) {
+        throw new Error(`Invalid result URL from AI engine: "${url}"`);
+      }
 
       if (typeof data.generationsRemaining === 'number') {
         setGenerationsRemaining(data.generationsRemaining);

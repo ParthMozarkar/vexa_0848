@@ -175,6 +175,7 @@ export async function handleTryOn(
   }
 
   const resUrl = orchestrationResult.outputUrl;
+  console.info('[/api/tryon] provider returned outputUrl:', resUrl);
 
   // 4. Persistence — await so we return the stable stored URL, not the short-lived TNB URL
   let finalUrl = resUrl;
