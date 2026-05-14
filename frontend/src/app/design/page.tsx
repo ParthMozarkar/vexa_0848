@@ -17,6 +17,20 @@ import { useStore } from '@/store/useStore';
 import Header from '@/components/Header';
 import { motion, AnimatePresence } from 'framer-motion';
 
+function proxyIfExternal(url: string): string {
+  if (!url || !url.startsWith('http')) return url;
+  try {
+    const u = new URL(url);
+    const isSupabase = u.hostname.endsWith('.supabase.co');
+    const isR2 = u.hostname.endsWith('.r2.dev') || u.hostname.endsWith('.r2.cloudflarestorage.com');
+    const isSameOrigin = typeof window !== 'undefined' && u.hostname === window.location.hostname;
+    if (isSupabase || isR2 || isSameOrigin) return url;
+    return `/api/proxy?url=${encodeURIComponent(url)}`;
+  } catch {
+    return url;
+  }
+}
+
 // ── Types ─────────────────────────────────────────────────────────────────────
 
 type DesignStep = 'design' | 'tryon';
@@ -378,7 +392,7 @@ export default function DesignPage() {
                   <motion.div key="ready" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 flex flex-col">
                     <div className="flex-1 bg-slate-50 flex items-center justify-center p-8">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={designImageUrl} alt="Design" className="max-h-full object-contain" />
+                      <img src={proxyIfExternal(designImageUrl)} alt="Design" className="max-h-full object-contain" />
                     </div>
                     <div className="p-8 bg-white border-t flex justify-between items-center">
                       <button onClick={() => router.push(`/studio?garmentUrl=${encodeURIComponent(designImageUrl)}&category=${category}`)} className="px-8 py-4 rounded-2xl bg-[#4A6741] text-white font-black uppercase text-xs">Try on Yourself</button>

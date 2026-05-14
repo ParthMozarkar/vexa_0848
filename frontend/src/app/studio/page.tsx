@@ -53,6 +53,20 @@ const FETCH_TIMEOUT_MS = 300_000;
 
 // ── Studio Page ───────────────────────────────────────────────────────────────
 
+function proxyIfExternal(url: string): string {
+  if (!url || !url.startsWith('http')) return url;
+  try {
+    const u = new URL(url);
+    const isSupabase = u.hostname.endsWith('.supabase.co');
+    const isR2 = u.hostname.endsWith('.r2.dev') || u.hostname.endsWith('.r2.cloudflarestorage.com');
+    const isSameOrigin = typeof window !== 'undefined' && u.hostname === window.location.hostname;
+    if (isSupabase || isR2 || isSameOrigin) return url;
+    return `/api/proxy?url=${encodeURIComponent(url)}`;
+  } catch {
+    return url;
+  }
+}
+
 function StudioPageInner() {
   const { currentUser } = useStore();
   const searchParams = useSearchParams();
@@ -366,7 +380,7 @@ function StudioPageInner() {
                     )}
                     {!limitReached && status === "ready" && resultUrl && (
                       <motion.div key="result" className="absolute inset-0">
-                        <img src={resultUrl} alt="Result" className="w-full h-full object-contain" />
+                        <img src={proxyIfExternal(resultUrl)} alt="Result" className="w-full h-full object-contain" />
                       </motion.div>
                     )}
                     {!limitReached && status === "error" && (
