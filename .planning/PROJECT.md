@@ -1,16 +1,16 @@
-# VEXA — AI Infrastructure Scale
+# VEXA — Frontend Performance
 
-## Current Milestone: v2.0 AI Infrastructure Scale
+## Current Milestone: v3.0 Frontend Performance
 
-**Goal:** Make VEXA AI pipelines scalable, resilient, and cost-efficient without changing user-facing product behavior.
+**Goal:** Optimize VEXA frontend and mobile performance without redesigning the product.
 
 **Target features:**
-- Provider abstraction layer (TNB, OpenAI, Meshy, BlackBox, future providers)
-- Async job queue system (Redis + BullMQ — enqueue+polling for video/avatar/Meshy)
-- Retries + failover (exponential backoff, provider failover, graceful degradation)
-- Generation + upload + response caching (eliminate duplicate AI calls)
-- Cost protection (usage tracking, abuse prevention, hedging controls)
-- AI infra documentation (architecture, queue topology, provider map, retry strategy)
+- Feature-based src/features/ structure (barrel re-exports, zero file moves)
+- Mobile performance (dynamic imports, device capability detection, lazy images, Next.js config)
+- 3D optimization (Draco config, progressive GLB loading, mobile GPU frame controls)
+- Frontend API layer (typed apiClient, error normalization, useApiCall hook)
+- State management cleanup (centralized loading/error states, Zustand selector hooks)
+- Performance reports (bundle analysis, mobile readiness, frontend architecture map)
 
 ## What This Is
 

@@ -290,3 +290,136 @@
 ---
 
 *v2.0 roadmap appended: 2026-05-14*
+
+---
+---
+
+# VEXA Frontend Performance — Roadmap
+
+**Milestone:** v3.0 Frontend Performance
+**Mode:** MVP — each phase delivers one complete frontend performance capability; zero regression on existing API flows and user-facing behavior
+**Granularity:** Standard
+**Coverage:** 25/25 requirements mapped
+
+---
+
+## Phases
+
+- [x] **Phase 15: Feature-Based Structure** — Additive barrel re-exports for all five feature domains; zero file moves; all existing imports unchanged
+- [x] **Phase 16: Mobile Performance** — Dynamic imports with SSR disabled, device capability detection, lazy image loading, Next.js config optimizations
+- [x] **Phase 17: 3D Optimization** — Draco decoder config, progressive GLB loading with progress events, mobile GPU frame controls; all 3D stays client-only
+- [x] **Phase 18: Frontend API Layer** — Typed apiClient with error normalization, full method coverage, useApiCall hook; zero collision with existing types
+- [x] **Phase 19: State Management Cleanup** — Centralized loading/error slices in Zustand, typed selector hooks, barrel export; all existing state untouched
+- [x] **Phase 20: Performance Reports** — Bundle analysis, mobile readiness matrix, performance before/after table, frontend architecture map
+
+---
+
+## Phase Details
+
+### Phase 15: Feature-Based Structure
+**Goal**: Developers can import any feature component or hook from a single barrel path without any existing import in the codebase being broken or moved
+**Mode:** mvp
+**Depends on**: Nothing (first phase of v3.0)
+**Requirements**: FEAT-01, FEAT-02, FEAT-03, FEAT-04, FEAT-05, FEAT-06, FEAT-07
+**Success Criteria** (what must be TRUE):
+  1. `import { useTryOn, TryOnResult } from '@/features/tryon'` resolves correctly — no existing file is moved or renamed
+  2. `import { AvatarViewer } from '@/features/avatar'` resolves correctly alongside the original import path, which continues to work
+  3. `import { supabase, useUser } from '@/features/auth'` resolves correctly
+  4. `import { ImageUploadBox } from '@/features/studio'` and `import { useStore } from '@/features/dashboard'` both resolve correctly
+  5. A single `import { ... } from '@/features'` top-level barrel re-exports all five feature namespaces without circular dependency errors
+**Plans**: Complete
+**UI hint**: yes
+
+---
+
+### Phase 16: Mobile Performance
+**Goal**: Heavy UI components load only when needed and the application adapts rendering fidelity to the user's device capability — without changing /api/tryon or any server-side behavior
+**Mode:** mvp
+**Depends on**: Phase 15
+**Requirements**: MOB-01, MOB-02, MOB-03, MOB-04, MOB-05
+**Success Criteria** (what must be TRUE):
+  1. AvatarViewer, ARTryOn, VideoTryOn, and Spline components are imported via SSR-disabled dynamic wrappers — none of them appear in the server-rendered HTML
+  2. `useDeviceCapability()` returns correct values for isMobile, isLowEndDevice, prefersReducedMotion, connectionType, and supportsWebGL in a browser environment
+  3. LazyImage renders a skeleton placeholder until the image enters the viewport, then loads the full image with no layout shift
+  4. The Next.js build completes with compress, swcMinify, and optimizePackageImports for three/r3f/drei active — bundle size for the 3D chunk is reduced versus baseline
+  5. The browser tab on mobile shows the correct theme color from the themeColor metadata added to layout.tsx
+**Plans**: Complete
+**UI hint**: yes
+
+---
+
+### Phase 17: 3D Optimization
+**Goal**: 3D avatar content loads progressively with visible progress feedback, uses Draco compression where available, and does not exhaust mobile GPU resources — all 3D components remain client-only with ssr: false
+**Mode:** mvp
+**Depends on**: Phase 15, Phase 16
+**Requirements**: THREED-01, THREED-02, THREED-03, THREED-04, THREED-05
+**Success Criteria** (what must be TRUE):
+  1. GLB files are served through the Draco decoder path — `configureDracoDecoder()` is called before any DRACOLoader instantiation and DRACO_DECODER_PATH resolves correctly
+  2. `getTextureQuality()` returns 'low', 'medium', or 'high' based on the detected device tier — low-end devices receive downsampled textures
+  3. `useProgressiveGlb()` emits progress values between 0 and 1 during XHR fetch — GlbLoadingIndicator renders a progress bar that advances visibly before the model appears
+  4. AvatarViewer Canvas uses `frameloop="demand"` so frames are only rendered on state change — GPU utilization is idle when the avatar is static
+  5. On a simulated low-end device, AvatarViewer Canvas uses `performance={{ min: 0.5 }}` — Three.js pixel ratio scales down under GPU pressure
+**Plans**: Complete
+**UI hint**: yes
+
+---
+
+### Phase 18: Frontend API Layer
+**Goal**: All client-to-server communication goes through a single typed apiClient with consistent error handling — no component calls fetch() directly against /api routes
+**Mode:** mvp
+**Depends on**: Phase 15
+**Requirements**: API-01, API-02, API-03, API-04, API-05
+**Success Criteria** (what must be TRUE):
+  1. `api.tryOn(...)`, `api.uploadPhoto(...)`, `api.generateAvatar(...)`, `api.getJobStatus(...)`, `api.pollJobUntilComplete(...)`, `api.validateApiKey(...)`, `api.generateDesign(...)`, and `api.healthCheck()` all exist on the exported `api` object with full TypeScript types
+  2. A network error or non-2xx response from any api method throws an `ApiError` instance with `status`, `message`, and `data` fields — never a raw fetch rejection or untyped error
+  3. `useApiCall(fn)` returns `{ loading, error, data, execute }` — calling `execute()` sets loading to true, then resolves to data or error with no unhandled promise rejection
+  4. Importing from `@/lib/apiClient` introduces zero type conflicts with existing types — `StudioDesignApiResponse` does not collide with any prior `DesignResponse` usage
+**Plans**: Complete
+**UI hint**: no
+
+---
+
+### Phase 19: State Management Cleanup
+**Goal**: Loading and error states for all async operations are managed centrally in the Zustand store via typed selector hooks — no component maintains its own ad-hoc loading/error useState pairs for operations that touch the store
+**Mode:** mvp
+**Depends on**: Phase 15, Phase 18
+**Requirements**: STATE-01, STATE-02, STATE-03, STATE-04
+**Success Criteria** (what must be TRUE):
+  1. `useStore.getState().setLoading('tryon', true)` sets the loading flag; `isLoading('tryon')` returns true; all pre-existing store state (userImage, currentUser, tryOnResult, favorites) is unchanged
+  2. `setError('upload', 'File too large')` stores the error; `clearError('upload')` removes it; `clearAllErrors()` removes all errors — no existing state slice is affected
+  3. `useTryOnState()`, `useTryOnActions()`, `useAuthState()`, `useAuthActions()`, `useFavorites()`, `useFavoriteActions()`, `useLoadingState()`, `useErrorState()`, and `useLoadingActions()` all import cleanly from `@/store` without error
+  4. `import { useStore } from '@/store'` and `import { LOADING_KEYS } from '@/store'` both resolve via the barrel — no direct import of `useStore.ts` or `selectors.ts` is required
+**Plans**: Complete
+**UI hint**: yes
+
+---
+
+### Phase 20: Performance Reports
+**Goal**: The frontend performance baseline, mobile readiness status, bundle composition, and architecture conventions are documented so any engineer can identify bottlenecks, verify improvements, and understand the layer rules
+**Mode:** mvp
+**Depends on**: Phase 15, Phase 16, Phase 17, Phase 18, Phase 19
+**Requirements**: REPORT-01, REPORT-02, REPORT-03, REPORT-04
+**Success Criteria** (what must be TRUE):
+  1. `docs/PERFORMANCE-REPORT.md` contains a before/after table with at least LCP, FID/INP, and CLS values for the studio page — and documents which phase delivered each improvement
+  2. `docs/MOBILE-READINESS.md` contains a capability matrix showing which features are available on low-end vs. high-end mobile devices, plus a checklist of remaining TODOs
+  3. `docs/BUNDLE-ANALYSIS.md` identifies the largest chunks by estimated size, lists which are lazy-loaded, and includes instructions for running the Next.js bundle analyzer locally
+  4. `docs/FRONTEND-ARCH.md` contains the full `frontend/src/` directory tree annotated by layer, a data flow diagram from user action to API response, the Zustand state map, and the layer rules (what may import what)
+**Plans**: Complete
+**UI hint**: yes
+
+---
+
+## Progress Table (v3.0)
+
+| Phase | Plans Complete | Status | Completed |
+|-------|----------------|--------|-----------|
+| 15. Feature-Based Structure | 7/7 | Complete | 2026-05-14 |
+| 16. Mobile Performance | 5/5 | Complete | 2026-05-14 |
+| 17. 3D Optimization | 5/5 | Complete | 2026-05-14 |
+| 18. Frontend API Layer | 5/5 | Complete | 2026-05-14 |
+| 19. State Management Cleanup | 4/4 | Complete | 2026-05-14 |
+| 20. Performance Reports | 4/4 | Complete | 2026-05-14 |
+
+---
+
+*v3.0 roadmap appended: 2026-05-14*
