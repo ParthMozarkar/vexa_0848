@@ -110,18 +110,26 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
     const sanitizedPrompt = finalDesignPrompt.slice(0, 850);
     const generationPrompt = `Top-down overhead flat lay photograph of a ${sanitizedPrompt}, clean white background, bird's-eye view, crisp studio lighting, no people.`;
 
-    // 3. Generate Image using SEEDREAM (BytePlus Ark)
-    const seedreamKey = process.env.SEEDREAM_API_KEY;
+    // 3. Generate Image using SEEDREAM (BytePlus Ark) — try primary key, then fallback key
+    const seedreamKeys = [process.env.SEEDREAM_API_KEY, process.env.SEEDREAM_API_KEY_2].filter(
+      (k): k is string => Boolean(k && k.trim())
+    );
     const seedreamEndpoint = process.env.SEEDREAM_ENDPOINT || 'https://ark.ap-southeast.bytepluses.com/api/v3/images/generations';
     const seedreamModel = process.env.SEEDREAM_MODEL || 'seedream-4-0-250828';
 
     let imageUrl: string | undefined;
 
-    if (seedreamKey) {
+    if (seedreamKeys.length === 0) {
+      console.warn('[Design] No SEEDREAM_API_KEY set — skipping Seedream');
+    }
+
+    for (let i = 0; i < seedreamKeys.length && !imageUrl; i++) {
+      const key = seedreamKeys[i];
       try {
+        console.log(`[Design] Trying Seedream key #${i + 1}...`);
         const seedreamRes = await fetch(seedreamEndpoint, {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${seedreamKey.trim()}` },
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${key.trim()}` },
           body: JSON.stringify({
             model: seedreamModel,
             prompt: generationPrompt,
@@ -129,21 +137,25 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
             response_format: 'url',
             size: '2K',
             stream: false,
-            watermark: false
+            watermark: false,
           }),
           signal: AbortSignal.timeout(90_000),
         });
         if (!seedreamRes.ok) {
           const errText = await seedreamRes.text().catch(() => '');
-          console.error(`[Design] Seedream HTTP ${seedreamRes.status}:`, errText.slice(0, 200));
-        } else {
-          const data = await seedreamRes.json();
-          imageUrl = data.data?.[0]?.url || data.url || data.image_url;
-          if (!imageUrl) console.warn('[Design] Seedream OK but no URL in response:', JSON.stringify(data).slice(0, 200));
+          console.error(`[Design] Seedream key #${i + 1} HTTP ${seedreamRes.status}:`, errText.slice(0, 300));
+          continue;
         }
-      } catch (e) { console.warn('[Design] Seedream exception:', e); }
-    } else {
-      console.warn('[Design] SEEDREAM_API_KEY not set — skipping Seedream');
+        const data = await seedreamRes.json();
+        imageUrl = data.data?.[0]?.url || data.url || data.image_url;
+        if (!imageUrl) {
+          console.warn(`[Design] Seedream key #${i + 1} OK but no URL:`, JSON.stringify(data).slice(0, 200));
+        } else {
+          console.log(`[Design] Seedream key #${i + 1} succeeded`);
+        }
+      } catch (e) {
+        console.warn(`[Design] Seedream key #${i + 1} exception:`, e);
+      }
     }
 
     // 4. Fallback to OpenAI gpt-image-1 (DALL-E 3 deprecated)
