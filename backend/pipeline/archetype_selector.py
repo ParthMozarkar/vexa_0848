@@ -40,7 +40,7 @@ def select_archetypes(betas, k: int = 3, top_k: int | None = None):
     # Softmax over negative distances
     logits = [-item["distance"] / TEMPERATURE for item in top_items]
     max_logit = max(logits)
-    exps = [math.exp(l - max_logit) for l in logits]
+    exps = [math.exp(logit - max_logit) for logit in logits]
     sum_exps = sum(exps)
     weights = [e / sum_exps for e in exps]
 

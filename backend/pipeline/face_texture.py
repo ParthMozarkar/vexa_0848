@@ -2,12 +2,7 @@ import cv2
 import numpy as np
 import urllib.request
 import mediapipe as mp
-import tempfile
-import os
-
-
 import base64
-import re
 
 def download_image(url_or_base64: str) -> np.ndarray:
     # Check if it's a data URL (base64)

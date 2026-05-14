@@ -12,7 +12,6 @@ import os
 import sys
 import hmac
 import logging
-import asyncio
 from sentry_config import init_sentry
 
 logging.basicConfig(level=logging.INFO)
@@ -74,7 +73,6 @@ def _is_production_environment() -> bool:
 
 def verify_internal_token(credentials: HTTPAuthorizationCredentials | None = Security(security)):
     expected = os.environ.get("INTERNAL_SERVICE_TOKEN", "")
-    env = os.environ.get("ENVIRONMENT", "production")
     if not expected:
         if _is_production_environment():
             raise HTTPException(

@@ -1,7 +1,12 @@
-import pytest
+import os
+import tempfile
+import cv2
+import numpy as np
 import torch
+from unittest.mock import patch
 from pipeline.body_generator import measurements_to_betas
 from pipeline.archetype_selector import select_archetypes
+from pipeline.face_texture import extract_face_texture
 
 
 class FakeMeasurements:
@@ -44,14 +49,6 @@ def test_select_archetypes_average_is_nearest_to_zero():
     result = select_archetypes(betas, k=5)
     top_name = result[0]["archetype"]["id"]
     assert top_name == 'arch_001'
-
-
-import cv2
-import numpy as np
-import tempfile
-import os
-from unittest.mock import patch
-from pipeline.face_texture import extract_face_texture, download_image
 
 
 def _make_fake_face_image() -> np.ndarray:
