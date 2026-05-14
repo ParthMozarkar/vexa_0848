@@ -119,6 +119,54 @@ export interface BookingRow {
   created_at?: string;
 }
 
+// ─── Multi-Tenant / Organizations ────────────────────────────────────────────
+
+export interface OrganizationRow {
+  id: string;
+  name: string;
+  slug: string;
+  plan: 'free' | 'pro' | 'enterprise';
+  owner_id: string;
+  created_at: string;
+  metadata: Record<string, unknown> | null;
+}
+
+export interface OrgMemberRow {
+  id: string;
+  org_id: string;
+  user_id: string;
+  role: 'owner' | 'admin' | 'member';
+  created_at: string;
+}
+
+export interface TenantQuotaRow {
+  id: string;
+  org_id: string;
+  daily_ai_limit: number;
+  monthly_ai_limit: number;
+  daily_used: number;
+  monthly_used: number;
+  reset_daily_at: string;
+  reset_monthly_at: string;
+  updated_at: string;
+}
+
+export interface UsageEventRow {
+  id: string;
+  org_id: string | null;
+  user_id: string | null;
+  provider: string;
+  endpoint: string;
+  unit: string;
+  quantity: number;
+  cost_usd: number;
+  duration_ms: number;
+  status: 'success' | 'failed';
+  timestamp: string;
+  stripe_meter_id: string | null;
+  idempotency_key: string | null;
+}
+
 export interface Database {
   public: {
     PostgrestVersion: '12';
