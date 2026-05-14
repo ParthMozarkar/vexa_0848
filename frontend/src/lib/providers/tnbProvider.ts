@@ -44,8 +44,9 @@ export class TNBProvider implements AIProvider {
     const endpoint = category === 'shoes' ? 'vto-shoes' : 'vto_stream';
 
     const formData = new FormData();
+    formData.append('api_key', apiKey);
     formData.append('model_photo', this.fixUrl(personImageUrl));
-    
+
     if (category === 'shoes') {
       formData.append('shoes_photo', this.fixUrl(garmentImageUrl));
     } else {
@@ -77,6 +78,7 @@ export class TNBProvider implements AIProvider {
   private async handleVideoGen(input: any, apiKey: string, signal: AbortSignal): Promise<string> {
     const { imageUrl, prompt } = input;
     const formData = new FormData();
+    formData.append('api_key', apiKey);
     formData.append('image_url', this.fixUrl(imageUrl));
     formData.append('prompt', prompt || 'Elegant fashion motion');
 

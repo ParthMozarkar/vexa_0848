@@ -30,6 +30,7 @@ new Worker(
     const apiKey = process.env.TNB_API_KEY;
     if (!apiKey) throw new Error('TNB_API_KEY not configured');
     const formData = new FormData();
+    formData.append('api_key', apiKey);
     formData.append('person_video', videoUrl);
     formData.append('clothing_photo', productImageUrl);
     const res = await fetch('https://thenewblack.ai/api/1.1/wf/vto_video', {
