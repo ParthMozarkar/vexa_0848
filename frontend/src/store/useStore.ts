@@ -26,9 +26,20 @@ interface AppState {
   /** Public URL of the uploaded avatar photo (stored in Supabase Storage). */
   userPhotoUrl: string | null;
   setUserPhotoUrl: (url: string | null) => void;
+
+  // ─── Centralized loading states ──────────────────────────────────────────
+  loadingStates: Record<string, boolean>;
+  setLoading: (key: string, value: boolean) => void;
+  isLoading: (key: string) => boolean;
+
+  // ─── Error states ─────────────────────────────────────────────────────────
+  errors: Record<string, string | null>;
+  setError: (key: string, error: string | null) => void;
+  clearError: (key: string) => void;
+  clearAllErrors: () => void;
 }
 
-export const useStore = create<AppState>((set) => ({
+export const useStore = create<AppState>((set, get) => ({
   // ─── Try-on ──────────────────────────────────────────────────────────────
   userImage: null,
   setUserImage: (image) => set({ userImage: image }),
@@ -57,4 +68,24 @@ export const useStore = create<AppState>((set) => ({
 
   userPhotoUrl: null,
   setUserPhotoUrl: (url) => set({ userPhotoUrl: url }),
+
+  // ─── Centralized loading ──────────────────────────────────────────────────
+  loadingStates: {},
+  setLoading: (key, value) =>
+    set((state) => ({
+      loadingStates: { ...state.loadingStates, [key]: value },
+    })),
+  isLoading: (key) => get().loadingStates[key] ?? false,
+
+  // ─── Errors ───────────────────────────────────────────────────────────────
+  errors: {},
+  setError: (key, error) =>
+    set((state) => ({
+      errors: { ...state.errors, [key]: error },
+    })),
+  clearError: (key) =>
+    set((state) => ({
+      errors: { ...state.errors, [key]: null },
+    })),
+  clearAllErrors: () => set({ errors: {} }),
 }));
