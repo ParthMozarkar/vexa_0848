@@ -8,21 +8,21 @@ export const maxDuration = 300;
 interface VideoGenRequest {
   imageUrl: string;
   prompt?: string;
-  duration?: '5' | '10';
 }
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
   try {
     const body = await req.json();
-    const { imageUrl, prompt, duration = '5' } = body;
+    const { imageUrl, prompt } = body;
 
     if (!imageUrl) {
       return NextResponse.json({ error: 'imageUrl is required' }, { status: 400 });
     }
 
+    // Hardcoded 5s / 10-credit mode — 10s/20-credit disabled
     const result = await OrchestrationEngine.execute(
       'video-gen',
-      { imageUrl, prompt, duration },
+      { imageUrl, prompt },
       { timeoutMs: 280000 }
     );
 

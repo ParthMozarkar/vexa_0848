@@ -74,14 +74,13 @@ export class TNBProvider implements AIProvider {
   }
 
   private async handleVideoGen(input: any, apiKey: string, signal: AbortSignal): Promise<string> {
-    const { imageUrl, prompt, duration } = input;
-    const time = duration === '10' ? '10' : '5';
+    const { imageUrl, prompt } = input;
 
-    // Step 1: submit job
+    // Strict 5s only (10 credits). 10s mode disabled to control TNB cost.
     const submitForm = new FormData();
     submitForm.append('image', this.fixUrl(imageUrl));
     submitForm.append('prompt', prompt || 'Elegant fashion motion, smooth dynamic movement');
-    submitForm.append('time', time);
+    submitForm.append('time', '5');
 
     const submitRes = await fetch(`${TNB_BASE}/ai-video?api_key=${encodeURIComponent(apiKey)}`, {
       method: 'POST',

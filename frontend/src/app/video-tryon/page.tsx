@@ -97,7 +97,7 @@ function VideoTryOnPageInner() {
           'Content-Type': 'application/json',
           ...(session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {}),
         },
-        body: JSON.stringify({ imageUrl: publicUrl, duration: '5' }),
+        body: JSON.stringify({ imageUrl: publicUrl }),
       });
 
       const data = (await res.json()) as VideoGenResponse;
