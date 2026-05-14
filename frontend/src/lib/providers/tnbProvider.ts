@@ -74,19 +74,55 @@ export class TNBProvider implements AIProvider {
   }
 
   private async handleVideoGen(input: any, apiKey: string, signal: AbortSignal): Promise<string> {
-    const { imageUrl, prompt } = input;
-    const formData = new FormData();
-    formData.append('image_url', this.fixUrl(imageUrl));
-    formData.append('prompt', prompt || 'Elegant fashion motion');
+    const { imageUrl, prompt, duration } = input;
+    const time = duration === '10' ? '10' : '5';
 
-    const res = await fetch(`${TNB_BASE}/vto_video?api_key=${encodeURIComponent(apiKey)}`, {
+    // Step 1: submit job
+    const submitForm = new FormData();
+    submitForm.append('image', this.fixUrl(imageUrl));
+    submitForm.append('prompt', prompt || 'Elegant fashion motion, smooth dynamic movement');
+    submitForm.append('time', time);
+
+    const submitRes = await fetch(`${TNB_BASE}/ai-video?api_key=${encodeURIComponent(apiKey)}`, {
       method: 'POST',
-      body: formData,
+      body: submitForm,
       signal,
     });
 
-    if (!res.ok) throw new Error(`TNB Video Error: ${res.status}`);
-    return this.parseResponse(await res.text());
+    if (!submitRes.ok) {
+      const errText = await submitRes.text().catch(() => '');
+      throw new Error(`TNB Video submit ${submitRes.status}: ${errText.slice(0, 200)}`);
+    }
+
+    const jobId = (await submitRes.text()).trim();
+    if (!jobId || jobId.includes('"status"')) {
+      throw new Error(`TNB Video: invalid job id response: ${jobId.slice(0, 200)}`);
+    }
+
+    // Step 2: poll results_video until URL returned or signal aborts
+    const pollIntervalMs = 5_000;
+    while (true) {
+      if (signal.aborted) throw new Error('TNB Video polling aborted (timeout)');
+      await new Promise((r) => setTimeout(r, pollIntervalMs));
+
+      const pollForm = new FormData();
+      pollForm.append('id', jobId);
+      const pollRes = await fetch(`${TNB_BASE}/results_video?api_key=${encodeURIComponent(apiKey)}`, {
+        method: 'POST',
+        body: pollForm,
+        signal,
+      });
+      if (!pollRes.ok) {
+        const errText = await pollRes.text().catch(() => '');
+        throw new Error(`TNB Video poll ${pollRes.status}: ${errText.slice(0, 200)}`);
+      }
+      const body = (await pollRes.text()).trim();
+      if (!body) continue;
+      if (/^processing/i.test(body)) continue;
+      if (body.startsWith('http')) return body;
+      // unknown payload — surface for debugging
+      throw new Error(`TNB Video unknown poll response: ${body.slice(0, 200)}`);
+    }
   }
 
   private fixUrl(u: string) { return u.startsWith('//') ? `https:${u}` : u; }

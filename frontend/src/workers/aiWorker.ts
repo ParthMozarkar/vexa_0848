@@ -29,17 +29,39 @@ new Worker(
     const { userId, videoUrl, productImageUrl, productId } = job.data;
     const apiKey = process.env.TNB_API_KEY;
     if (!apiKey) throw new Error('TNB_API_KEY not configured');
-    const formData = new FormData();
-    formData.append('person_video', videoUrl);
-    formData.append('clothing_photo', productImageUrl);
-    const res = await fetch(`https://thenewblack.ai/api/1.1/wf/vto_video?api_key=${encodeURIComponent(apiKey)}`, {
+    // TNB ai-video is async: submit → poll results_video until URL returned
+    const submitForm = new FormData();
+    submitForm.append('image', productImageUrl);
+    submitForm.append('prompt', 'Fashion model wearing garment, smooth dynamic motion');
+    submitForm.append('time', '5');
+    const submitRes = await fetch(`https://thenewblack.ai/api/1.1/wf/ai-video?api_key=${encodeURIComponent(apiKey)}`, {
       method: 'POST',
-      body: formData,
-      signal: AbortSignal.timeout(300_000),
+      body: submitForm,
+      signal: AbortSignal.timeout(60_000),
     });
-    if (!res.ok) throw new Error(`TNB video failed: ${res.status}`);
-    const resultUrl = (await res.text()).trim();
-    return { resultUrl, userId, productId, status: 'ready' };
+    if (!submitRes.ok) throw new Error(`TNB video submit ${submitRes.status}`);
+    const jobId = (await submitRes.text()).trim();
+    if (!jobId) throw new Error('TNB video: empty job id');
+
+    const deadline = Date.now() + 280_000;
+    while (Date.now() < deadline) {
+      await new Promise((r) => setTimeout(r, 5_000));
+      const pollForm = new FormData();
+      pollForm.append('id', jobId);
+      const pollRes = await fetch(`https://thenewblack.ai/api/1.1/wf/results_video?api_key=${encodeURIComponent(apiKey)}`, {
+        method: 'POST',
+        body: pollForm,
+        signal: AbortSignal.timeout(20_000),
+      });
+      if (!pollRes.ok) throw new Error(`TNB video poll ${pollRes.status}`);
+      const body = (await pollRes.text()).trim();
+      if (/^processing/i.test(body)) continue;
+      if (body.startsWith('http')) {
+        return { resultUrl: body, userId, productId, status: 'ready' };
+      }
+      throw new Error(`TNB video unknown poll: ${body.slice(0, 200)}`);
+    }
+    throw new Error('TNB video: polling deadline exceeded');
   },
   { connection, concurrency: CONCURRENCY[QUEUE_NAMES.TRYON_VIDEO] },
 );
