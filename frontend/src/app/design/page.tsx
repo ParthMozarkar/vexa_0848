@@ -2,8 +2,16 @@
 
 import React, { useState, useRef, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2, Download, AlertCircle, Sparkles, X, ArrowRight, RotateCcw, Lock, Shirt } from 'lucide-react';
-import { ImageUploadBox } from '@/components/studio/ImageUploadBox';
+import {
+  Loader2,
+  Download,
+  AlertCircle,
+  Sparkles,
+  ArrowRight,
+  Lock,
+  Shirt,
+  Check,
+} from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useStore } from '@/store/useStore';
 import Header from '@/components/Header';
@@ -65,7 +73,6 @@ export default function DesignPage() {
   const [step, setStep] = useState<DesignStep>('design');
   const [status, setStatus] = useState<DesignStatus>('idle');
   const [designImageUrl, setDesignImageUrl] = useState<string | null>(null);
-  const [personUrl, setPersonUrl] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const [elapsedSec, setElapsedSec] = useState(0);
   const [limitReached, setLimitReached] = useState(false);
@@ -106,7 +113,9 @@ export default function DesignPage() {
       setTrends(results);
       setShowTrends(results.length > 0);
       setStatus('idle');
-    } catch { setStatus('idle'); }
+    } catch {
+      setStatus('idle');
+    }
   }, [prompt, style, category]);
 
   const handleGenerateDesign = useCallback(async () => {
@@ -132,7 +141,7 @@ export default function DesignPage() {
           category,
           trendContext: selectedTrend ? `${selectedTrend.title}: ${selectedTrend.content}` : undefined,
           designPrompt: selectedTrend?.designPrompt ?? undefined,
-          userId: currentUser?.id ?? 'anonymous'
+          userId: currentUser?.id ?? 'anonymous',
         }),
       });
 
@@ -176,6 +185,7 @@ export default function DesignPage() {
   };
 
   const canGenerate = prompt.trim().length >= 3 && status === 'idle' && !limitReached;
+  const canFetchTrends = prompt.trim().length >= 3 && status !== 'fetching_trends' && !limitReached;
 
   return (
     <div className="w-full min-h-screen flex flex-col bg-[#f8f7f2] text-[#1a1a1a]">
@@ -192,7 +202,7 @@ export default function DesignPage() {
 
       <div className="flex-1 px-4 md:px-6 pb-20 max-w-7xl mx-auto w-full">
         <div className="flex flex-col lg:flex-row gap-12">
-          
+
           <div className="flex-1 flex flex-col gap-8">
             <div className="bg-white rounded-[2rem] p-2 border border-slate-200 shadow-xl">
               <textarea
@@ -205,12 +215,119 @@ export default function DesignPage() {
               />
             </div>
 
-            <div className="flex flex-wrap gap-2">
-              {EXAMPLE_PROMPTS.map(p => (
-                <button key={p} onClick={() => setPrompt(p)} disabled={limitReached} className="px-4 py-2 rounded-full bg-white border border-slate-200 text-xs font-bold text-slate-500 hover:border-[#4A6741] hover:text-[#4A6741]">
-                  {p.slice(0, 32)}...
+            {/* Style + Category selectors */}
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-widest mr-2">Style</span>
+              {STYLES.map(s => (
+                <button
+                  key={s}
+                  onClick={() => setStyle(prev => (prev === s ? null : s))}
+                  disabled={limitReached}
+                  className={`px-3 py-1.5 rounded-full text-xs font-bold transition-colors ${
+                    style === s
+                      ? 'bg-[#4A6741] text-white border border-[#4A6741]'
+                      : 'bg-white text-slate-500 border border-slate-200 hover:border-[#4A6741] hover:text-[#4A6741]'
+                  }`}
+                >
+                  {s}
                 </button>
               ))}
+            </div>
+
+            <div className="flex flex-wrap items-center gap-3">
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-widest mr-2">Category</span>
+              {DESIGN_CATEGORIES.map(c => (
+                <button
+                  key={c.id}
+                  onClick={() => setCategory(c.id)}
+                  disabled={limitReached}
+                  className={`px-3 py-1.5 rounded-full text-xs font-bold transition-colors ${
+                    category === c.id
+                      ? 'bg-[#4A6741] text-white border border-[#4A6741]'
+                      : 'bg-white text-slate-500 border border-slate-200 hover:border-[#4A6741] hover:text-[#4A6741]'
+                  }`}
+                >
+                  {c.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Get Trends button — fetches Anakin → GPT-4o-mini trend cards */}
+            <button
+              onClick={handleFetchTrends}
+              disabled={!canFetchTrends}
+              className={`w-full py-4 rounded-2xl font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-3 border transition-all ${
+                canFetchTrends
+                  ? 'bg-white text-[#4A6741] border-[#4A6741] hover:bg-[#4A6741] hover:text-white'
+                  : 'bg-slate-50 text-slate-300 border-slate-200 cursor-not-allowed'
+              }`}
+            >
+              {status === 'fetching_trends' ? (
+                <><Loader2 className="w-4 h-4 animate-spin" /> Fetching live trends...</>
+              ) : (
+                <><Sparkles className="w-4 h-4" /> Get Live Trend Suggestions</>
+              )}
+            </button>
+
+            {/* Trend chips — populated from /api/studio/trends */}
+            {showTrends && trends.length > 0 && (
+              <div className="bg-white rounded-3xl p-5 border border-slate-200 shadow-sm">
+                <div className="flex items-center justify-between mb-3">
+                  <span className="text-xs font-bold text-slate-400 uppercase tracking-widest">
+                    {trends.length} Live Trends
+                  </span>
+                  {selectedTrend && (
+                    <button
+                      onClick={() => setSelectedTrend(null)}
+                      className="text-xs font-bold text-slate-400 hover:text-[#4A6741]"
+                    >
+                      Clear selection
+                    </button>
+                  )}
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {trends.map((trend, i) => {
+                    const isSelected = selectedTrend?.title === trend.title;
+                    return (
+                      <button
+                        key={`${trend.title}-${i}`}
+                        onClick={() => {
+                          setSelectedTrend(isSelected ? null : trend);
+                          if (!isSelected) setPrompt(trend.designPrompt || trend.title);
+                        }}
+                        title={trend.content}
+                        className={`px-4 py-2 rounded-full text-xs font-bold border transition-all flex items-center gap-2 ${
+                          isSelected
+                            ? 'bg-[#4A6741] text-white border-[#4A6741]'
+                            : 'bg-slate-50 text-slate-600 border-slate-200 hover:border-[#4A6741] hover:text-[#4A6741]'
+                        }`}
+                      >
+                        {isSelected && <Check className="w-3 h-3" />}
+                        {trend.title}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Static example fallbacks */}
+            <div>
+              <span className="text-xs font-bold text-slate-400 uppercase tracking-widest block mb-2">
+                Or pick an example
+              </span>
+              <div className="flex flex-wrap gap-2">
+                {EXAMPLE_PROMPTS.map(p => (
+                  <button
+                    key={p}
+                    onClick={() => setPrompt(p)}
+                    disabled={limitReached}
+                    className="px-4 py-2 rounded-full bg-white border border-slate-200 text-xs font-bold text-slate-500 hover:border-[#4A6741] hover:text-[#4A6741]"
+                  >
+                    {p.slice(0, 32)}...
+                  </button>
+                ))}
+              </div>
             </div>
 
             <button
@@ -222,9 +339,15 @@ export default function DesignPage() {
                   : limitReached ? 'bg-slate-200 text-slate-400 cursor-not-allowed' : 'bg-slate-100 text-slate-300'
               }`}
             >
-              {status === 'generating_design' ? <><Loader2 className="w-5 h-5 animate-spin" /> Generating...</> : limitReached ? <><Lock className="w-5 h-5" /> Free Limit Reached</> : <>Generate Design <ArrowRight className="w-5 h-5" /></>}
+              {status === 'generating_design' ? (
+                <><Loader2 className="w-5 h-5 animate-spin" /> Generating... {elapsedSec}s</>
+              ) : limitReached ? (
+                <><Lock className="w-5 h-5" /> Free Limit Reached</>
+              ) : (
+                <>Generate Design <ArrowRight className="w-5 h-5" /></>
+              )}
             </button>
-            
+
             {limitReached && (
               <p className="text-center text-xs font-bold text-slate-400 uppercase tracking-widest">
                 Trial over (3 designs). Resets automatically in 24 hours.
@@ -242,7 +365,7 @@ export default function DesignPage() {
                     </div>
                     <div>
                       <h3 className="text-2xl font-black mb-2">Free Trial Finished</h3>
-                      <p className="text-slate-500 font-medium">You've used all 3 free designs for today. Your limit resets in 24 hours.</p>
+                      <p className="text-slate-500 font-medium">You&apos;ve used all 3 free designs for today. Your limit resets in 24 hours.</p>
                     </div>
                   </motion.div>
                 ) : status === 'error' ? (
@@ -254,6 +377,7 @@ export default function DesignPage() {
                 ) : designImageUrl ? (
                   <motion.div key="ready" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="absolute inset-0 flex flex-col">
                     <div className="flex-1 bg-slate-50 flex items-center justify-center p-8">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
                       <img src={designImageUrl} alt="Design" className="max-h-full object-contain" />
                     </div>
                     <div className="p-8 bg-white border-t flex justify-between items-center">
@@ -263,8 +387,8 @@ export default function DesignPage() {
                   </motion.div>
                 ) : (
                   <motion.div key="idle" className="flex flex-col items-center gap-6 text-center p-12">
-                     <Shirt className="w-12 h-12 text-slate-200" />
-                     <p className="text-slate-400 font-medium">Your 2K design will appear here</p>
+                    <Shirt className="w-12 h-12 text-slate-200" />
+                    <p className="text-slate-400 font-medium">Your 2K design will appear here</p>
                   </motion.div>
                 )}
               </AnimatePresence>
