@@ -23,8 +23,10 @@ export class TNBProvider implements AIProvider {
   ) {}
 
   async call(input: any, options?: { timeoutMs?: number; signal?: AbortSignal }): Promise<string> {
-    const apiKey = process.env.TNB_API_KEY || process.env.NEWBLACK_API_KEY;
-    if (!apiKey) throw new Error('AI service not configured');
+    const rawKey = process.env.TNB_API_KEY || process.env.NEWBLACK_API_KEY;
+    if (!rawKey) throw new Error('AI service not configured');
+    const apiKey = rawKey.trim();
+    console.info(`[TNB] using key len=${apiKey.length} prefix=${apiKey.slice(0, 4)}*** type=${this.type}`);
 
     const timeoutMs = options?.timeoutMs ?? DEFAULT_TIMEOUT_MS;
     const signal = options?.signal ?? AbortSignal.timeout(timeoutMs);
@@ -69,8 +71,10 @@ export class TNBProvider implements AIProvider {
       const errText = await res.text();
       throw new Error(`TNB Error (${res.status}): ${errText.slice(0, 200)}`);
     }
-    
-    return this.parseResponse(await res.text());
+
+    const rawBody = await res.text();
+    console.info(`[TNB ${endpoint}] body len=${rawBody.length} preview=${rawBody.slice(0, 120)}`);
+    return this.parseResponse(rawBody);
   }
 
   private async handleVideoGen(input: any, apiKey: string, signal: AbortSignal): Promise<string> {
