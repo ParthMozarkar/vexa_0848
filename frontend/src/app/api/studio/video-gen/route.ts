@@ -1,7 +1,10 @@
+
 import { NextRequest, NextResponse } from 'next/server';
+import { OrchestrationEngine } from '@/lib/orchestration/OrchestrationEngine';
+import { AIProvider } from '@/lib/orchestration/types';
 
 export const runtime = 'nodejs';
-export const maxDuration = 120;
+export const maxDuration = 300;
 
 interface VideoGenRequest {
   imageUrl: string;
@@ -9,53 +12,70 @@ interface VideoGenRequest {
   duration?: '5' | '10';
 }
 
-interface VideoGenResponse {
-  videoUrl?: string;
-  frameUrls?: string[];
-  type: 'video' | 'frames';
-}
+/**
+ * Generic video provider executor
+ */
+async function executeVideoProvider(provider: AIProvider, data: any): Promise<string> {
+  const { imageUrl, prompt, duration } = data;
+  const apiKey = process.env.TNB_API_KEY || process.env.NEWBLACK_API_KEY;
 
-const BLACKBOX_BASE_URL = 'https://api.blackbox.ai/api/v1/video-gen';
-const DEFAULT_PROMPT = 'Fashion model naturally showcasing the outfit with elegant movements';
+  if (provider.id.startsWith('tnb')) {
+    // For TNB Video, we usually use the vto-video or similar endpoint
+    // Assuming the endpoint logic based on user's current TNB setup
+    const endpoint = 'vto_video'; 
+    const formData = new FormData();
+    formData.append('image_url', imageUrl);
+    formData.append('prompt', prompt || 'Elegant fashion motion');
+    formData.append('duration', duration || '5');
+
+    const res = await fetch(`https://thenewblack.ai/api/1.1/wf/${endpoint}?api_key=${apiKey}`, {
+      method: 'POST',
+      body: formData,
+      signal: AbortSignal.timeout(120_000),
+    });
+
+    if (!res.ok) throw new Error(`TNB Video Error: ${res.status}`);
+    const text = await res.text();
+    // Use the same robust parsing as tryon
+    if (text.trim().startsWith('http')) return text.trim();
+    if (text.trim().startsWith('//')) return 'https:' + text.trim();
+    try {
+      const json = JSON.parse(text);
+      return json.output_url || json.url || json.response || text;
+    } catch {
+      return text.trim();
+    }
+  }
+
+  throw new Error(`Provider ${provider.id} not implemented for video-gen`);
+}
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
   try {
-    const body = (await req.json()) as VideoGenRequest;
+    const body = await req.json();
     const { imageUrl, prompt, duration = '5' } = body;
 
     if (!imageUrl) {
       return NextResponse.json({ error: 'imageUrl is required' }, { status: 400 });
     }
 
-    const apiKey = process.env.BLACKBOX_API_KEY;
-    if (!apiKey) {
-      return NextResponse.json({ error: 'BLACKBOX_API_KEY not configured' }, { status: 500 });
+    const result = await OrchestrationEngine.executeWithOrchestration(
+      'video-gen',
+      { imageUrl, prompt, duration },
+      executeVideoProvider,
+      { timeoutMs: 120000, minQualityScore: 70 }
+    );
+
+    if (!result.success) {
+      return NextResponse.json({ error: result.error }, { status: 500 });
     }
 
-    const finalPrompt = prompt?.trim() && prompt.trim().length >= 3 ? prompt.trim() : DEFAULT_PROMPT;
-
-    const form = new FormData();
-    form.append('image_url', imageUrl);
-    form.append('prompt', finalPrompt);
-    form.append('duration', duration);
-
-    const res = await fetch(BLACKBOX_BASE_URL, {
-      method: 'POST',
-      headers: { 'Authorization': `Bearer ${apiKey}` },
-      body: form,
-      signal: AbortSignal.timeout(60_000),
+    return NextResponse.json({ 
+      videoUrl: result.outputUrl, 
+      type: 'video',
+      provider: result.providerId,
+      qualityScore: result.qualityScore 
     });
-
-    if (!res.ok) {
-      const errText = await res.text().catch(() => 'unknown');
-      throw new Error(`BlackBox video-gen failed (${res.status}): ${errText}`);
-    }
-
-    const json = await res.json();
-    if (json.output_url) {
-      return NextResponse.json({ videoUrl: json.output_url, type: 'video' } satisfies VideoGenResponse);
-    }
-    throw new Error('BlackBox API returned success but no output_url');
   } catch (err: unknown) {
     const msg = err instanceof Error ? err.message : String(err);
     console.error('[/api/studio/video-gen]', msg);

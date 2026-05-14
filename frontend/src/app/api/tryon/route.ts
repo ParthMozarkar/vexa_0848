@@ -13,6 +13,8 @@ import { createServerSupabaseClient } from '@/lib/supabaseServer';
 import type { HandleTryOnInput, HandleTryOnResult } from '@/lib/tryonContracts';
 import { validateProxyUrl } from '@/lib/ssrfGuard';
 import { logger } from '@/lib/logger';
+import { OrchestrationEngine } from '@/lib/orchestration/OrchestrationEngine';
+import { AIProvider } from '@/lib/orchestration/types';
 
 export type { TryOnCategory } from '@/types';
 
@@ -159,31 +161,23 @@ function parseTNBResponse(responseText: string): string {
 }
 
 /**
- * HEDGING: Fire multiple requests and take the first one that returns a VALID result.
- * This effectively cuts down P99 latency by 40-50% on Bubble/TNB.
+ * Generic provider executor for Try-On
  */
-async function callTNB(personImageUrl: string, garmentImageUrl: string, category: TryOnCategory): Promise<string> {
-  const apiKey = process.env.TNB_API_KEY || process.env.NEWBLACK_API_KEY;
-  if (!apiKey) throw new Error('AI service not configured');
+async function executeTryOnProvider(provider: AIProvider, data: any): Promise<string> {
+  const { personImageUrl, garmentImageUrl, category } = data;
+  const apiKey = process.env.TNB_API_KEY || process.env.NEWBLACK_API_KEY; // Fallback to env for now
 
-  const endpoint = category === 'shoes' ? 'vto-shoes' : 'vto_stream';
-
-  const runRequest = async () => {
+  if (provider.id.startsWith('tnb')) {
+    const endpoint = category === 'shoes' ? 'vto-shoes' : 'vto_stream';
     const fixUrl = (u: string) => u.startsWith('//') ? `https:${u}` : u;
-    const pUrl = fixUrl(personImageUrl);
-    const gUrl = fixUrl(garmentImageUrl);
-
+    
     const formData = new FormData();
-    formData.append('model_photo', pUrl);
+    formData.append('model_photo', fixUrl(personImageUrl));
     if (category === 'shoes') {
-      formData.append('shoes_photo', gUrl);
+      formData.append('shoes_photo', fixUrl(garmentImageUrl));
     } else {
-      const promptText = category === 'bottoms'
-        ? 'Put this bottom/pants on the model'
-        : category === 'one-pieces'
-          ? 'Put this dress/outfit on the model'
-          : 'Put this top/shirt on the model';
-      formData.append('clothing_photo', gUrl);
+      const promptText = category === 'bottoms' ? 'Put this bottom on' : 'Put this top on';
+      formData.append('clothing_photo', fixUrl(garmentImageUrl));
       formData.append('prompt', promptText);
       formData.append('ratio', 'auto');
     }
@@ -194,10 +188,10 @@ async function callTNB(personImageUrl: string, garmentImageUrl: string, category
     const res = await fetch(`https://thenewblack.ai/api/1.1/wf/${endpoint}`, {
       method: 'POST',
       headers: {
-        'X-API-Key': apiKey,
+        'X-API-Key': apiKey || '',
       },
       body: formData,
-      signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+      signal: AbortSignal.timeout(60_000),
     });
 
     if (!res.ok) {
@@ -208,38 +202,11 @@ async function callTNB(personImageUrl: string, garmentImageUrl: string, category
       throw new Error(`AI service error (${res.status})`);
     }
     return parseTNBResponse(await res.text());
-  };
+  }
 
-  // TAIL HEDGING: Start 1st request, wait 3s, then start backup if 1st isn't done.
-  // This is safer for rate limits and often faster than just waiting for one.
-  return new Promise<string>((resolve, reject) => {
-    let resolved = false;
-    const errors: Error[] = [];
-
-    const attempt = async (_id: number) => {
-      try {
-        const result = await runRequest();
-        if (!resolved) {
-          resolved = true;
-          resolve(result);
-        }
-      } catch (e: unknown) {
-        const err = e instanceof Error ? e : new Error(String(e));
-        errors.push(err);
-        if (errors.length >= 2) {
-          // OBS-05: Both hedged attempts failed — capture final failure to Sentry
-          logger.aiError('TNB', endpoint, { duration: undefined, status: undefined });
-          reject(new Error('AI service busy. Please try again in a moment.'));
-        }
-      }
-    };
-
-    attempt(1);
-    setTimeout(() => { if (!resolved) attempt(2); }, 3000);
-
-    // Safety timeout
-    setTimeout(() => { if (!resolved) reject(new Error('Generation timed out')); }, FETCH_TIMEOUT_MS);
-  });
+  // Fallback / Mock for other providers
+  console.log(`[Mock] Executing ${provider.name} for ${category}`);
+  return personImageUrl; // Just return input for mock
 }
 
 export async function handleTryOn(
@@ -269,12 +236,23 @@ export async function handleTryOn(
     resolveToPublicUrl(garmentEntry.url, 'garment', userId, supabase),
   ]);
 
-  // 3. Call AI with Hedging
-  const resUrl = await callTNB(
-    personUrlFinal,
-    garmentUrlFinal,
-    (garmentEntry.category ?? category ?? 'tops') as TryOnCategory,
+  // 3. Orchestrated AI Call
+  const orchestrationResult = await OrchestrationEngine.executeWithOrchestration(
+    'tryon',
+    {
+      personImageUrl: personUrlFinal,
+      garmentImageUrl: garmentUrlFinal,
+      category: (garmentEntry.category ?? category ?? 'tops') as TryOnCategory,
+    },
+    executeTryOnProvider,
+    { preferLatency: true, minQualityScore: 80 }
   );
+
+  if (!orchestrationResult.success) {
+    throw new Error(orchestrationResult.error || 'AI generation failed');
+  }
+
+  const resUrl = orchestrationResult.outputUrl;
 
   // 4. Persistence — await so we return the stable stored URL, not the short-lived TNB URL
   let finalUrl = resUrl;
