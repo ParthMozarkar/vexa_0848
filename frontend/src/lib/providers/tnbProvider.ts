@@ -44,25 +44,23 @@ export class TNBProvider implements AIProvider {
     const endpoint = category === 'shoes' ? 'vto-shoes' : 'vto_stream';
 
     const formData = new FormData();
-    formData.append('api_key', apiKey);
     formData.append('model_photo', this.fixUrl(personImageUrl));
 
     if (category === 'shoes') {
       formData.append('shoes_photo', this.fixUrl(garmentImageUrl));
     } else {
-      const promptText = 
+      const promptText =
         category === 'bottoms' ? 'Put this bottom/pants on the model' :
         category === 'one-pieces' ? 'Put this dress/outfit on the model' :
         'Put this top/shirt on the model';
-      
+
       formData.append('clothing_photo', this.fixUrl(garmentImageUrl));
       formData.append('prompt', promptText);
       formData.append('ratio', 'auto');
     }
 
-    const res = await fetch(`${TNB_BASE}/${endpoint}`, {
+    const res = await fetch(`${TNB_BASE}/${endpoint}?api_key=${encodeURIComponent(apiKey)}`, {
       method: 'POST',
-      headers: { 'X-API-Key': apiKey },
       body: formData,
       signal,
     });
@@ -78,13 +76,11 @@ export class TNBProvider implements AIProvider {
   private async handleVideoGen(input: any, apiKey: string, signal: AbortSignal): Promise<string> {
     const { imageUrl, prompt } = input;
     const formData = new FormData();
-    formData.append('api_key', apiKey);
     formData.append('image_url', this.fixUrl(imageUrl));
     formData.append('prompt', prompt || 'Elegant fashion motion');
 
-    const res = await fetch(`${TNB_BASE}/vto_video`, {
+    const res = await fetch(`${TNB_BASE}/vto_video?api_key=${encodeURIComponent(apiKey)}`, {
       method: 'POST',
-      headers: { 'X-API-Key': apiKey },
       body: formData,
       signal,
     });
