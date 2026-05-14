@@ -160,6 +160,8 @@ const AvatarViewerImpl = ({ avatarUrl, glbUrl, className = '', showControls = tr
       <Suspense fallback={<CanvasLoader />}>
         <Canvas
           camera={{ position: [0, 1.0, 3.0 * zoom], fov: 50 }}
+          frameloop="demand"
+          performance={{ min: 0.5 }}
           shadows
           gl={{ antialias: true, alpha: true }}
           className="w-full"
