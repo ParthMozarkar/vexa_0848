@@ -4,11 +4,15 @@ import { AIStylist } from '@/lib/fashion-intelligence/AIStylist';
 import { TrendEngine } from '@/lib/fashion-intelligence/TrendEngine';
 import { WardrobeSystem } from '@/lib/fashion-intelligence/WardrobeSystem';
 import { PersonalizationEngine } from '@/lib/fashion-intelligence/PersonalizationEngine';
+import { VisualIntelligenceEngine } from '@/lib/fashion-intelligence/VisualIntelligenceEngine';
+import { ProactiveAssistant } from '@/lib/fashion-intelligence/ProactiveAssistant';
+
+export const runtime = 'nodejs';
 
 export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const userId = searchParams.get('userId');
-  const type = searchParams.get('type'); // 'recommend', 'trends', 'wardrobe'
+  const type = searchParams.get('type');
 
   if (!userId) return NextResponse.json({ error: 'userId required' }, { status: 400 });
 
@@ -18,14 +22,12 @@ export async function GET(req: NextRequest) {
         const occasion = searchParams.get('occasion') || 'daily';
         const isBrief = searchParams.get('brief') === 'true';
         if (isBrief) {
-          const { ProactiveAssistant } = require('@/lib/fashion-intelligence/ProactiveAssistant');
           return NextResponse.json(await ProactiveAssistant.generateMorningBrief(userId));
         }
         const recs = await AIStylist.recommendOutfits(userId, { occasion });
         return NextResponse.json(recs);
       
       case 'visual_search':
-        const { VisualIntelligenceEngine } = require('@/lib/fashion-intelligence/VisualIntelligenceEngine');
         const img = searchParams.get('imageUrl');
         if (!img) return NextResponse.json({ error: 'imageUrl required' }, { status: 400 });
         return NextResponse.json(await VisualIntelligenceEngine.getVisualSimilarity(img));
