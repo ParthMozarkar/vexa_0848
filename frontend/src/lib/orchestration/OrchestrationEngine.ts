@@ -8,7 +8,7 @@ export class OrchestrationEngine {
     preferLatency: true,
     minQualityScore: 70,
     retryAttempts: 2,
-    timeoutMs: 45000,
+    timeoutMs: 120000,
   };
 
   /**
