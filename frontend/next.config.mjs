@@ -7,6 +7,15 @@ const nextConfig = {
   distDir: process.env.DIST_DIR || '.next',
   transpilePackages: [],
 
+  // PERF: Compress responses with gzip
+  compress: true,
+
+  // PERF: Remove X-Powered-By header to reduce response overhead
+  poweredByHeader: false,
+
+  // PERF: SWC minification (explicit — Next 15 default but stated for clarity)
+  swcMinify: true,
+
   typescript: {
     ignoreBuildErrors: true,
   },
@@ -15,9 +24,17 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
 
-  // PERF FIX: Added bundle optimization for heavy imports
+  // PERF FIX: Added bundle optimization for heavy imports — includes 3D libs
   experimental: {
-    optimizePackageImports: ['framer-motion', 'lucide-react', '@heroicons/react', 'recharts'],
+    optimizePackageImports: [
+      'framer-motion',
+      'lucide-react',
+      '@heroicons/react',
+      'recharts',
+      'three',
+      '@react-three/fiber',
+      '@react-three/drei',
+    ],
   },
 
   images: {
