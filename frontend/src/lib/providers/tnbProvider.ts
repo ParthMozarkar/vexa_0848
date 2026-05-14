@@ -73,7 +73,9 @@ export class TNBProvider implements AIProvider {
     }
 
     const rawBody = await res.text();
-    console.info(`[TNB ${endpoint}] body len=${rawBody.length} preview=${rawBody.slice(0, 120)}`);
+    const headerDump: Record<string, string> = {};
+    res.headers.forEach((v, k) => { headerDump[k] = v; });
+    console.info(`[TNB ${endpoint}] status=${res.status} body len=${rawBody.length} preview=${rawBody.slice(0, 120)} headers=${JSON.stringify(headerDump)}`);
     return this.parseResponse(rawBody);
   }
 
