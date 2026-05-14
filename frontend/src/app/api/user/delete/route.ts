@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 import { S3Client, DeleteObjectCommand } from '@aws-sdk/client-s3';
 import { logAdminAction } from '@/lib/admin';
+import { emitAuditLog, buildAuditEntry } from '@/lib/auditLog';
 
 export async function DELETE(req: NextRequest) {
   try {
@@ -78,11 +79,31 @@ export async function DELETE(req: NextRequest) {
     // 6. Audit Log
     await logAdminAction('PURGE_USER', '/api/user/delete', userId);
 
+    emitAuditLog(buildAuditEntry({
+      action: 'user.deleted',
+      actor: 'system',
+      resource: userId,
+      outcome: 'success',
+      ip: req.headers.get('x-forwarded-for')?.split(',')[0] ?? null,
+      userAgent: req.headers.get('user-agent') ?? null,
+    }));
+
     return NextResponse.json({ success: true, message: 'User data and assets fully purged.' });
 
   } catch (error: unknown) {
     const err = error as Error;
     console.error('GDPR Deletion Error:', err.message);
+
+    emitAuditLog(buildAuditEntry({
+      action: 'user.deleted',
+      actor: 'system',
+      resource: null,
+      outcome: 'failed',
+      ip: null,
+      userAgent: null,
+      metadata: { error: err.message },
+    }));
+
     return NextResponse.json({ error: err.message }, { status: 500 });
   }
 }

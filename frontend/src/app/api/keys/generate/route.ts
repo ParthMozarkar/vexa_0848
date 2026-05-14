@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { hashApiKey } from '@/lib/crypto';
 import { logAdminAction } from '@/lib/admin';
 import { createServerSupabaseClient } from '@/lib/supabaseServer';
+import { emitAuditLog, buildAuditEntry } from '@/lib/auditLog';
 
 export async function POST(req: Request) {
   try {
@@ -45,10 +46,20 @@ export async function POST(req: Request) {
     }
 
     // 4. Audit Log
-    await logAdminAction('GENERATE_API_KEY', '/api/keys/generate', marketplaceId, { 
-      marketplace_name, 
-      monthly_limit 
+    await logAdminAction('GENERATE_API_KEY', '/api/keys/generate', marketplaceId, {
+      marketplace_name,
+      monthly_limit
     });
+
+    emitAuditLog(buildAuditEntry({
+      action: 'api_key.generated',
+      actor: 'system',
+      resource: marketplaceId,
+      outcome: 'success',
+      ip: req.headers.get('x-forwarded-for')?.split(',')[0] ?? null,
+      userAgent: req.headers.get('user-agent') ?? null,
+      metadata: { marketplace_name },
+    }));
 
     // 5. Return raw key ONLY ONCE
     return NextResponse.json({
