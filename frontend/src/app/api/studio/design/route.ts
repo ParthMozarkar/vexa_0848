@@ -146,28 +146,34 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       console.warn('[Design] SEEDREAM_API_KEY not set — skipping Seedream');
     }
 
-    // 4. Fallback to OpenAI DALL-E 3
+    // 4. Fallback to OpenAI gpt-image-1 (DALL-E 3 deprecated)
     if (!imageUrl) {
       try {
-        console.log('[Design] Trying DALL-E fallback...');
-        const dalleResponse = await fetch('https://api.openai.com/v1/images/generations', {
+        console.log('[Design] Trying OpenAI gpt-image-1 fallback...');
+        const openaiImgRes = await fetch('https://api.openai.com/v1/images/generations', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${openaiKey.trim()}` },
-          body: JSON.stringify({ model: 'dall-e-3', prompt: generationPrompt, n: 1, size: '1024x1024' }),
-          signal: AbortSignal.timeout(60_000),
+          body: JSON.stringify({ model: 'gpt-image-1', prompt: generationPrompt, n: 1, size: '1024x1024' }),
+          signal: AbortSignal.timeout(120_000),
         });
-        if (!dalleResponse.ok) {
-          const errText = await dalleResponse.text().catch(() => '');
-          console.error(`[Design] DALL-E HTTP ${dalleResponse.status}:`, errText.slice(0, 200));
+        if (!openaiImgRes.ok) {
+          const errText = await openaiImgRes.text().catch(() => '');
+          console.error(`[Design] OpenAI image HTTP ${openaiImgRes.status}:`, errText.slice(0, 300));
         } else {
-          const data = await dalleResponse.json();
-          imageUrl = data.data?.[0]?.url;
-          if (!imageUrl) console.warn('[Design] DALL-E OK but no URL:', JSON.stringify(data).slice(0, 200));
+          const data = await openaiImgRes.json();
+          const item = data.data?.[0];
+          if (item?.url) {
+            imageUrl = item.url;
+          } else if (item?.b64_json) {
+            imageUrl = `data:image/png;base64,${item.b64_json}`;
+          } else {
+            console.warn('[Design] OpenAI image OK but no url/b64:', JSON.stringify(data).slice(0, 200));
+          }
         }
-      } catch (e) { console.warn('[Design] DALL-E exception:', e); }
+      } catch (e) { console.warn('[Design] OpenAI image exception:', e); }
     }
 
-    if (!imageUrl) throw new Error('Both Seedream and DALL-E failed — check API keys and logs');
+    if (!imageUrl) throw new Error('Both Seedream and OpenAI image generation failed — check API keys and logs');
 
     // 5. Increment Usage (Only if successful)
     if (!isMarketplaceRequest) {
