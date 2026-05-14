@@ -9,6 +9,7 @@ import { supabase } from "@/lib/supabase";
 import { useStore } from "@/store/useStore";
 import Header from "@/components/Header";
 import { SizeCompass } from "@/components/studio/SizeCompass";
+import { createOutfitCollage } from "@/lib/studio/collage";
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 
@@ -126,56 +127,7 @@ function StudioPageInner() {
     setGarments(garments.filter(g => g.id !== id));
   };
 
-  const createOutfitCollage = async (items: GarmentItem[]): Promise<string> => {
-    if (items.length === 1) return items[0].url;
-    
-    return new Promise((resolve, reject) => {
-      const canvas = document.createElement('canvas');
-      // 1024x1024 grid for the outfit
-      // Optimized canvas size for faster processing and lower memory footprint
-      canvas.width = 768;
-      canvas.height = 768;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) return resolve(items[0].url);
-
-      // White background
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, 768, 768);
-
-      let loaded = 0;
-      const positions = [
-        { x: 0, y: 0, w: 384, h: 384 },       // Top Left
-        { x: 384, y: 0, w: 384, h: 384 },     // Top Right
-        { x: 0, y: 384, w: 384, h: 384 },     // Bottom Left
-        { x: 384, y: 384, w: 384, h: 384 },   // Bottom Right
-      ];
-
-      items.forEach((item, index) => {
-        const img = new Image();
-        img.crossOrigin = "anonymous";
-        img.onload = () => {
-          const pos = positions[index % 4];
-          // Draw image centered in its quadrant, maintaining aspect ratio
-          const scale = Math.min(pos.w / img.width, pos.h / img.height) * 0.9;
-          const w = img.width * scale;
-          const h = img.height * scale;
-          const dx = pos.x + (pos.w - w) / 2;
-          const dy = pos.y + (pos.h - h) / 2;
-          ctx.drawImage(img, dx, dy, w, h);
-          
-          loaded++;
-          if (loaded === items.length) {
-            resolve(canvas.toDataURL('image/png'));
-          }
-        };
-        img.onerror = () => {
-          loaded++;
-          if (loaded === items.length) resolve(canvas.toDataURL('image/png'));
-        };
-        img.src = item.url;
-      });
-    });
-  };
+  // createOutfitCollage moved to @/lib/studio/collage
 
   const handleGenerate = useCallback(async () => {
     if (!personUrl || garments.length === 0) {

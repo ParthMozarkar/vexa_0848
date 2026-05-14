@@ -1,7 +1,7 @@
 import type { AIProvider, ProviderCapability } from './types';
 import { TNBProvider } from './tnbProvider';
 import { OpenAIProvider } from './openaiProvider';
-import { BlackBoxProvider } from './blackboxProvider';
+import { MeshyProvider } from './meshyProvider';
 
 // Capability → ordered list of providers (primary first, fallbacks after)
 const REGISTRY = new Map<ProviderCapability, AIProvider[]>();
@@ -31,5 +31,5 @@ export function initializeRegistry(): void {
   registerProvider('tryon-video', new TNBProvider());
   registerProvider('design', new OpenAIProvider());
   registerProvider('trends', new OpenAIProvider());
-  registerProvider('model-gen', new BlackBoxProvider());
+  // model-gen registration removed as it was BlackBox based
 }

@@ -130,84 +130,7 @@ async function persistResultImage(imageUrl: string, userId: string, productId: s
   } catch { return imageUrl; }
 }
 
-/**
- * Robust parser for TNB responses.
- * Handles JSON errors, plain text URLs, and protocol-relative URLs (//).
- */
-function parseTNBResponse(responseText: string): string {
-  const trimmed = responseText.trim();
-
-  // Plain URL response (most common from vto_stream)
-  if (trimmed.startsWith('http')) return trimmed;
-
-  // Protocol-relative URL
-  if (trimmed.startsWith('//')) return 'https:' + trimmed;
-
-  // JSON response
-  if (trimmed.startsWith('{')) {
-    try {
-      const json = JSON.parse(trimmed) as Record<string, unknown>;
-      if (json.status === 'error') throw new Error((json.message as string) || 'AI generation failed');
-      const url = (json.response as string) || (json.url as string) || (json.output_url as string) || (json.image as string);
-      if (url?.startsWith('http')) return url.trim();
-    } catch (e: unknown) {
-      const msg = e instanceof Error ? e.message : '';
-      if (msg === 'AI generation failed' || msg.startsWith('AI ')) throw e;
-    }
-  }
-
-  logger.error('[TNB] Unexpected response', { preview: trimmed.slice(0, 120) });
-  throw new Error('AI service is temporarily unavailable. Please try again.');
-}
-
-/**
- * Generic provider executor for Try-On
- */
-async function executeTryOnProvider(provider: AIProvider, data: any): Promise<string> {
-  const { personImageUrl, garmentImageUrl, category } = data;
-  const apiKey = process.env.TNB_API_KEY || process.env.NEWBLACK_API_KEY; // Fallback to env for now
-
-  if (provider.id.startsWith('tnb')) {
-    const endpoint = category === 'shoes' ? 'vto-shoes' : 'vto_stream';
-    const fixUrl = (u: string) => u.startsWith('//') ? `https:${u}` : u;
-    
-    const formData = new FormData();
-    formData.append('model_photo', fixUrl(personImageUrl));
-    if (category === 'shoes') {
-      formData.append('shoes_photo', fixUrl(garmentImageUrl));
-    } else {
-      const promptText = category === 'bottoms' ? 'Put this bottom on' : 'Put this top on';
-      formData.append('clothing_photo', fixUrl(garmentImageUrl));
-      formData.append('prompt', promptText);
-      formData.append('ratio', 'auto');
-    }
-
-    // OBS-05: Track start time for AI provider failure reporting
-    const start = Date.now();
-
-    const res = await fetch(`https://thenewblack.ai/api/1.1/wf/${endpoint}`, {
-      method: 'POST',
-      headers: {
-        'X-API-Key': apiKey || '',
-      },
-      body: formData,
-      signal: AbortSignal.timeout(60_000),
-    });
-
-    if (!res.ok) {
-      const errText = await res.text();
-      logger.error('[TNB Error]', { status: res.status, body: errText.slice(0, 200) });
-      // OBS-05: Capture AI provider failure to Sentry with full context
-      logger.aiError('TNB', endpoint, { duration: Date.now() - start, status: res.status });
-      throw new Error(`AI service error (${res.status})`);
-    }
-    return parseTNBResponse(await res.text());
-  }
-
-  // Fallback / Mock for other providers
-  console.log(`[Mock] Executing ${provider.name} for ${category}`);
-  return personImageUrl; // Just return input for mock
-}
+// Removed executeTryOnProvider as logic is now inside TNBProvider class
 
 export async function handleTryOn(
   input: HandleTryOnInput,
@@ -237,15 +160,14 @@ export async function handleTryOn(
   ]);
 
   // 3. Orchestrated AI Call
-  const orchestrationResult = await OrchestrationEngine.executeWithOrchestration(
+  const orchestrationResult = await OrchestrationEngine.execute(
     'tryon',
     {
       personImageUrl: personUrlFinal,
       garmentImageUrl: garmentUrlFinal,
       category: (garmentEntry.category ?? category ?? 'tops') as TryOnCategory,
     },
-    executeTryOnProvider,
-    { preferLatency: true, minQualityScore: 80 }
+    { preferLatency: true }
   );
 
   if (!orchestrationResult.success) {

@@ -1,74 +1,94 @@
 
 import { AIProvider, RoutingConfig, ProviderMetrics } from './types';
 import { getProvidersByType } from './ProviderRegistry';
+import { getUpstashClient } from '@/lib/upstash';
+
+const METRICS_TTL = 86400 * 7; // 7 days
 
 export class SmartRouter {
-  private static metrics: Map<string, ProviderMetrics> = new Map();
+  private static METRICS_KEY_PREFIX = 'vexa:metrics:v1:';
 
   static async selectProvider(
     type: AIProvider['type'],
     config: RoutingConfig
   ): Promise<AIProvider> {
     const providers = getProvidersByType(type);
-    
-    if (providers.length === 0) {
-      throw new Error(`No providers available for type: ${type}`);
+    if (providers.length === 0) throw new Error(`No providers for ${type}`);
+
+    const redis = getUpstashClient();
+    let metricsData: Record<string, ProviderMetrics> = {};
+
+    if (redis) {
+      try {
+        const keys = providers.map(p => `${this.METRICS_KEY_PREFIX}${p.id}`);
+        const results = await redis.mget<ProviderMetrics[]>(...keys);
+        results.forEach((m, i) => {
+          if (m) metricsData[providers[i].id] = m;
+        });
+      } catch (err) {
+        console.warn('[SmartRouter] Redis error, falling back to weights:', err);
+      }
     }
 
-    // Rank providers based on config
     const ranked = providers.sort((a, b) => {
-      const metricsA = this.metrics.get(a.id);
-      const metricsB = this.metrics.get(b.id);
+      const mA = metricsData[a.id];
+      const mB = metricsData[b.id];
 
-      let scoreA = 0;
-      let scoreB = 0;
+      let scoreA = a.weight * 100;
+      let scoreB = b.weight * 100;
 
-      // Base score on historical success rate if available
-      if (metricsA) scoreA += metricsA.successRate * 10;
-      if (metricsB) scoreB += metricsB.successRate * 10;
+      // Quality adjustment
+      if (mA) scoreA += (mA.successRate * 50) + (mA.qualityScore / 2);
+      if (mB) scoreB += (mB.successRate * 50) + (mB.qualityScore / 2);
 
-      if (config.preferCost) {
-        scoreA += (1 / a.costPerCall) * 5;
-        scoreB += (1 / b.costPerCall) * 5;
-      }
-
+      // Latency adjustment
       if (config.preferLatency) {
-        const latA = metricsA?.avgLatencyMs || a.expectedLatencyMs;
-        const latB = metricsB?.avgLatencyMs || b.expectedLatencyMs;
-        scoreA += (1 / latA) * 10000;
-        scoreB += (1 / latB) * 10000;
+        const latA = mA?.avgLatencyMs || a.expectedLatencyMs;
+        const latB = mB?.avgLatencyMs || b.expectedLatencyMs;
+        scoreA -= (latA / 100);
+        scoreB -= (latB / 100);
       }
 
-      return scoreB - scoreA; // Higher score wins
+      return scoreB - scoreA;
     });
 
     return ranked[0];
   }
 
-  static updateMetrics(providerId: string, success: boolean, latencyMs: number, qualityScore?: number) {
-    const current = this.metrics.get(providerId) || {
-      providerId,
-      successRate: 1,
-      avgLatencyMs: 0,
-      lastUsed: new Date().toISOString(),
-      errorCount: 0,
-      qualityScore: 0,
-    };
+  static async updateMetrics(providerId: string, success: boolean, latencyMs: number, qualityScore?: number) {
+    const redis = getUpstashClient();
+    if (!redis) return;
 
-    // Simple moving average for metrics
-    const alpha = 0.2;
-    current.successRate = success ? (current.successRate * (1 - alpha) + alpha) : (current.successRate * (1 - alpha));
-    current.avgLatencyMs = current.avgLatencyMs === 0 ? latencyMs : (current.avgLatencyMs * (1 - alpha) + latencyMs * alpha);
-    if (qualityScore !== undefined) {
-      current.qualityScore = current.qualityScore === 0 ? qualityScore : (current.qualityScore * (1 - alpha) + qualityScore * alpha);
+    try {
+      const key = `${this.METRICS_KEY_PREFIX}${providerId}`;
+      const current: ProviderMetrics = (await redis.get<ProviderMetrics>(key)) || {
+        providerId,
+        successRate: 1,
+        avgLatencyMs: 0,
+        lastUsed: new Date().toISOString(),
+        errorCount: 0,
+        qualityScore: 75,
+      };
+
+      const alpha = 0.2;
+      current.successRate = success 
+        ? (current.successRate * (1 - alpha) + alpha) 
+        : (current.successRate * (1 - alpha));
+      
+      current.avgLatencyMs = current.avgLatencyMs === 0 
+        ? latencyMs 
+        : (current.avgLatencyMs * (1 - alpha) + latencyMs * alpha);
+      
+      if (qualityScore !== undefined) {
+        current.qualityScore = (current.qualityScore * (1 - alpha) + qualityScore * alpha);
+      }
+      
+      if (!success) current.errorCount++;
+      current.lastUsed = new Date().toISOString();
+
+      await redis.set(key, current, { ex: METRICS_TTL });
+    } catch (err) {
+      console.warn('[SmartRouter] Failed to update metrics:', err);
     }
-    if (!success) current.errorCount++;
-    current.lastUsed = new Date().toISOString();
-
-    this.metrics.set(providerId, current);
-  }
-
-  static getAllMetrics(): ProviderMetrics[] {
-    return Array.from(this.metrics.values());
   }
 }

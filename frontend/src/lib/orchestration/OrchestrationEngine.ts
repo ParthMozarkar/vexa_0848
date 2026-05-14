@@ -1,21 +1,22 @@
 
 import { SmartRouter } from './SmartRouter';
-import { QualityScorer } from './QualityScorer';
 import { AIProvider, RoutingConfig, GenerationResult } from './types';
 
 export class OrchestrationEngine {
   private static defaultConfig: RoutingConfig = {
     preferCost: false,
     preferLatency: true,
-    minQualityScore: 75,
+    minQualityScore: 70,
     retryAttempts: 2,
-    timeoutMs: 30000,
+    timeoutMs: 45000,
   };
 
-  static async executeWithOrchestration(
+  /**
+   * Orchestrates an AI generation task with smart routing and persistent metrics.
+   */
+  static async execute(
     type: AIProvider['type'],
     payload: any,
-    executeFn: (provider: AIProvider, data: any) => Promise<string>,
     config: Partial<RoutingConfig> = {}
   ): Promise<GenerationResult> {
     const finalConfig = { ...this.defaultConfig, ...config };
@@ -28,35 +29,27 @@ export class OrchestrationEngine {
       const callStart = Date.now();
 
       try {
-        console.log(`[Orchestration] Attempt ${attempts} using provider: ${provider.name}`);
+        console.log(`[Orchestration] Executing ${type} via ${provider.name} (Attempt ${attempts}/${finalConfig.retryAttempts + 1})`);
         
-        const outputUrl = await executeFn(provider, payload);
+        const outputUrl = await provider.call(payload, { timeoutMs: finalConfig.timeoutMs });
         const latencyMs = Date.now() - callStart;
 
-        // Quality Scoring
-        const scoring = await QualityScorer.scoreGeneration(outputUrl, JSON.stringify(payload));
-        
-        const result: GenerationResult = {
+        // Persist metrics
+        await SmartRouter.updateMetrics(provider.id, true, latencyMs);
+
+        return {
           providerId: provider.id,
           outputUrl,
           latencyMs,
-          qualityScore: scoring.score,
           cost: provider.costPerCall,
           success: true,
         };
-
-        // Validate
-        if (QualityScorer.validateOutput(result, finalConfig.minQualityScore)) {
-          SmartRouter.updateMetrics(provider.id, true, latencyMs, scoring.score);
-          return result;
-        } else {
-          console.warn(`[Orchestration] Quality too low (${scoring.score}), retrying...`);
-          SmartRouter.updateMetrics(provider.id, true, latencyMs, scoring.score); // Still a success but low quality
-        }
       } catch (error: any) {
         const latencyMs = Date.now() - callStart;
         console.error(`[Orchestration] Provider ${provider.name} failed:`, error.message);
-        SmartRouter.updateMetrics(provider.id, false, latencyMs);
+        
+        // Log failure to Redis
+        await SmartRouter.updateMetrics(provider.id, false, latencyMs);
         
         if (attempts > finalConfig.retryAttempts) {
           return {
@@ -68,9 +61,11 @@ export class OrchestrationEngine {
             error: error.message,
           };
         }
+        // Small delay before retry
+        await new Promise(r => setTimeout(r, 1000 * attempts));
       }
     }
 
-    throw new Error('Orchestration failed after maximum retries');
+    throw new Error('Orchestration failed after exhaustion of providers and retries');
   }
 }
