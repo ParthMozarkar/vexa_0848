@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useState, useRef, useEffect, useCallback, Suspense } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Download, Loader2, RotateCcw, Shirt, Lock } from "lucide-react";
+import { Download, Loader2, RotateCcw, Shirt, Lock, Film } from "lucide-react";
 import { ImageUploadBox } from "@/components/studio/ImageUploadBox";
 import { supabase } from "@/lib/supabase";
 import { useStore } from "@/store/useStore";
@@ -56,6 +56,7 @@ const FETCH_TIMEOUT_MS = 300_000;
 function StudioPageInner() {
   const { currentUser } = useStore();
   const searchParams = useSearchParams();
+  const router = useRouter();
 
   const [activeTab, setActiveTab] = useState<StudioTab>("tryon");
   const [personUrl, setPersonUrl] = useState<string | null>(null);
@@ -388,7 +389,7 @@ function StudioPageInner() {
                       Export to Instagram
                     </button>
 
-                    <button 
+                    <button
                       onClick={() => {
                         const link = document.createElement('a');
                         link.href = resultUrl;
@@ -399,6 +400,14 @@ function StudioPageInner() {
                     >
                       <Download className="w-3.5 h-3.5" />
                       Download
+                    </button>
+
+                    <button
+                      onClick={() => router.push(`/video-tryon?image=${encodeURIComponent(resultUrl)}`)}
+                      className="flex items-center gap-2 px-6 py-2.5 rounded-2xl bg-[#4A6741] text-white font-bold text-xs hover:bg-[#3d5636] transition-all shadow-xl hover:scale-105"
+                    >
+                      <Film className="w-3.5 h-3.5" />
+                      Try Video Try-On
                     </button>
                   </div>
                 )}

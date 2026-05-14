@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Loader2, AlertCircle, Download, Film, Sparkles } from 'lucide-react';
 import { ImageUploadBox } from '@/components/studio/ImageUploadBox';
 import { VideoTryOn } from '@/components/VideoTryOn';
@@ -17,9 +18,22 @@ interface VideoGenResponse {
   error?: string;
 }
 
-export default function VideoTryOnPage() {
+function VideoTryOnPageInner() {
+  const searchParams = useSearchParams();
   // ── Animate section ────────────────────────────────────────────────────────
   const [animateImageUrl, setAnimateImageUrl] = useState<string | null>(null);
+
+  // Preload image from ?image=<url> query param (handoff from /studio)
+  useEffect(() => {
+    const imgParam = searchParams?.get('image');
+    if (imgParam) {
+      try {
+        setAnimateImageUrl(decodeURIComponent(imgParam));
+      } catch {
+        setAnimateImageUrl(imgParam);
+      }
+    }
+  }, [searchParams]);
   const [animateStatus, setAnimateStatus] = useState<VideoGenStatus>('idle');
   const [animateResultUrl, setAnimateResultUrl] = useState<string | null>(null);
   const [animateError, setAnimateError] = useState<string | null>(null);
@@ -272,5 +286,13 @@ export default function VideoTryOnPage() {
         </section>
       </div>
     </div>
+  );
+}
+
+export default function VideoTryOnPage() {
+  return (
+    <Suspense fallback={<div className="w-full min-h-screen bg-[#f8f7f2]" />}>
+      <VideoTryOnPageInner />
+    </Suspense>
   );
 }
