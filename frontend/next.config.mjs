@@ -42,6 +42,18 @@ const nextConfig = {
     formats: ['image/avif', 'image/webp'],
   },
 
+  // Silence Sentry → Prisma instrumentation critical-dependency warning.
+  // We don't use Prisma; ignore the dynamic-require in the unused tracing path.
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      config.ignoreWarnings = [
+        ...(config.ignoreWarnings || []),
+        { module: /@prisma\/instrumentation/, message: /Critical dependency/ },
+      ];
+    }
+    return config;
+  },
+
   // PERF FIX: Added HTTP caching headers for static assets
   async headers() {
     return [
