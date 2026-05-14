@@ -1,4 +1,5 @@
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
+import { getCachedUploadUrl, setCachedUploadUrl } from './uploadDedup';
 
 /**
  * Upload a buffer to Cloudflare R2.
@@ -44,4 +45,28 @@ export async function uploadToR2(
     console.warn('[r2] Upload failed:', err instanceof Error ? err.message : String(err));
     return null;
   }
+}
+
+/**
+ * Upload a buffer to Cloudflare R2 with content-hash deduplication.
+ *
+ * If a buffer with the same SHA-256 hash was already uploaded, the cached
+ * public URL is returned immediately without a network call.
+ */
+export async function uploadToR2WithDedup(
+  file: Buffer,
+  filename: string,
+  contentType: string,
+): Promise<string | null> {
+  const cached = await getCachedUploadUrl(file);
+  if (cached) {
+    console.info('[r2] Dedup hit — returning cached URL');
+    return cached;
+  }
+
+  const url = await uploadToR2(file, filename, contentType);
+  if (url) {
+    await setCachedUploadUrl(file, url);
+  }
+  return url;
 }
