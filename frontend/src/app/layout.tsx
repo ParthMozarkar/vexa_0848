@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Plus_Jakarta_Sans, JetBrains_Mono } from 'next/font/google';
 import "./globals.css";
 import { Analytics } from "@vercel/analytics/react";
@@ -54,7 +54,10 @@ export const metadata: Metadata = {
   verification: {
     google: 'OzdMEB7tqmLLYhYKIsvtWX6CZwf4M6zyImfKOD_L3Pw',
   },
-  // PERF: mobile status-bar theming
+};
+
+// PERF: mobile status-bar theming (Next 15 viewport export)
+export const viewport: Viewport = {
   themeColor: [
     { media: '(prefers-color-scheme: dark)', color: '#0a0a0a' },
     { media: '(prefers-color-scheme: light)', color: '#ffffff' },

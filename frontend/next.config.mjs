@@ -13,9 +13,6 @@ const nextConfig = {
   // PERF: Remove X-Powered-By header to reduce response overhead
   poweredByHeader: false,
 
-  // PERF: SWC minification (explicit — Next 15 default but stated for clarity)
-  swcMinify: true,
-
   typescript: {
     ignoreBuildErrors: true,
   },
