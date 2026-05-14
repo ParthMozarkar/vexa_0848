@@ -1,48 +1,54 @@
 ---
 gsd_state_version: 1.0
-milestone: v3.0
-milestone_name: Frontend Performance
-status: complete
+milestone: v4.0
+milestone_name: Enterprise Scale
+status: planning
 last_updated: "2026-05-14T00:00:00.000Z"
 last_activity: 2026-05-14
 progress:
-  total_phases: 6
-  completed_phases: 6
-  total_plans: 30
-  completed_plans: 30
-  percent: 100
+  total_phases: 7
+  completed_phases: 0
+  total_plans: 0
+  completed_plans: 0
+  percent: 0
 ---
 
-# VEXA Frontend Performance — Project State
+# VEXA Enterprise Scale — Project State
 
 **Last updated:** 2026-05-14
-**Milestone:** v3.0 Frontend Performance
+**Milestone:** v4.0 Enterprise Scale
 
 ---
 
 ## Project Reference
 
-**Core Value:** Optimize VEXA frontend and mobile performance without redesigning the product — additive structure, typed API layer, centralized state, and documented performance baseline.
+**Core Value:** Evolve VEXA into enterprise-grade scalable infrastructure — multi-tenancy, metered billing readiness, admin observability, scaling design, hardened audit trails — without disrupting existing production functionality or API shapes.
 
-**Current Focus:** Milestone v3.0 complete — all 6 phases executed, all 25 requirements delivered.
+**Current Focus:** Milestone v4.0 roadmap created. Ready to begin Phase 21: Multi-Tenant Architecture.
 
 ---
 
 ## Current Position
 
-Phase: 20 — Performance Reports (complete)
-Plan: All plans complete
-Status: Milestone complete
-Last activity: 2026-05-14 — v3.0 roadmap written, all phases marked complete
+Phase: 21 (not started)
+Plan: —
+Status: Roadmap complete, execution not yet started
+Last activity: 2026-05-14 — v4.0 roadmap initialized
+
+## Progress Bar
+
+```
+v4.0 Progress: [                              ] 0% (0/7 phases)
+```
 
 ## Performance Metrics
 
 | Metric | Value |
 |--------|-------|
-| Requirements total | 25 |
-| Requirements complete | 25 |
-| Phases complete | 6/6 |
-| Plans complete | 30/30 |
+| Requirements total | 40 |
+| Requirements complete | 0 |
+| Phases complete | 0/7 |
+| Plans complete | 0/? |
 | Blockers | None |
 
 ---
@@ -53,52 +59,70 @@ Last activity: 2026-05-14 — v3.0 roadmap written, all phases marked complete
 
 | Decision | Rationale |
 |----------|-----------|
-| Zero file moves in Phase 15 | Barrel re-exports are purely additive — no existing imports broken, no refactor risk |
-| Main /api/tryon stays synchronous | B2B clients depend on the synchronous response shape; Phase 16/18 do not touch it |
-| All 3D components remain client-only (ssr: false) | SSR for Three.js/R3F would require significant renderer polyfill work with no user-facing benefit |
-| apiClient uses StudioDesignApiResponse (not DesignResponse) | Avoids type collision with existing DesignResponse usage at call sites |
-| Zustand loading/error slices are additive | All existing state (userImage, currentUser, tryOnResult, favorites) untouched — zero regression |
-| Draco decoder path centralized in dracoConfig.ts | Single configuration point for DRACOLoader; avoids per-component decoder path duplication |
-| frameloop="demand" on AvatarViewer Canvas | Prevents continuous GPU rendering when avatar is static — critical for mobile battery life |
+| Extend marketplace_id/ApiKeyRow — do not replace | Existing B2B clients depend on the current key shape; org_id is an additive layer on top |
+| Admin routes use existing VEXA_ADMIN_KEY env var pattern | Consistent with existing auth patterns; no new secret types introduced |
+| No microservices migration in v4.0 | Design and documentation only — migration is a future milestone trigger, not this one |
+| No payment processing in v4.0 | Billing schema is Stripe-compatible but no Stripe SDK or webhook handling in scope |
+| Phase 24 (Infra Scaling Design) is independent | All docs + one config module — no runtime dependency on tenant/billing work |
+| Phase 25 (Enterprise Hardening) depends on 21+22 | Audit log entries reference org_id (from Phase 21) and usage events (from Phase 22) |
 
-### Critical Files Delivered
+### Phase Dependencies
+
+```
+Phase 21 (Multi-Tenant)
+  └─> Phase 22 (Analytics + Billing)
+        └─> Phase 23 (Admin Systems)
+
+Phase 24 (Infra Scaling Design) — independent, can run in parallel
+
+Phase 21 + Phase 22
+  └─> Phase 25 (Enterprise Hardening)
+
+Phases 21 + 22 + 23 + 24 + 25
+  └─> Phase 26 (Enterprise Documentation)
+        └─> Phase 27 (Enterprise Output)
+```
+
+### Critical Files To Be Delivered
 
 | File | Phase | Purpose |
 |------|-------|---------|
-| frontend/src/features/tryon/index.ts | 15 | Barrel re-export for try-on feature |
-| frontend/src/features/avatar/index.ts | 15 | Barrel re-export for avatar feature |
-| frontend/src/features/auth/index.ts | 15 | Barrel re-export for auth feature |
-| frontend/src/features/studio/index.ts | 15 | Barrel re-export for studio feature |
-| frontend/src/features/dashboard/index.ts | 15 | Barrel re-export for dashboard feature |
-| frontend/src/features/index.ts | 15 | Top-level barrel across all features |
-| frontend/src/lib/dynamicImports.ts | 16 | SSR-disabled dynamic wrappers |
-| frontend/src/hooks/useDeviceCapability.ts | 16 | Device capability detection |
-| frontend/src/components/ui/LazyImage.tsx | 16 | Progressive image loading with skeleton |
-| frontend/next.config.mjs | 16 | compress, swcMinify, optimizePackageImports |
-| frontend/src/lib/glbOptimization.ts | 17 | Draco path + texture quality tiers |
-| frontend/src/lib/dracoConfig.ts | 17 | configureDracoDecoder() browser-safe wiring |
-| frontend/src/hooks/useProgressiveGlb.ts | 17 | XHR-based GLB preload with progress events |
-| frontend/src/components/ui/GlbLoadingIndicator.tsx | 17 | Progress bar UI for 3D content |
-| frontend/src/lib/apiClient.ts | 18 | Typed request(), ApiError, all api methods |
-| frontend/src/hooks/useApiCall.ts | 18 | loading/error/data state hook |
-| frontend/src/store/useStore.ts | 19 | loadingStates + errors slices added |
-| frontend/src/store/selectors.ts | 19 | All typed selector hooks + LOADING_KEYS |
-| frontend/src/store/index.ts | 19 | Barrel export for store + selectors |
-| docs/PERFORMANCE-REPORT.md | 20 | Before/after CWV table |
-| docs/MOBILE-READINESS.md | 20 | Capability matrix + checklist |
-| docs/BUNDLE-ANALYSIS.md | 20 | Bundle composition + analyzer instructions |
-| docs/FRONTEND-ARCH.md | 20 | Directory tree, data flows, layer rules |
+| frontend/src/lib/tenant.ts | 21 | Tenant context resolution from JWT / x-vexa-key / subdomain |
+| frontend/src/types/database.ts (extended) | 21 | OrganizationRow, OrgMemberRow, TenantQuotaRow added |
+| frontend/src/lib/usageAnalytics.ts | 22 | Event emitter for generation metering |
+| frontend/src/lib/adminAuth.ts | 23 | VEXA_ADMIN_KEY guard for all /api/admin/* routes |
+| frontend/src/types/admin.ts | 23 | Admin dashboard data types |
+| frontend/src/lib/scalingConfig.ts | 24 | Runtime scaling knobs (worker counts, TTLs, queue depths) |
+| docs/WORKER-SCALING.md | 24 | Horizontal worker scaling guide |
+| docs/GPU-SCALING.md | 24 | Python backend GPU scaling guide |
+| docs/CDN-STRATEGY.md | 24 | CDN layer for R2 assets |
+| docs/STORAGE-STRATEGY.md | 24 | R2 lifecycle and deduplication |
+| docs/CACHING-LAYERS.md | 24 | Full caching topology |
+| frontend/src/lib/auditLog.ts | 25 | Structured audit event emitter |
+| frontend/src/lib/compliance.ts | 25 | PII field list, retention policy, GDPR delete helper |
+| frontend/src/lib/slaMonitor.ts | 25 | SLA constants + health check aggregator |
+| docs/BACKUP-STRATEGY.md | 25 | Supabase/R2/Redis backup and recovery RTO/RPO |
+| docs/ENTERPRISE-ARCH.md | 26 | Multi-tenant architecture diagram and org isolation model |
+| docs/ONBOARDING.md | 26 | New developer onboarding guide |
+| docs/PROVIDER-INTEGRATION.md | 26 | How to add new AI providers |
+| docs/EMERGENCY-RECOVERY.md | 26 | Runbooks for provider outage, Redis/DB/R2 failures |
+| docs/SLA-ARCHITECTURE.md | 26 | SLA commitments, health check endpoints, alerting thresholds |
+| docs/ENTERPRISE-READINESS.md | 27 | Readiness scorecard across five dimensions |
+| docs/SCALING-ROADMAP.md | 27 | Phased scaling plan to 1M daily requests |
+| docs/INFRA-TOPOLOGY.md | 27 | Full infrastructure topology diagram |
+| docs/MIGRATION-STRATEGY.md | 27 | Future migration paths (sharding, microservices, multi-region) |
 
-### Zero Regression Constraints Upheld
+### Zero Regression Constraints
 
-- /api/tryon response shape unchanged — B2B clients unaffected
-- Zero file moves in feature barrel phase — all existing imports resolve identically
-- All 3D components remain `{ ssr: false }` — no server-renderer breakage
-- Zustand existing state slices (userImage, currentUser, tryOnResult, favorites) untouched
+- Existing /api/tryon, /api/upload, /api/avatar/generate, /api/proxy flows must not break
+- marketplace_id and ApiKeyRow shapes are extended (org_id additive), not changed
+- Non-org requests (demo/IP-rate-limited) must continue to work exactly as before
+- No Stripe SDK, no payment processing, no charge events in this milestone
+- No microservice extraction — design docs only
 
 ### Todos
 
-None — milestone complete.
+- Begin Phase 21: implement `frontend/src/lib/tenant.ts` and extend `frontend/src/types/database.ts`
 
 ### Blockers
 
@@ -108,18 +132,19 @@ None.
 
 ## Session Continuity
 
-**Milestone v3.0 is complete.** All 25 requirements across 6 phases have been executed.
+**Milestone v4.0 roadmap is complete.** 40 requirements across 7 phases are mapped.
 
-**To start the next milestone:**
-1. Run `/gsd-complete-milestone` to formally close v3.0
-2. Define requirements for v4.0 via `/gsd-new-project` or `/gsd-add-requirements`
-3. Run `/gsd-roadmap` to plan the next milestone
+**To start execution:**
+
+Run `/gsd-plan-phase 21` to decompose Phase 21 into executable plans, then `/gsd-execute-phase 21`.
 
 **Previous milestone context:**
+
 - v1.0 Security Hardening: Phases 1–8 (39 requirements)
 - v2.0 AI Infrastructure Scale: Phases 9–14 (37 requirements)
 - v3.0 Frontend Performance: Phases 15–20 (25 requirements) — complete
+- v4.0 Enterprise Scale: Phases 21–27 (40 requirements) — roadmap ready
 
 ---
 
-*State updated for v3.0 completion: 2026-05-14*
+*State initialized for v4.0: 2026-05-14*

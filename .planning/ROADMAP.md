@@ -423,3 +423,150 @@
 ---
 
 *v3.0 roadmap appended: 2026-05-14*
+
+---
+---
+
+# VEXA Enterprise Scale — Roadmap
+
+**Milestone:** v4.0 Enterprise Scale
+**Mode:** MVP — each phase delivers one complete enterprise capability; existing API shapes, user-facing flows, and marketplace_id/ApiKeyRow patterns are preserved and extended, not replaced
+**Granularity:** Standard
+**Coverage:** 40/40 requirements mapped
+
+---
+
+## Phases
+
+- [ ] **Phase 21: Multi-Tenant Architecture** — Tenant context resolution, org/quota types, org-scoped DB queries, per-tenant rate limits, quotas, provider priority, and usage endpoint
+- [ ] **Phase 22: Analytics + Billing** — Usage event emission and storage, per-org cost analytics, billing summary endpoint, cost alerts, and Stripe-compatible event schema
+- [ ] **Phase 23: Admin Systems** — VEXA_ADMIN_KEY-protected endpoints for provider health, queue depth, failure history, org list, and admin type definitions
+- [ ] **Phase 24: Infra Scaling Design** — Worker/GPU scaling guides, CDN strategy, storage lifecycle, caching topology docs, and runtime scaling config module
+- [ ] **Phase 25: Enterprise Hardening** — Structured audit log emitter, audit wiring into key lifecycle and generation flows, compliance/PII constants, SLA monitor, and backup strategy doc
+- [ ] **Phase 26: Enterprise Documentation** — Multi-tenant arch diagram, developer onboarding guide, provider integration guide, emergency recovery runbook, SLA architecture doc
+- [ ] **Phase 27: Enterprise Output** — Enterprise readiness scorecard, phased scaling roadmap, infra topology diagram, future migration strategy doc
+
+---
+
+## Phase Details
+
+### Phase 21: Multi-Tenant Architecture
+**Goal**: Every API route operates in a known org context — rate limits, AI quotas, provider priority, and data queries are all scoped to org_id, extending the existing marketplace_id pattern without replacing it
+**Mode:** mvp
+**Depends on**: Nothing (first phase of v4.0)
+**Requirements**: MT-01, MT-02, MT-03, MT-04, MT-05, MT-06, MT-07
+**Success Criteria** (what must be TRUE):
+  1. `resolveTenantContext(req)` returns an org_id for requests carrying a valid x-vexa-key with a marketplace_id — and returns null (not an error) for unauthenticated requests, preserving existing demo mode behavior
+  2. OrganizationRow, OrgMemberRow, and TenantQuotaRow types compile cleanly in `frontend/src/types/database.ts` alongside existing ApiKeyRow and UserRow — no existing type is modified
+  3. A DB query in any /api route wrapped with org-scoping returns only rows where org_id matches the resolved tenant — a cross-tenant read attempt returns zero rows, not an error
+  4. An org that has consumed its daily AI call quota receives a 429 with a message identifying the quota ceiling; an org without a configured quota falls through to the global IP rate limiter unchanged
+**Plans**: TBD
+**UI hint**: no
+
+---
+
+### Phase 22: Analytics + Billing
+**Goal**: Every AI generation emits a metered usage event stored per org, cost totals are queryable by org, and event data is structured for future Stripe integration without any payment processing in this phase
+**Mode:** mvp
+**Depends on**: Phase 21
+**Requirements**: BILL-01, BILL-02, BILL-03, BILL-04, BILL-05, BILL-06
+**Success Criteria** (what must be TRUE):
+  1. Completing a try-on or avatar generation produces a row in `usage_events` containing provider, cost_usd, tokens, duration_ms, and org_id — verifiable by querying the table directly
+  2. `GET /api/dashboard/analytics` returns per-org cost totals and generation counts when called with a valid org_id — the existing non-org analytics response is unchanged for callers without an org context
+  3. `GET /api/billing/summary` returns the current month's total usage and estimated cost for the requesting org — the response includes the fields required by the Stripe-compatible schema (org_id, quantity, unit, timestamp)
+  4. When an org's monthly spend crosses 80% of its configured budget, a warning is emitted to the structured logger with org_id, current spend, and budget ceiling — no email or webhook is sent in this phase
+**Plans**: TBD
+**UI hint**: no
+
+---
+
+### Phase 23: Admin Systems
+**Goal**: Operators can inspect provider health, queue state, recent failures, and org status through a consistent set of authenticated admin endpoints without touching any user-facing routes
+**Mode:** mvp
+**Depends on**: Phase 22
+**Requirements**: ADMIN-01, ADMIN-02, ADMIN-03, ADMIN-04, ADMIN-05, ADMIN-06
+**Success Criteria** (what must be TRUE):
+  1. All /api/admin/* routes return 401 when the VEXA_ADMIN_KEY header is absent or wrong — no admin data leaks to unauthenticated callers; the guard lives in `frontend/src/lib/adminAuth.ts` and is imported by every admin route
+  2. `GET /api/admin/providers` returns a list of all registered AI providers each with a healthy boolean and latency measurement taken at request time — a provider that fails its health check appears in the list with healthy: false rather than being omitted
+  3. `GET /api/admin/queues` returns current BullMQ depth counts (active, waiting, failed) per named queue — the response matches the shape defined in `frontend/src/types/admin.ts`
+  4. `GET /api/admin/failures` returns the 20 most recent failed jobs with error message, provider name, userId, and timestamp — results are ordered newest-first
+**Plans**: TBD
+**UI hint**: no
+
+---
+
+### Phase 24: Infra Scaling Design
+**Goal**: The architecture for scaling workers, GPU backends, CDN, storage, and caching is fully documented and a runtime config module exists so scaling knobs can be adjusted without code changes
+**Mode:** mvp
+**Depends on**: Nothing (independent of phases 21-23; can run in parallel)
+**Requirements**: SCALE-01, SCALE-02, SCALE-03, SCALE-04, SCALE-05, SCALE-06
+**Success Criteria** (what must be TRUE):
+  1. `docs/WORKER-SCALING.md` and `docs/GPU-SCALING.md` each contain concrete configuration examples — WORKER-SCALING covers BullMQ concurrency settings and multi-instance deployment; GPU-SCALING covers CUDA worker dispatch and spot instance lifecycle
+  2. `docs/CDN-STRATEGY.md` and `docs/STORAGE-STRATEGY.md` document the full asset delivery and lifecycle policy — CDN covers signed URL caching and edge rules for R2 assets; STORAGE covers R2 lifecycle tiers and deduplication approach
+  3. `docs/CACHING-LAYERS.md` diagrams all four cache layers (edge, Redis, in-memory LRU, CDN) with TTL recommendations and eviction policies for each
+  4. `frontend/src/lib/scalingConfig.ts` exports typed constants for worker counts, cache TTLs, and queue depth limits — changing a scaling parameter requires only editing this file, not hunting through route handlers
+**Plans**: TBD
+**UI hint**: no
+
+---
+
+### Phase 25: Enterprise Hardening
+**Goal**: Every privileged action in the system produces an immutable audit log entry, PII handling is governed by explicit policy constants, and SLA targets are defined and monitored programmatically
+**Mode:** mvp
+**Depends on**: Phase 21, Phase 22
+**Requirements**: HARD-01, HARD-02, HARD-03, HARD-04, HARD-05, HARD-06
+**Success Criteria** (what must be TRUE):
+  1. Generating an API key, revoking an API key, creating an org, completing a try-on, and completing an avatar generation each produce a structured audit log entry containing actor, action, resource, outcome, timestamp, and IP — verifiable by querying the audit log store
+  2. Calling `GET /api/user/delete` produces an audit log entry with action 'user.delete' before the deletion executes — if the deletion fails the audit entry still records the attempt with outcome 'failed'
+  3. `frontend/src/lib/compliance.ts` exports a PII_FIELDS constant listing measurement and biometric fields, a DATA_RETENTION_DAYS constant, and a `gdprDeleteUser(userId)` helper that removes PII fields without deleting the account row
+  4. `frontend/src/lib/slaMonitor.ts` exports SLA target constants (uptime %, p99 latency ms, max error rate %) and a `getHealthSummary()` function that aggregates the current health check results against those targets — the function returns a typed object, not a log string
+**Plans**: TBD
+**UI hint**: no
+
+---
+
+### Phase 26: Enterprise Documentation
+**Goal**: The multi-tenant model, developer onboarding path, provider extension contract, emergency recovery runbooks, and SLA commitments are all documented so the system can be operated and extended without author involvement
+**Mode:** mvp
+**Depends on**: Phase 21, Phase 22, Phase 23, Phase 24, Phase 25
+**Requirements**: DOC-E01, DOC-E02, DOC-E03, DOC-E04, DOC-E05
+**Success Criteria** (what must be TRUE):
+  1. `docs/ENTERPRISE-ARCH.md` contains a diagram showing org isolation boundaries, tenant context resolution flow, and the data boundary between orgs — a reader can determine from the diagram alone which tables are org-scoped and which are global
+  2. `docs/ONBOARDING.md` is sufficient for a developer with no prior VEXA context to run the full stack locally and make a successful API call — it covers env var setup, first API key generation, and how to run the test suite
+  3. `docs/PROVIDER-INTEGRATION.md` documents the AIProvider interface, registration steps, cost configuration, and the worker wiring needed to add a net-new AI provider — no source file reading required to follow the steps
+  4. `docs/EMERGENCY-RECOVERY.md` contains a numbered runbook for each of the four failure scenarios (provider outage, Redis failure, DB failure, R2 outage) with explicit recovery steps and expected RTO
+**Plans**: TBD
+**UI hint**: no
+
+---
+
+### Phase 27: Enterprise Output
+**Goal**: The system's enterprise readiness, scaling trajectory, infrastructure topology, and future migration options are captured in four standalone reference documents that can be shared with technical stakeholders
+**Mode:** mvp
+**Depends on**: Phase 26
+**Requirements**: OUT-01, OUT-02, OUT-03, OUT-04
+**Success Criteria** (what must be TRUE):
+  1. `docs/ENTERPRISE-READINESS.md` scores the system across at least five dimensions (security, scalability, compliance, observability, reliability) with a current rating and the phase that delivered each capability
+  2. `docs/SCALING-ROADMAP.md` defines three traffic tiers (10k, 100k, 1M daily requests) with the infrastructure changes required at each tier boundary — changes are specific (e.g. Redis cluster mode, read replicas) not generic advice
+  3. `docs/INFRA-TOPOLOGY.md` contains a diagram of all running services, their network boundaries, data flows, and the environment variables that connect them — the diagram is self-contained and does not require reading source code to interpret
+  4. `docs/MIGRATION-STRATEGY.md` documents at least three concrete future migration paths (e.g. DB read replica, queue worker horizontal scale, microservice extraction candidate) each with a trigger condition and a high-level migration sequence
+**Plans**: TBD
+**UI hint**: no
+
+---
+
+## Progress Table (v4.0)
+
+| Phase | Plans Complete | Status | Completed |
+|-------|----------------|--------|-----------|
+| 21. Multi-Tenant Architecture | 0/? | Not started | - |
+| 22. Analytics + Billing | 0/? | Not started | - |
+| 23. Admin Systems | 0/? | Not started | - |
+| 24. Infra Scaling Design | 0/? | Not started | - |
+| 25. Enterprise Hardening | 0/? | Not started | - |
+| 26. Enterprise Documentation | 0/? | Not started | - |
+| 27. Enterprise Output | 0/? | Not started | - |
+
+---
+
+*v4.0 roadmap appended: 2026-05-14*

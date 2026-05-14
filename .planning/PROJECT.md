@@ -1,13 +1,17 @@
-# VEXA — Frontend Performance
+# VEXA — Enterprise Scale
 
-## Current Milestone: v3.0 Frontend Performance
+## Current Milestone: v4.0 Enterprise Scale
 
-**Goal:** Optimize VEXA frontend and mobile performance without redesigning the product.
+**Goal:** Evolve VEXA into enterprise-grade scalable infrastructure without disrupting existing production functionality.
 
 **Target features:**
-- Feature-based src/features/ structure (barrel re-exports, zero file moves)
-- Mobile performance (dynamic imports, device capability detection, lazy images, Next.js config)
-- 3D optimization (Draco config, progressive GLB loading, mobile GPU frame controls)
+- Multi-tenant architecture (org accounts, brand isolation, tenant-aware limits, enterprise quotas)
+- Analytics + billing (usage metering, API metering, generation tracking, billing readiness)
+- Admin systems (operational dashboards, provider monitoring, AI queue monitoring, failure analytics)
+- Infra scaling design (worker/GPU scaling, CDN strategy, object storage, caching layers)
+- Enterprise hardening (audit logging, compliance readiness, SLA architecture, backup strategies)
+- Enterprise documentation (architecture, onboarding, deployment, provider integration, emergency recovery)
+- Enterprise readiness report + scaling roadmap + infra topology
 - Frontend API layer (typed apiClient, error normalization, useApiCall hook)
 - State management cleanup (centralized loading/error states, Zustand selector hooks)
 - Performance reports (bundle analysis, mobile readiness, frontend architecture map)
