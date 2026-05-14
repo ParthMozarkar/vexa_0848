@@ -1,21 +1,41 @@
-# VEXA AI - Project Overview
+# VEXA Enterprise Fashion Intelligence
 
-This is the main repository for the VEXA platform, an AI-powered fashion marketplace solution.
+![VEXA Architecture](docs/diagrams/architecture.png)
 
-## 📁 Project Structure
+VEXA is an enterprise-grade AI infrastructure platform designed to power the next generation of virtual try-on, automated styling, and intelligent wardrobe management. Built on a serverless-first, edge-optimized architecture, VEXA decouples product experiences from underlying AI providers to create a resilient, highly scalable platform.
 
-To maintain a professional and scalable codebase, the project is organized into the following services:
+## 📚 Engineering Documentation
 
-- **`/frontend`**: Next.js 15 + React 19 web application. This is the main user interface.
-- **`/backend`**: Python FastAPI service handling AI model orchestration and heavy processing.
-- **`/vexa-mobile-sdk`**: React Native SDK for integrating VEXA into third-party mobile apps.
-- **`/docs`**: Project documentation, architectural diagrams, and deployment guides.
+The complete VEXA engineering documentation hub is located in the `/docs` directory. It contains production-grade architecture overviews, scaling strategies, and onboarding guides.
 
-## 🚀 Getting Started
+👉 **[Go to the Documentation Hub](docs/README.md)**
 
-To start the entire VEXA ecosystem:
+### Quick Links for Investors & Advisors
+- [Technical Overview & Strategic Infrastructure](docs/TECHNICAL_OVERVIEW.md)
+- [System Capabilities](docs/SYSTEM_CAPABILITIES.md)
+
+### Quick Links for Engineering
+- [System Architecture Topology](docs/architecture/SYSTEM_ARCHITECTURE.md)
+- [AI Pipeline & Orchestration](docs/ai/AI_PIPELINE_DOCS.md)
+- [Database ER Diagrams](docs/architecture/DATABASE_ARCHITECTURE.md)
+- [Local Setup & Onboarding](docs/onboarding/LOCAL_SETUP.md)
+
+## 📁 Repository Structure
+
+- **`/frontend`**: Core Next.js 15 App Router application (Client, API edge, Orchestration).
+- **`/docs`**: Comprehensive architectural documentation and diagrams.
+- **`/supabase`**: Database migrations and configuration.
+- **`/vexa-mobile-sdk`**: Embeddable mobile tools.
+
+## 🚀 Getting Started Locally
+
+Please refer to the [Local Setup Guide](docs/onboarding/LOCAL_SETUP.md) for full instructions on configuring your environment variables, installing dependencies, and running the development server.
+
 ```bash
-./start_all.sh
+cd frontend
+npm install
+npm run dev
 ```
 
-For individual service development, see the READMEs in their respective folders.
+---
+*VEXA — Scalable Fashion Intelligence.*
