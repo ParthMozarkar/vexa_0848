@@ -5,6 +5,7 @@ import { createServerSupabaseClient } from '@/lib/supabaseServer';
 export async function GET(req: NextRequest) {
   try {
     const marketplaceKey = req.nextUrl.searchParams.get('marketplaceKey');
+    const orgId = req.nextUrl.searchParams.get('orgId');
 
     const supabase = createServerSupabaseClient();
 
@@ -32,6 +33,11 @@ export async function GET(req: NextRequest) {
         usageQuery = usageQuery.eq('api_key_id', keyRecord.id);
         // Note: For try_on if we had marketplace_id we'd filter, but skipping for now or assume filtering.
       }
+    }
+
+    // Org-scoped breakdown: filter usage_logs by org_id when provided
+    if (orgId) {
+      usageQuery = usageQuery.eq('org_id', orgId);
     }
 
     const [usageRes, tryonRes] = await Promise.all([
