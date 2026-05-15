@@ -12,10 +12,52 @@ import type { Outfit } from '@/types';
 type VideoGenStatus = 'idle' | 'generating' | 'ready' | 'error';
 
 interface VideoGenResponse {
+  jobId?: string;
+  status?: 'processing' | 'ready';
   videoUrl?: string;
   frameUrls?: string[];
   type?: 'video' | 'frames';
   error?: string;
+}
+
+const VIDEO_POLL_INTERVAL_MS = 5_000;
+const VIDEO_MAX_WAIT_MS = 240_000;
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+async function readVideoGenResponse(res: Response): Promise<VideoGenResponse> {
+  const rawText = await res.text();
+  try {
+    const parsed = JSON.parse(rawText) as unknown;
+    if (!isRecord(parsed)) return {};
+    return {
+      jobId: typeof parsed.jobId === 'string' ? parsed.jobId : undefined,
+      status:
+        parsed.status === 'processing' || parsed.status === 'ready'
+          ? parsed.status
+          : undefined,
+      videoUrl: typeof parsed.videoUrl === 'string' ? parsed.videoUrl : undefined,
+      frameUrls: Array.isArray(parsed.frameUrls)
+        ? parsed.frameUrls.filter((url): url is string => typeof url === 'string')
+        : undefined,
+      type: parsed.type === 'video' || parsed.type === 'frames' ? parsed.type : undefined,
+      error: typeof parsed.error === 'string' ? parsed.error : undefined,
+    };
+  } catch {
+    if (rawText.includes('<!DOCTYPE') || rawText.trim().startsWith('<')) {
+      return {
+        error:
+          'The video request timed out on the server. Please try again; if it repeats, check Vercel logs for /api/studio/video-gen.',
+      };
+    }
+    return { error: rawText.slice(0, 200) || `Request failed with status ${res.status}` };
+  }
+}
+
+function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 function VideoTryOnPageInner() {
@@ -92,7 +134,7 @@ function VideoTryOnPageInner() {
 
     try {
       const { data: { session } } = await supabase.auth.getSession();
-      const res = await fetch('/api/studio/video-gen', {
+      const submitRes = await fetch('/api/studio/video-gen', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -101,14 +143,39 @@ function VideoTryOnPageInner() {
         body: JSON.stringify({ imageUrl: publicUrl }),
       });
 
-      const data = (await res.json()) as VideoGenResponse;
-      stopTimer();
+      const submitData = await readVideoGenResponse(submitRes);
+      if (!submitRes.ok) throw new Error(submitData.error ?? `Error ${submitRes.status}`);
 
-      if (!res.ok) throw new Error(data.error ?? `Error ${res.status}`);
-      if (!data.videoUrl) throw new Error('No video URL returned');
+      if (submitData.videoUrl) {
+        stopTimer();
+        setAnimateResultUrl(submitData.videoUrl);
+        setAnimateStatus('ready');
+        return;
+      }
 
-      setAnimateResultUrl(data.videoUrl);
-      setAnimateStatus('ready');
+      if (!submitData.jobId) {
+        throw new Error(submitData.error ?? 'Video generation did not return a job id');
+      }
+
+      const deadline = Date.now() + VIDEO_MAX_WAIT_MS;
+      while (Date.now() < deadline) {
+        await sleep(VIDEO_POLL_INTERVAL_MS);
+        const pollRes = await fetch(
+          `/api/studio/video-gen?jobId=${encodeURIComponent(submitData.jobId)}`
+        );
+        const pollData = await readVideoGenResponse(pollRes);
+
+        if (!pollRes.ok) throw new Error(pollData.error ?? `Error ${pollRes.status}`);
+
+        if (pollData.status === 'ready' && pollData.videoUrl) {
+          stopTimer();
+          setAnimateResultUrl(pollData.videoUrl);
+          setAnimateStatus('ready');
+          return;
+        }
+      }
+
+      throw new Error('Video generation is taking longer than expected. Please try again.');
     } catch (err: unknown) {
       stopTimer();
       setAnimateError(err instanceof Error ? err.message : String(err));
