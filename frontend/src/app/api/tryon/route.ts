@@ -13,6 +13,7 @@ import { createServerSupabaseClient } from '@/lib/supabaseServer';
 import type { HandleTryOnInput, HandleTryOnResult } from '@/lib/tryonContracts';
 import { validateProxyUrl } from '@/lib/ssrfGuard';
 import { logger } from '@/lib/logger';
+import { storeAsTempAsset } from '@/lib/tempAsset';
 import { OrchestrationEngine } from '@/lib/orchestration/OrchestrationEngine';
 import { AIProvider } from '@/lib/orchestration/types';
 
@@ -125,28 +126,42 @@ async function resolveToPublicUrl(url: string, label: string, userId: string, su
     const r2Url = await uploadToR2(buffer, filename, mime);
     if (r2Url) return r2Url;
 
-    // Ensure the bucket exists (idempotent — error is ignored when it already exists)
+    // Ensure bucket exists; also try updateBucket to force public access
+    // in case the bucket already existed as private.
     await supabase.storage.createBucket('avatars', { public: true }).catch(() => {});
+    await supabase.storage.updateBucket('avatars', { public: true }).catch(() => {});
 
     const { error: storageError } = await supabase.storage
       .from('avatars')
       .upload(filename, buffer, { contentType: mime, upsert: true });
 
-    if (storageError) {
-      throw new Error(`Supabase Storage upload failed: ${storageError.message}`);
+    if (!storageError) {
+      const { data: publicData } = supabase.storage.from('avatars').getPublicUrl(filename);
+      if (publicData?.publicUrl) return publicData.publicUrl;
+    } else {
+      logger.warn(`resolveToPublicUrl: Supabase Storage upload failed (${label}):`, storageError.message);
     }
 
-    const { data: publicData } = supabase.storage.from('avatars').getPublicUrl(filename);
-    if (publicData?.publicUrl) return publicData.publicUrl;
+    // Last resort: store in Supabase DB and serve via /api/serve/[id].
+    // This works even when Storage is not configured/enabled.
+    const tempUrl = await storeAsTempAsset(buffer, mime, supabase);
+    if (tempUrl) {
+      logger.warn(`resolveToPublicUrl: using temp DB asset URL for ${label}: ${tempUrl}`);
+      return tempUrl;
+    }
 
-    throw new Error('Supabase Storage did not return a public URL');
+    throw new Error(
+      `Could not upload ${label} image to a public URL` +
+      (storageError ? ` (Storage: ${storageError.message})` : '') +
+      '. Run supabase/migrations_safe/007_temp_assets.sql or configure R2/Supabase Storage.'
+    );
   } catch (e: unknown) {
     const message = e instanceof Error ? e.message : String(e);
     logger.warn(`resolveToPublicUrl: failed to publish ${label} image:`, message);
     if (isDataUrl) {
-      throw new Error(
-        `Could not upload ${label} image to a public URL. ` +
-        'Fix R2 credentials or Supabase Storage/service-role environment variables before retrying.'
+      throw new Error(message.startsWith('Could not upload')
+        ? message
+        : `Could not upload ${label} image: ${message}`
       );
     }
     return url;

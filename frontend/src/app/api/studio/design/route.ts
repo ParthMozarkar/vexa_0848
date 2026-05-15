@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import type { Database } from '@/types/database';
 import { uploadToR2 } from '@/lib/r2';
+import { storeAsTempAsset } from '@/lib/tempAsset';
 import { getClientIp, checkIpLimit, incrementIpCount } from '@/lib/ipRateLimit';
 import { createServerSupabaseClient } from '@/lib/supabaseServer';
 import type { SupabaseClient } from '@supabase/supabase-js';
@@ -48,15 +49,16 @@ async function persistResultImage(imageUrl: string, userId: string, supabase: an
       }
 
       // 2. Try Supabase Storage (Bucket: avatars)
-      // Ensure the bucket exists (idempotent — error is ignored when it already exists)
+      // Ensure bucket exists; force public even if it already existed as private.
       await supabase.storage.createBucket('avatars', { public: true }).catch(() => {});
+      await supabase.storage.updateBucket('avatars', { public: true }).catch(() => {});
 
       const { error: uploadError } = await supabase.storage
         .from('avatars')
         .upload(filename, arrayBuffer, { contentType, upsert: true });
 
       if (uploadError) {
-        console.warn(`[Design Persist] Supabase upload failed:`, uploadError.message);
+        console.warn(`[Design Persist] Supabase Storage upload failed:`, uploadError.message);
       } else {
         const { data: publicData } = supabase.storage.from('avatars').getPublicUrl(filename);
         if (publicData?.publicUrl) {
@@ -64,20 +66,24 @@ async function persistResultImage(imageUrl: string, userId: string, supabase: an
           return publicData.publicUrl;
         }
       }
+
+      // 3. Try Supabase DB temp store → served by /api/serve/[id]
+      const tempUrl = await storeAsTempAsset(buffer, contentType, supabase);
+      if (tempUrl) {
+        console.warn('[Design Persist] Using temp DB asset URL:', tempUrl);
+        return tempUrl;
+      }
     }
   } catch (err: any) {
     console.error(`[Design Persist] Fetch/upload error:`, err.message);
   }
 
-  // 3. Last resort: return as base64 data URI so the browser can always display
-  //    the image regardless of CDN domain (bypasses the proxy allowlist entirely).
+  // 4. Last resort: base64 data URI (browser-only — won't work for TNB try-on)
   if (buffer) {
     console.warn('[Design Persist] Falling back to base64 data URI');
     return `data:${contentType};base64,${buffer.toString('base64')}`;
   }
 
-  // If we couldn't even fetch the image, return the original URL and let the
-  // client-side proxy attempt it (may still fail, but is the best we can do).
   return imageUrl;
 }
 
