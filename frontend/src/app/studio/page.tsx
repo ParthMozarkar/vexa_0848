@@ -158,12 +158,36 @@ function StudioPageInner() {
     setLimitReached(false);
 
     try {
-      // SMART COMPOSITION: If multiple items, merge them into 1 image to make the API 4x faster
-      const finalGarments = garments.length > 1 
-        ? [{ url: await createOutfitCollage(garments), category: "one-pieces" as TryOnCategory }]
-        : [{ url: garments[0].url, category: garments[0].category }];
-
       const { data: { session } } = await supabase.auth.getSession();
+
+      // SMART COMPOSITION: If multiple items, merge them into 1 image to make the API 4x faster
+      let collageUrl: string | null = null;
+      if (garments.length > 1) {
+        const dataUri = await createOutfitCollage(garments);
+        // Pre-upload the collage so the tryon API receives a stable HTTPS URL
+        // instead of a large data: URI that can fail storage resolution.
+        try {
+          const [, b64] = dataUri.split(',');
+          const bytes = Uint8Array.from(atob(b64), (c) => c.charCodeAt(0));
+          const blob = new Blob([bytes], { type: 'image/png' });
+          const fd = new FormData();
+          fd.append('file', blob, 'collage.png');
+          const uploadRes = await fetch('/api/upload', {
+            method: 'POST',
+            headers: session?.access_token ? { Authorization: `Bearer ${session.access_token}` } : {},
+            body: fd,
+          });
+          if (uploadRes.ok) {
+            const { url } = (await uploadRes.json()) as { url?: string };
+            if (url?.startsWith('http')) collageUrl = url;
+          }
+        } catch { /* non-fatal — fall through to data URI */ }
+        if (!collageUrl) collageUrl = dataUri;
+      }
+
+      const finalGarments = collageUrl
+        ? [{ url: collageUrl, category: "one-pieces" as TryOnCategory }]
+        : [{ url: garments[0].url, category: garments[0].category }];
       const body = {
         userId: currentUser?.id ?? "anonymous",
         productId: `custom_${Date.now()}`,

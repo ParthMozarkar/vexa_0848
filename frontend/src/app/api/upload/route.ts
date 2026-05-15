@@ -103,9 +103,31 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
 
   // 6. Upload to Cloudflare R2 using detected (not user-supplied) MIME type (UPL-05)
   const r2Url = await uploadToR2(buffer, filename, detectedMime);
-  const avatarUrl = r2Url ?? `data:${detectedMime};base64,${buffer.toString('base64')}`;
-  if (!r2Url) {
-    logger.warn('[/api/upload] R2 unavailable — serving base64 avatar inline');
+  let avatarUrl: string | null = r2Url;
+
+  // 6b. Fallback: Supabase Storage (used when R2 is not configured)
+  if (!avatarUrl) {
+    try {
+      // Ensure the bucket exists (idempotent — error ignored when already exists)
+      await supabase.storage.createBucket('avatars', { public: true }).catch(() => {});
+      const storagePath = `uploads/${filename}`;
+      const { error: upErr } = await supabase.storage
+        .from('avatars')
+        .upload(storagePath, buffer, { contentType: detectedMime, upsert: true });
+      if (!upErr) {
+        const { data: pub } = supabase.storage.from('avatars').getPublicUrl(storagePath);
+        if (pub?.publicUrl) avatarUrl = pub.publicUrl;
+      } else {
+        logger.warn('[/api/upload] Supabase Storage upload failed:', upErr.message);
+      }
+    } catch (err: unknown) {
+      logger.warn('[/api/upload] Supabase Storage error:', err instanceof Error ? err.message : String(err));
+    }
+  }
+
+  if (!avatarUrl) {
+    logger.warn('[/api/upload] Both R2 and Supabase Storage unavailable — serving base64 inline');
+    avatarUrl = `data:${detectedMime};base64,${buffer.toString('base64')}`;
   }
 
   // 7. Update users table (non-fatal)
