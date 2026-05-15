@@ -1,9 +1,9 @@
 "use client";
 
 import React, { useState, useRef, useEffect, useCallback, Suspense } from "react";
-import { useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { Download, Loader2, RotateCcw, Shirt, Lock, Film } from "lucide-react";
+import { Loader2, RotateCcw, Shirt, Lock, Film } from "lucide-react";
 import { ImageUploadBox } from "@/components/studio/ImageUploadBox";
 import { supabase } from "@/lib/supabase";
 import { useStore } from "@/store/useStore";
@@ -53,24 +53,9 @@ const FETCH_TIMEOUT_MS = 300_000;
 
 // ── Studio Page ───────────────────────────────────────────────────────────────
 
-function proxyIfExternal(url: string): string {
-  if (!url || !url.startsWith('http')) return url;
-  try {
-    const u = new URL(url);
-    const isSupabase = u.hostname.endsWith('.supabase.co');
-    const isR2 = u.hostname.endsWith('.r2.dev') || u.hostname.endsWith('.r2.cloudflarestorage.com');
-    const isSameOrigin = typeof window !== 'undefined' && u.hostname === window.location.hostname;
-    if (isSupabase || isR2 || isSameOrigin) return url;
-    return `/api/proxy?url=${encodeURIComponent(url)}`;
-  } catch {
-    return url;
-  }
-}
-
 function StudioPageInner() {
   const { currentUser } = useStore();
   const searchParams = useSearchParams();
-  const router = useRouter();
 
   const [activeTab, setActiveTab] = useState<StudioTab>("tryon");
   const [personUrl, setPersonUrl] = useState<string | null>(null);
@@ -246,16 +231,12 @@ function StudioPageInner() {
     setLimitReached(false);
   };
 
-  const handleDownload = async () => {
+  const handleVideoTryOn = () => {
     if (!resultUrl) return;
-    try {
-      const res = await fetch(resultUrl);
-      const blob = await res.blob();
-      const a = document.createElement("a");
-      a.href = URL.createObjectURL(blob);
-      a.download = `vexa-tryon-${Date.now()}.png`;
-      a.click();
-    } catch { window.open(resultUrl, "_blank"); }
+    const url = new URL("https://www.vexatryon.in/video-tryon");
+    url.searchParams.set("image", resultUrl);
+    url.searchParams.set("autostart", "1");
+    window.location.assign(url.toString());
   };
 
   const statusText = (): string => {
@@ -390,7 +371,12 @@ function StudioPageInner() {
                     )}
                     {!limitReached && status === "ready" && resultUrl && (
                       <motion.div key="result" className="absolute inset-0">
-                        <img src={proxyIfExternal(resultUrl)} alt="Result" className="w-full h-full object-contain" />
+                        <img
+                          src={resultUrl}
+                          alt="Generated try-on result"
+                          referrerPolicy="no-referrer"
+                          className="w-full h-full object-contain"
+                        />
                       </motion.div>
                     )}
                     {!limitReached && status === "error" && (
@@ -406,29 +392,9 @@ function StudioPageInner() {
                 {/* Action Buttons BELOW image */}
                 {status === "ready" && resultUrl && (
                   <div className="mt-6 flex flex-wrap justify-center gap-3 z-10">
-                    <button 
-                      onClick={() => window.open("https://www.instagram.com", "_blank")} 
-                      className="flex items-center gap-2 px-4 py-2.5 rounded-2xl font-bold text-xs bg-white text-[#4A6741] border border-slate-200 shadow-xl hover:bg-slate-50 hover:scale-105 transition-all"
-                    >
-                      Export to Instagram
-                    </button>
-
                     <button
-                      onClick={() => {
-                        const link = document.createElement('a');
-                        link.href = resultUrl;
-                        link.download = `vexa_tryon_${Date.now()}.png`;
-                        link.click();
-                      }}
-                      className="flex items-center gap-2 px-6 py-2.5 rounded-2xl bg-[#0f172a] text-white font-bold text-xs hover:bg-black transition-all shadow-xl hover:scale-105"
-                    >
-                      <Download className="w-3.5 h-3.5" />
-                      Download
-                    </button>
-
-                    <button
-                      onClick={() => router.push(`/video-tryon?image=${encodeURIComponent(resultUrl)}`)}
-                      className="flex items-center gap-2 px-6 py-2.5 rounded-2xl bg-[#4A6741] text-white font-bold text-xs hover:bg-[#3d5636] transition-all shadow-xl hover:scale-105"
+                      onClick={handleVideoTryOn}
+                      className="flex items-center gap-2 px-8 py-3 rounded-2xl bg-[#4A6741] text-white font-black text-xs uppercase tracking-widest hover:bg-[#3d5636] transition-all shadow-xl hover:scale-105"
                     >
                       <Film className="w-3.5 h-3.5" />
                       Try Video Try-On

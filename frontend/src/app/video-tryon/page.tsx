@@ -43,6 +43,7 @@ function VideoTryOnPageInner() {
   const [garmentUrl, setGarmentUrl] = useState<string | null>(null);
 
   const animateTimerRef = React.useRef<ReturnType<typeof setInterval> | null>(null);
+  const autoStartRef = React.useRef(false);
 
   const startTimer = () => {
     setAnimateElapsed(0);
@@ -114,6 +115,13 @@ function VideoTryOnPageInner() {
       setAnimateStatus('error');
     }
   }, [animateImageUrl]);
+
+  useEffect(() => {
+    const shouldAutoStart = searchParams?.get('autostart') === '1';
+    if (!shouldAutoStart || autoStartRef.current || !animateImageUrl) return;
+    autoStartRef.current = true;
+    void handleAnimate();
+  }, [animateImageUrl, handleAnimate, searchParams]);
 
   const mockProduct: Outfit = {
     id: `video_${Date.now()}`,
