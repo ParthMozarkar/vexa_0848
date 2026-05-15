@@ -125,6 +125,9 @@ async function resolveToPublicUrl(url: string, label: string, userId: string, su
     const r2Url = await uploadToR2(buffer, filename, mime);
     if (r2Url) return r2Url;
 
+    // Ensure the bucket exists (idempotent — error is ignored when it already exists)
+    await supabase.storage.createBucket('avatars', { public: true }).catch(() => {});
+
     const { error: storageError } = await supabase.storage
       .from('avatars')
       .upload(filename, buffer, { contentType: mime, upsert: true });

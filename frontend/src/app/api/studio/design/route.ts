@@ -48,6 +48,9 @@ async function persistResultImage(imageUrl: string, userId: string, supabase: an
       }
 
       // 2. Try Supabase Storage (Bucket: avatars)
+      // Ensure the bucket exists (idempotent — error is ignored when it already exists)
+      await supabase.storage.createBucket('avatars', { public: true }).catch(() => {});
+
       const { error: uploadError } = await supabase.storage
         .from('avatars')
         .upload(filename, arrayBuffer, { contentType, upsert: true });
