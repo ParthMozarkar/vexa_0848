@@ -165,7 +165,10 @@ async function persistResultImage(imageUrl: string, userId: string, productId: s
       return imageUrl;
     }
     const res = await fetch(parsedResultUrl.toString(), { signal: AbortSignal.timeout(30_000) });
-    if (!res.ok) return imageUrl;
+    if (!res.ok) {
+      logger.warn('persistResultImage: result fetch failed:', res.status);
+      return imageUrl;
+    }
     const arrayBuffer = await res.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
     const contentType = res.headers.get('content-type') || 'image/png';
@@ -175,10 +178,24 @@ async function persistResultImage(imageUrl: string, userId: string, productId: s
     const r2Url = await uploadToR2(buffer, filename, contentType);
     if (r2Url) return r2Url;
 
-    await supabase.storage.from('avatars').upload(filename, arrayBuffer, { contentType, upsert: true });
+    const { error: storageError } = await supabase.storage
+      .from('avatars')
+      .upload(filename, buffer, { contentType, upsert: true });
+
+    if (storageError) {
+      logger.warn('persistResultImage: Supabase Storage upload failed:', storageError.message);
+      return imageUrl;
+    }
+
     const { data: publicData } = supabase.storage.from('avatars').getPublicUrl(filename);
-    return publicData?.publicUrl || imageUrl;
-  } catch { return imageUrl; }
+    if (publicData?.publicUrl) return publicData.publicUrl;
+
+    logger.warn('persistResultImage: Supabase Storage did not return a public URL');
+    return imageUrl;
+  } catch (e: unknown) {
+    logger.warn('persistResultImage: failed, returning original AI URL:', e instanceof Error ? e.message : String(e));
+    return imageUrl;
+  }
 }
 
 // Removed executeTryOnProvider as logic is now inside TNBProvider class
