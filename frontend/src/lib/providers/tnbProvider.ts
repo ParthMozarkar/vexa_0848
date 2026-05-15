@@ -1,6 +1,7 @@
 
 import { AIProvider, ProviderType } from '../orchestration/types';
-import { TryOnCategory } from '@/types';
+import type { ProviderCapability, ProviderHealthResult } from './types';
+import type { TryOnCategory } from '@/types';
 
 export interface TNBInput {
   personImageUrl: string;
@@ -8,10 +9,124 @@ export interface TNBInput {
   category: TryOnCategory;
 }
 
+interface TNBVideoInput {
+  imageUrl: string;
+  prompt?: string;
+}
+
 const DEFAULT_TIMEOUT_MS = 60_000;
 const TNB_BASE = 'https://thenewblack.ai/api/1.1/wf';
 
+function parseTNBResponse(responseText: string): string {
+  const trimmed = responseText.trim()
+
+  const isValidUrl = (u: unknown): string | null => {
+    if (typeof u !== 'string') return null
+    let url = u.trim()
+    if (url.startsWith('//')) url = 'https:' + url
+    if (!url.startsWith('http')) return null
+    if (url.length < 20) return null
+    try {
+      new URL(url)
+      return url
+    } catch {
+      return null
+    }
+  }
+
+  console.log('[TNB] Raw response preview:', trimmed.slice(0, 500))
+
+  if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+    try {
+      const json = JSON.parse(trimmed) as Record<string, unknown>
+
+      if (json.status === 'error' || json.error) {
+        throw new Error(
+          (json.message as string) ||
+          (json.error as string) ||
+          'TNB returned error status'
+        )
+      }
+
+      const data = json.data as Record<string, unknown> | undefined
+
+      const url =
+        isValidUrl(json.response) ||
+        isValidUrl(json.url) ||
+        isValidUrl(json.output_url) ||
+        isValidUrl(json.image) ||
+        isValidUrl(json.result) ||
+        isValidUrl(json.output) ||
+        isValidUrl(data?.url) ||
+        isValidUrl(data?.image) ||
+        isValidUrl(data?.response)
+
+      if (url) return url
+
+      console.error('[TNB] JSON parsed but no URL found. Keys:', Object.keys(json))
+      throw new Error(
+        `TNB response missing URL. Got keys: ${Object.keys(json).join(', ')}`
+      )
+    } catch (e: unknown) {
+      const msg = e instanceof Error ? e.message : String(e)
+      if (
+        msg.includes('TNB returned error') ||
+        msg.includes('missing URL')
+      ) throw e
+    }
+  }
+
+  const plainUrl = isValidUrl(trimmed)
+  if (plainUrl) return plainUrl
+
+  const urlMatch = trimmed.match(/https?:\/\/[^\s"'<>]+/)
+  if (urlMatch?.[0]) {
+    const extracted = isValidUrl(urlMatch[0])
+    if (extracted) return extracted
+  }
+
+  console.error('[TNB] Full unparseable response:', trimmed)
+  throw new Error(
+    `AI service returned unparseable response: ${trimmed.slice(0, 200)}`
+  )
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null
+}
+
+function isTryOnCategory(value: unknown): value is TryOnCategory {
+  return (
+    value === 'tops' ||
+    value === 'bottoms' ||
+    value === 'one-pieces' ||
+    value === 'shoes' ||
+    value === 'bags' ||
+    value === 'accessories' ||
+    value === 'jewelry'
+  )
+}
+
+function isTNBInput(input: unknown): input is TNBInput {
+  return (
+    isRecord(input) &&
+    typeof input.personImageUrl === 'string' &&
+    typeof input.garmentImageUrl === 'string' &&
+    isTryOnCategory(input.category)
+  )
+}
+
+function isTNBVideoInput(input: unknown): input is TNBVideoInput {
+  return (
+    isRecord(input) &&
+    typeof input.imageUrl === 'string' &&
+    (input.prompt === undefined || typeof input.prompt === 'string')
+  )
+}
+
 export class TNBProvider implements AIProvider {
+  public readonly capabilities: ProviderCapability[];
+
   constructor(
     public readonly id: string,
     public readonly name: string,
@@ -20,12 +135,25 @@ export class TNBProvider implements AIProvider {
     public readonly expectedLatencyMs: number,
     public weight: number = 1.0,
     public enabled: boolean = true
-  ) {}
+  ) {
+    this.capabilities = type === 'video-gen' ? ['tryon-video'] : ['tryon'];
+  }
 
-  async call(input: any, options?: { timeoutMs?: number; signal?: AbortSignal }): Promise<string> {
-    const rawKey = process.env.TNB_API_KEY || process.env.NEWBLACK_API_KEY;
-    if (!rawKey) throw new Error('AI service not configured');
-    const apiKey = rawKey.trim();
+  async call(input: unknown, options?: { timeoutMs?: number; signal?: AbortSignal }): Promise<string> {
+    const apiKey = (process.env.TNB_API_KEY || process.env.NEWBLACK_API_KEY)?.trim()
+    if (!apiKey) {
+      throw new Error(
+        'TNB_API_KEY is not set in environment variables. ' +
+        'Go to Vercel dashboard → Settings → Environment Variables and add it.'
+      )
+    }
+
+    if (apiKey.length < 10) {
+      throw new Error(
+        'TNB_API_KEY appears invalid (too short). Check Vercel environment variables.'
+      )
+    }
+
     console.info(`[TNB] using key len=${apiKey.length} prefix=${apiKey.slice(0, 4)}*** type=${this.type}`);
 
     const timeoutMs = options?.timeoutMs ?? DEFAULT_TIMEOUT_MS;
@@ -33,12 +161,37 @@ export class TNBProvider implements AIProvider {
 
     // Handle both TryOn and VideoGen
     if (this.type === 'tryon') {
+      if (!isTNBInput(input)) throw new Error('Invalid TNB try-on input')
       return this.handleTryOn(input, apiKey, signal);
     } else if (this.type === 'video-gen') {
+      if (!isTNBVideoInput(input)) throw new Error('Invalid TNB video input')
       return this.handleVideoGen(input, apiKey, signal);
     }
     
     throw new Error(`Method not implemented for ${this.type}`);
+  }
+
+  async healthCheck(): Promise<ProviderHealthResult> {
+    const start = Date.now();
+    const apiKey = (process.env.TNB_API_KEY || process.env.NEWBLACK_API_KEY)?.trim();
+
+    if (!apiKey) {
+      return {
+        healthy: false,
+        latencyMs: Date.now() - start,
+        error: 'TNB_API_KEY is not set in environment variables.',
+      };
+    }
+
+    if (apiKey.length < 10) {
+      return {
+        healthy: false,
+        latencyMs: Date.now() - start,
+        error: 'TNB_API_KEY appears invalid (too short).',
+      };
+    }
+
+    return { healthy: true, latencyMs: Date.now() - start };
   }
 
   private async handleTryOn(input: TNBInput, apiKey: string, signal: AbortSignal): Promise<string> {
@@ -61,25 +214,31 @@ export class TNBProvider implements AIProvider {
       formData.append('ratio', 'auto');
     }
 
-    const res = await fetch(`${TNB_BASE}/${endpoint}?api_key=${encodeURIComponent(apiKey)}`, {
-      method: 'POST',
-      body: formData,
-      signal,
-    });
+    const res = await fetch(
+      `${TNB_BASE}/${endpoint}?api_key=${encodeURIComponent(apiKey)}`,
+      {
+        method: 'POST',
+        body: formData,
+        signal,
+      }
+    )
+
+    const responseText = await res.text()
+
+    console.log('[TNB] HTTP Status:', res.status)
+    console.log('[TNB] Content-Type:', res.headers.get('content-type'))
+    console.log('[TNB] Response preview:', responseText.slice(0, 500))
 
     if (!res.ok) {
-      const errText = await res.text();
-      throw new Error(`TNB Error (${res.status}): ${errText.slice(0, 200)}`);
+      throw new Error(
+        `TNB API failed with status ${res.status}: ${responseText.slice(0, 200)}`
+      )
     }
 
-    const rawBody = await res.text();
-    const headerDump: Record<string, string> = {};
-    res.headers.forEach((v, k) => { headerDump[k] = v; });
-    console.info(`[TNB ${endpoint}] status=${res.status} body len=${rawBody.length} preview=${rawBody.slice(0, 120)} headers=${JSON.stringify(headerDump)}`);
-    return this.parseResponse(rawBody);
+    return parseTNBResponse(responseText)
   }
 
-  private async handleVideoGen(input: any, apiKey: string, signal: AbortSignal): Promise<string> {
+  private async handleVideoGen(input: TNBVideoInput, apiKey: string, signal: AbortSignal): Promise<string> {
     const { imageUrl, prompt } = input;
 
     // Strict 5s only (10 credits). 10s mode disabled to control TNB cost.
@@ -131,27 +290,4 @@ export class TNBProvider implements AIProvider {
   }
 
   private fixUrl(u: string) { return u.startsWith('//') ? `https:${u}` : u; }
-
-  private parseResponse(text: string): string {
-    const trimmed = text.trim();
-    // Must look like a real URL — reject short prefixes like "https:" or "https://"
-    const looksLikeUrl = (s: string) => /^https?:\/\/[^/\s]{3,}/.test(s);
-    if (looksLikeUrl(trimmed)) return trimmed;
-    if (trimmed.startsWith('//') && trimmed.length > 5) {
-      const fixed = 'https:' + trimmed;
-      if (looksLikeUrl(fixed)) return fixed;
-    }
-    if (trimmed.startsWith('{')) {
-      try {
-        const json = JSON.parse(trimmed);
-        if (json.status === 'error') throw new Error(json.message || 'AI failed');
-        const url = json.response || json.url || json.output_url || json.image;
-        if (typeof url === 'string' && looksLikeUrl(url.trim())) return url.trim();
-      } catch (e: any) {
-        if (e.message?.startsWith('AI ')) throw e;
-      }
-    }
-    console.error('[TNB parseResponse] unparseable upstream:', trimmed.slice(0, 300));
-    throw new Error(`AI service returned unparseable response: ${trimmed.slice(0, 100)}`);
-  }
 }

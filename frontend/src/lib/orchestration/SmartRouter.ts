@@ -7,6 +7,11 @@ const METRICS_TTL = 86400 * 7; // 7 days
 
 export class SmartRouter {
   private static METRICS_KEY_PREFIX = 'vexa:metrics:v1:';
+  private static metricsCache = new Map<string, ProviderMetrics>();
+
+  static getAllMetrics(): ProviderMetrics[] {
+    return Array.from(this.metricsCache.values());
+  }
 
   static async selectProvider(
     type: AIProvider['type'],
@@ -85,6 +90,7 @@ export class SmartRouter {
       
       if (!success) current.errorCount++;
       current.lastUsed = new Date().toISOString();
+      this.metricsCache.set(providerId, current);
 
       await redis.set(key, current, { ex: METRICS_TTL });
     } catch (err) {

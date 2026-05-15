@@ -1,7 +1,6 @@
 import type { AIProvider, ProviderCapability } from './types';
 import { TNBProvider } from './tnbProvider';
 import { OpenAIProvider } from './openaiProvider';
-import { MeshyProvider } from './meshyProvider';
 
 // Capability → ordered list of providers (primary first, fallbacks after)
 const REGISTRY = new Map<ProviderCapability, AIProvider[]>();
@@ -27,8 +26,8 @@ export function getPrimaryProvider(capability: ProviderCapability): AIProvider |
 
 // Initialize default providers
 export function initializeRegistry(): void {
-  registerProvider('tryon', new TNBProvider());
-  registerProvider('tryon-video', new TNBProvider());
+  registerProvider('tryon', new TNBProvider('tnb-vto', 'TheNewBlack VTO', 'tryon', 0.05, 8000, 0.7));
+  registerProvider('tryon-video', new TNBProvider('tnb-video', 'TheNewBlack Video', 'video-gen', 0.15, 15000, 1.0));
   registerProvider('design', new OpenAIProvider());
   registerProvider('trends', new OpenAIProvider());
   // model-gen registration removed as it was BlackBox based

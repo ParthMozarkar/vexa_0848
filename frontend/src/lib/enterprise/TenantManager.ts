@@ -27,16 +27,15 @@ export class TenantManager {
     // Check role_permissions table
     const { data: hasPerm } = await this.supabase
       .from('role_permissions')
-      .select('id')
+      .select('id, permissions!inner(name)')
       .eq('role', member.role)
-      .innerJoin('permissions', 'permission_id', 'id')
-      .eq('name', permission)
+      .eq('permissions.name', permission)
       .maybeSingle();
 
     return !!hasPerm;
   }
 
-  static async updateBranding(orgId: string, branding: any) {
+  static async updateBranding(orgId: string, branding: Record<string, unknown>) {
     return await this.supabase
       .from('organizations')
       .update({ branding_config: branding })
