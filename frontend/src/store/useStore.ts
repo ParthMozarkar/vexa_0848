@@ -27,6 +27,11 @@ interface AppState {
   userPhotoUrl: string | null;
   setUserPhotoUrl: (url: string | null) => void;
 
+  /** Transient garment URL passed from the design page to the studio page.
+   *  Used instead of a query-param to avoid URL-length limits with data: URIs. */
+  pendingGarmentUrl: string | null;
+  setPendingGarmentUrl: (url: string | null) => void;
+
   // ─── Centralized loading states ──────────────────────────────────────────
   loadingStates: Record<string, boolean>;
   setLoading: (key: string, value: boolean) => void;
@@ -68,6 +73,9 @@ export const useStore = create<AppState>((set, get) => ({
 
   userPhotoUrl: null,
   setUserPhotoUrl: (url) => set({ userPhotoUrl: url }),
+
+  pendingGarmentUrl: null,
+  setPendingGarmentUrl: (url) => set({ pendingGarmentUrl: url }),
 
   // ─── Centralized loading ──────────────────────────────────────────────────
   loadingStates: {},

@@ -54,7 +54,7 @@ const FETCH_TIMEOUT_MS = 300_000;
 // ── Studio Page ───────────────────────────────────────────────────────────────
 
 function StudioPageInner() {
-  const { currentUser } = useStore();
+  const { currentUser, pendingGarmentUrl, setPendingGarmentUrl } = useStore();
   const searchParams = useSearchParams();
 
   const [activeTab, setActiveTab] = useState<StudioTab>("tryon");
@@ -104,15 +104,25 @@ function StudioPageInner() {
     return () => { abortRef.current?.abort(); };
   }, []);
 
-  // Pre-fill garment from /design page redirect
+  // Pre-fill garment from /design page redirect.
+  // When coming from the design page the garment may be a data: URI — too large
+  // to survive as a query param — so it is passed via the Zustand store instead.
   useEffect(() => {
-    const garmentUrl = searchParams.get('garmentUrl');
     const cat = (searchParams.get('category') ?? 'tops') as TryOnCategory;
+
+    if (searchParams.get('fromDesign') === '1' && pendingGarmentUrl) {
+      setGarments([{ id: `design_${Date.now()}`, url: pendingGarmentUrl, category: cat }]);
+      setActiveTab('tryon');
+      setPendingGarmentUrl(null);
+      return;
+    }
+
+    const garmentUrl = searchParams.get('garmentUrl');
     if (garmentUrl) {
       setGarments([{ id: `design_${Date.now()}`, url: garmentUrl, category: cat }]);
       setActiveTab('tryon');
     }
-  }, [searchParams]);
+  }, [searchParams, pendingGarmentUrl, setPendingGarmentUrl]);
 
   const handleAddGarment = () => {
     if (tempGarmentUrl) {

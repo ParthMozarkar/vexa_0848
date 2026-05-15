@@ -78,7 +78,7 @@ const EXAMPLE_PROMPTS = [
 ];
 
 export default function DesignPage() {
-  const { currentUser } = useStore();
+  const { currentUser, setPendingGarmentUrl } = useStore();
   const router = useRouter();
 
   const [prompt, setPrompt] = useState('');
@@ -395,7 +395,15 @@ export default function DesignPage() {
                       <img src={proxyIfExternal(designImageUrl)} alt="Design" className="max-h-full object-contain" />
                     </div>
                     <div className="p-8 bg-white border-t flex justify-between items-center">
-                      <button onClick={() => router.push(`/studio?garmentUrl=${encodeURIComponent(designImageUrl)}&category=${category}`)} className="px-8 py-4 rounded-2xl bg-[#4A6741] text-white font-black uppercase text-xs">Try on Yourself</button>
+                      <button
+                        onClick={() => {
+                          setPendingGarmentUrl(designImageUrl);
+                          router.push(`/studio?fromDesign=1&category=${encodeURIComponent(category)}`);
+                        }}
+                        className="px-8 py-4 rounded-2xl bg-[#4A6741] text-white font-black uppercase text-xs"
+                      >
+                        Try on Yourself
+                      </button>
                       <button onClick={() => handleDownload(designImageUrl, 'design')} className="p-4 rounded-2xl bg-slate-50"><Download className="w-5 h-5" /></button>
                     </div>
                   </motion.div>
