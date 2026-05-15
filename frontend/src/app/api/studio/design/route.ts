@@ -22,41 +22,60 @@ interface DesignRequest {
 }
 
 async function persistResultImage(imageUrl: string, userId: string, supabase: any): Promise<string> {
+  // Skip if already a data URI (e.g. OpenAI b64_json path)
+  if (imageUrl.startsWith('data:')) return imageUrl;
+
+  let buffer: Buffer | null = null;
+  let contentType = 'image/png';
+
   try {
-    console.log(`[Design Persist] Fetching image from: ${imageUrl.slice(0, 50)}...`);
+    console.log(`[Design Persist] Fetching image from: ${imageUrl.slice(0, 80)}...`);
     const res = await fetch(imageUrl, { signal: AbortSignal.timeout(30_000) });
     if (!res.ok) {
       console.error(`[Design Persist] Failed to fetch source image: ${res.status}`);
-      return imageUrl;
-    }
-    const arrayBuffer = await res.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-    const contentType = res.headers.get('content-type') || 'image/png';
-    const ext = contentType.split('/')[1]?.split(';')[0] || 'png';
-    const filename = `design_results/${userId}_${Date.now()}.${ext}`;
+    } else {
+      const arrayBuffer = await res.arrayBuffer();
+      buffer = Buffer.from(arrayBuffer);
+      contentType = res.headers.get('content-type') || 'image/png';
+      const ext = contentType.split('/')[1]?.split(';')[0] || 'png';
+      const filename = `design_results/${userId}_${Date.now()}.${ext}`;
 
-    // 1. Try Cloudflare R2
-    const r2Url = await uploadToR2(buffer, filename, contentType);
-    if (r2Url) {
-      console.log(`[Design Persist] Successfully saved to R2: ${filename}`);
-      return r2Url;
-    }
+      // 1. Try Cloudflare R2
+      const r2Url = await uploadToR2(buffer, filename, contentType);
+      if (r2Url) {
+        console.log(`[Design Persist] Successfully saved to R2: ${filename}`);
+        return r2Url;
+      }
 
-    // 2. Try Supabase Storage (Bucket: avatars)
-    const { error: uploadError } = await supabase.storage.from('avatars').upload(filename, arrayBuffer, { contentType, upsert: true });
-    
-    if (uploadError) {
-      console.error(`[Design Persist] Supabase Upload Error:`, uploadError);
-      return imageUrl;
-    }
+      // 2. Try Supabase Storage (Bucket: avatars)
+      const { error: uploadError } = await supabase.storage
+        .from('avatars')
+        .upload(filename, arrayBuffer, { contentType, upsert: true });
 
-    const { data: publicData } = supabase.storage.from('avatars').getPublicUrl(filename);
-    console.log(`[Design Persist] Successfully saved to Supabase: ${filename}`);
-    return publicData?.publicUrl || imageUrl;
-  } catch (err: any) { 
-    console.error(`[Design Persist] Critical Error:`, err.message);
-    return imageUrl; 
+      if (uploadError) {
+        console.warn(`[Design Persist] Supabase upload failed:`, uploadError.message);
+      } else {
+        const { data: publicData } = supabase.storage.from('avatars').getPublicUrl(filename);
+        if (publicData?.publicUrl) {
+          console.log(`[Design Persist] Successfully saved to Supabase: ${filename}`);
+          return publicData.publicUrl;
+        }
+      }
+    }
+  } catch (err: any) {
+    console.error(`[Design Persist] Fetch/upload error:`, err.message);
   }
+
+  // 3. Last resort: return as base64 data URI so the browser can always display
+  //    the image regardless of CDN domain (bypasses the proxy allowlist entirely).
+  if (buffer) {
+    console.warn('[Design Persist] Falling back to base64 data URI');
+    return `data:${contentType};base64,${buffer.toString('base64')}`;
+  }
+
+  // If we couldn't even fetch the image, return the original URL and let the
+  // client-side proxy attempt it (may still fail, but is the best we can do).
+  return imageUrl;
 }
 
 export async function POST(req: NextRequest): Promise<NextResponse> {
