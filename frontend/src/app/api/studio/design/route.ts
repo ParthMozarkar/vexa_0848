@@ -192,24 +192,24 @@ export async function POST(req: NextRequest): Promise<NextResponse> {
       await incrementIpCount(clientIp, 'design').catch(e => console.warn('Limit increment failed', e));
     }
 
-    // 6. Persistence (History)
+    // 6. Persistence — await so we return a stable R2/Supabase URL instead of
+    //    an expiring external CDN link (Seedream / OpenAI signed URLs expire).
     const supabase = getServiceSupabase();
-    Promise.resolve().then(async () => {
-      try {
-        const persistedUrl = await persistResultImage(imageUrl!, userId, supabase);
-        await (supabase.from('design_history') as any).insert({
-          user_id: userId,
-          original_prompt: prompt,
-          ai_prompt: finalDesignPrompt,
-          result_url: persistedUrl,
-          category: category,
-          style: style || 'modern',
-          created_at: new Date().toISOString()
-        });
-      } catch (e) { console.warn('History save failed', e); }
-    });
+    let finalImageUrl = imageUrl;
+    try {
+      finalImageUrl = await persistResultImage(imageUrl!, userId, supabase);
+      await (supabase.from('design_history') as any).insert({
+        user_id: userId,
+        original_prompt: prompt,
+        ai_prompt: finalDesignPrompt,
+        result_url: finalImageUrl,
+        category: category,
+        style: style || 'modern',
+        created_at: new Date().toISOString()
+      });
+    } catch (e) { console.warn('History save failed', e); }
 
-    return NextResponse.json({ designImageUrl: imageUrl, prompt: finalDesignPrompt });
+    return NextResponse.json({ designImageUrl: finalImageUrl, prompt: finalDesignPrompt });
   } catch (err: any) {
     return NextResponse.json({ error: err.message }, { status: 500 });
   }

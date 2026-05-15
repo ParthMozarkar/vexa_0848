@@ -26,6 +26,8 @@ const EXACT_HOSTS: ReadonlySet<string> = new Set([
   'images.pixabay.com',
   'img.rocket.new',
   'thenewblack.ai',
+  // OpenAI image CDN (gpt-image-1 / DALL-E 3 signed URLs)
+  'oaidalleapiprodscus.blob.core.windows.net',
 ]);
 
 // Wildcard suffix patterns — hostname must end with this suffix
@@ -34,6 +36,14 @@ const WILDCARD_SUFFIXES: ReadonlyArray<string> = [
   '.supabase.co',
   '.r2.cloudflarestorage.com',
   '.thenewblack.ai',
+  // BytePlus / Seedream (Ark API) image CDN domains
+  '.byteimg.com',
+  '.bytedance.com',
+  '.bytepluses.com',
+  '.volccdn.com',
+  '.byteplus.com',
+  // OpenAI Azure blob storage (varies by region)
+  '.blob.core.windows.net',
 ];
 
 // ---------------------------------------------------------------------------
