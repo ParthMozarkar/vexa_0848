@@ -141,10 +141,11 @@ export function ImageUploadBox({
           });
           if (res.ok) {
             const j = (await res.json()) as { url?: string };
-            if (j.url) {
+            if (j.url?.startsWith("http")) {
               onChange(j.url);
               return;
             }
+            console.warn("[ImageUploadBox] /api/upload did not return a public URL — trying Supabase Storage fallback");
           }
         }
 

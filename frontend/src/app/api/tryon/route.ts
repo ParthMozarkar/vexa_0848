@@ -29,6 +29,37 @@ function getServiceSupabase(): SupabaseClient {
   return createServerSupabaseClient();
 }
 
+function describeAssetUrl(url: string): string {
+  if (url.startsWith('data:')) {
+    const mime = url.slice(5).split(';')[0] || 'unknown';
+    return `data:${mime};length=${url.length}`;
+  }
+
+  try {
+    const parsed = new URL(url);
+    return `${parsed.protocol}//${parsed.hostname}`;
+  } catch {
+    return url.slice(0, 80);
+  }
+}
+
+function assertPublicAssetUrl(url: string, label: string): void {
+  try {
+    const parsed = new URL(url);
+    if ((parsed.protocol === 'http:' || parsed.protocol === 'https:') && parsed.hostname.length >= 3) {
+      return;
+    }
+  } catch {
+    // handled below
+  }
+
+  throw new Error(
+    `Could not prepare ${label} image for AI try-on. ` +
+    `Expected a public HTTP URL, got ${describeAssetUrl(url)}. ` +
+    'Check R2 credentials and Supabase environment variables, then retry.'
+  );
+}
+
 async function authenticateRequest(req: NextRequest, bodyUserId: string): Promise<{ userId: string; marketplace: MarketplaceContext | null } | NextResponse> {
   const marketplaceCtx = await validateApiKey(req);
   if (marketplaceCtx) {
@@ -59,15 +90,18 @@ async function authenticateRequest(req: NextRequest, bodyUserId: string): Promis
 
 async function resolveToPublicUrl(url: string, label: string, userId: string, supabase: SupabaseClient): Promise<string> {
   if (!url) return '';
+  const isDataUrl = url.startsWith('data:');
 
   try {
-    const isDataUrl = url.startsWith('data:');
     let buffer: Buffer;
     let mime: string;
     let ext: string;
 
     if (isDataUrl) {
       const [meta, b64] = url.split(',');
+      if (!b64) {
+        throw new Error(`${label} data URL is missing base64 image data`);
+      }
       mime = meta?.slice(5).split(';')[0] || 'image/png';
       ext = mime.split('/')[1] || 'png';
       buffer = Buffer.from(b64, 'base64');
@@ -91,10 +125,27 @@ async function resolveToPublicUrl(url: string, label: string, userId: string, su
     const r2Url = await uploadToR2(buffer, filename, mime);
     if (r2Url) return r2Url;
 
-    await supabase.storage.from('avatars').upload(filename, buffer, { contentType: mime, upsert: true });
+    const { error: storageError } = await supabase.storage
+      .from('avatars')
+      .upload(filename, buffer, { contentType: mime, upsert: true });
+
+    if (storageError) {
+      throw new Error(`Supabase Storage upload failed: ${storageError.message}`);
+    }
+
     const { data: publicData } = supabase.storage.from('avatars').getPublicUrl(filename);
-    return publicData?.publicUrl || url;
-  } catch (e) {
+    if (publicData?.publicUrl) return publicData.publicUrl;
+
+    throw new Error('Supabase Storage did not return a public URL');
+  } catch (e: unknown) {
+    const message = e instanceof Error ? e.message : String(e);
+    logger.warn(`resolveToPublicUrl: failed to publish ${label} image:`, message);
+    if (isDataUrl) {
+      throw new Error(
+        `Could not upload ${label} image to a public URL. ` +
+        'Fix R2 credentials or Supabase Storage/service-role environment variables before retrying.'
+      );
+    }
     return url;
   }
 }
@@ -158,6 +209,12 @@ export async function handleTryOn(
     resolveToPublicUrl(userPhotoUrl, 'person', userId, supabase),
     resolveToPublicUrl(garmentEntry.url, 'garment', userId, supabase),
   ]);
+  assertPublicAssetUrl(personUrlFinal, 'person');
+  assertPublicAssetUrl(garmentUrlFinal, 'garment');
+  console.info('[/api/tryon] resolved asset URLs:', {
+    person: describeAssetUrl(personUrlFinal),
+    garment: describeAssetUrl(garmentUrlFinal),
+  });
 
   // 3. Orchestrated AI Call
   const orchestrationResult = await OrchestrationEngine.execute(
